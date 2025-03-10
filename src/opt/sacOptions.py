@@ -10,16 +10,16 @@ from opt.trOptions import TRoptions
 
 
 class SACoptions:
-
+    """
+        The collection of all parameters (options) for SACOBRA, hierarchical
+        organized in sub-option-classes
+    """
     def __init__(self,
                  feval=100,
-                 # initDesign="RANDOM", # "LHS",
-                 # initDesPoints=None, initDesOptP=None, initBias=0.005,
-                 # rescale=True, newlower=-1, newupper=1,
-                 ID=IDoptions(),
-                 RBF=RBFoptions(),
                  XI=None,
                  skipPhaseI=True,
+                 ID=IDoptions(),
+                 RBF=RBFoptions(),
                  SEQ=SEQoptions(),
                  # repairInfeas=False, ri=defaultRI(),
                  MS=MSoptions(),
@@ -44,6 +44,7 @@ class SACoptions:
         self.epsilonInit = epsilonInit
         self.epsilonMax = epsilonMax
         self.penaF = penaF
+        self.sigmaD = sigmaD
         self.DOSAC = DOSAC
         self.ISA = ISA
         self.XI = XI

@@ -1,5 +1,6 @@
 from typing import Union
 import numpy as np
+import pandas as pd
 # need to specify SACOBRA_Py.src as source folder in File - Settings - Project Structure,
 # then the following import statements will work:
 from rescaleWrapper import RescaleWrapper
@@ -16,10 +17,29 @@ DRCS = np.array([0.001,0.0])
 
 
 class CobraInitializer:
+    """
+        Initialize SACOBRA optimization:
+
+        - problem formulation: xStart, fn, lower, upper, is_equ, solu
+        - parameter settings: s_opts
+        - create initial design: A, Fres, Gres
+    """
     def __init__(self, xStart, fn, fName, lower, upper,
                  is_equ: Union[np.ndarray, None] = None,
                  solu: Union[np.ndarray, None] = None, s_opts=SACoptions(50),
                  ):
+        """
+
+        :param xStart: start point, its dimension defines input space dimension
+        :param fn:  function returning (1+nConstraints)-dim vector: [objective to minimize, constraints]
+        :param fName: function name
+        :param lower: lower bound (same dim as xStart)
+        :param upper: upper bound (same dim as xStart)
+        :param is_equ: nConstraints-dim boolean vector: which constraints are equality constraints
+        :param solu:  (optional, for diagnostics) true solution vector or solution matrix: which x are feasible
+                    and deliver minimal objective value
+        :param s_opts: the options, see :class:`SACoptions`
+        """
         #
         # STEP 0: first settings and checks
         #
@@ -84,6 +104,7 @@ class CobraInitializer:
         if s_opts.epsilonInit is None: s_opts.epsilonInit = 0.005 * l
         if s_opts.epsilonMax is None:  s_opts.epsilonMax = 2 * 0.005 * l
         if s_opts.ID.initDesOptP is None: s_opts.ID.initDesOptP = s_opts.ID.initDesPoints
+        s_opts.phase1DesignPoints = None
 
         #
         # STEP 3: create initial design
@@ -118,6 +139,10 @@ class CobraInitializer:
                         'Gres': Gres,
                         'nConstraints': nConstraints,
                         'l': l
+                        }
+        self.for_rbf = {'A': A,
+                        'Fres': Fres,
+                        'Gres': Gres
                         }
 
         # TODO: cobra$equIndex
@@ -176,11 +201,13 @@ class CobraInitializer:
                     'ibest': ibest,
                     'fbestArray': fbestArray,
                     'xbestArray': xbestArray,
-                    'phase': phaseVec
+                    'phase': phaseVec,
+                    'xStart': xbest,         # bug fix
+                    'rs': np.array([])      # will be populated by random_start
                     }
         self.sac_res.update(sac_res2)       # update dict sac_res with the content of sac_res2
         self.df = None
-        self.df2 = None
+        self.df2 = pd.DataFrame()
 
         # TODO:
         # cobra$equIndex = which(colnames(Gres) == "equ")

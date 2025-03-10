@@ -21,7 +21,14 @@ class RBFmodel:
         """
         self.d = xobs.shape[1]
         self.nmodels = 1 if yobs.ndim == 1 else yobs.shape[1]
-        self.model = RBFInterpolator(xobs, yobs, kernel=kernel, degree=degree)
+        try:
+            self.model = RBFInterpolator(xobs, yobs, kernel=kernel, degree=degree)
+        except np.linalg.LinAlgError:
+            # LinAlgError ('Singular Matrix') is raised by RBFInterpolator if xobs contains identical rows
+            # (identical infill points). We avoid this with cobra.for_rbf['A'] (instead of cobra.sac_res['A']),
+            # where a new infill point is added in updateInfoAndCounters ONLY if min(xNewDist), the minimum distance
+            # of the new infill points to all rows of cobra.for_rbf['A'] is greater than 0.
+            print("[RBFmodel] LinAlgError --> probably identical points in rows of xobs")
 
     def __call__(self, xflat: np.ndarray):
         """

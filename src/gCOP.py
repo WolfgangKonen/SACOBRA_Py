@@ -18,6 +18,7 @@ class GCOP:
         if name == "G01": self._call_G01()
         elif name == "G02": self._call_G02(dimension)
         elif name == "G05": self._call_G05()
+        elif name == "G06": self._call_G06()
         elif name == "G11": self._call_G11()
         else:
             str = f"G-function {name} not yet implemented"
@@ -79,6 +80,18 @@ class GCOP:
                                       1000 * np.sin(-x[2] - 0.25) + 1000 * np.sin(-x[3] - 0.25) + 894.8 - x[0],
                                       1000 * np.sin( x[2] - 0.25) + 1000 * np.sin( x[2] - x[3] - 0.25) + 894.8 - x[1],
                                       1000 * np.sin( x[3] - 0.25) + 1000 * np.sin( x[3] - x[2] - 0.25) + 1294.8])
+
+    def _call_G06(self):
+        self.dimension = 2
+        self.lower = np.array([13,0])
+        self.upper = np.array([100,100])
+        self.nConstraints = 2
+        self.is_equ = np.array([False, False])
+        self.solu = np.array([14.095, 5 - np.sqrt(100 - (14.095 - 5) ** 2)])
+        self.xStart = np.array([20.1, 5.84])
+        self.fn = lambda x: np.array([((x[0] - 10) ** 3) + ((x[1] - 20) ** 3),
+                                      -((((x[0] - 5) ** 2) + ((x[1] - 5) ** 2) - 100)),
+                                      ((x[0] - 6) ** 2) + ((x[1] - 5) ** 2) - 82.81])
 
     def _call_G11(self):
         self.dimension = 2

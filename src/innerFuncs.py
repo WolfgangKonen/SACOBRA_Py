@@ -21,8 +21,8 @@ def distLine(x,xp):
     :return:    vector of length n, the Euclidean distances
     """
     xp = xp.reshape(xp.shape[0], x.shape[0])
-    z = np.tile(x,(xp.shape[0],1)) - xp
-    z = np.sqrt(np.sum(z*z,axis=1))
+    z = np.tile(x,(xp.shape[0], 1)) - xp
+    z = np.sqrt(np.sum(z*z, axis=1))
     return z
 
 
@@ -33,10 +33,10 @@ def plog(f, pShift=0.0):
 
     Let :math:`f' =  f - p_{shift}`. Then:
 
-    :math:`plog(f) = \ln(1+ f'),  \quad\mbox{if}\quad f' \ge 0`
+    :math:`plog(f) = +\ln(1 + f'),  \quad\mbox{if}\quad f' \ge 0`
     and
 
-    :math:`plog(f) = -\ln(1- f'), \quad\mbox{if}\quad f'  <   0`
+    :math:`plog(f) = -\ln(1 - f'), \quad\mbox{if}\quad f'  <   0`
 
 
     :param f:   function value(s), number or np.array
@@ -46,23 +46,16 @@ def plog(f, pShift=0.0):
     return np.sign(f - pShift) * np.log(1 + np.abs(f - pShift))
 
 
-# ' Inverse of \code{\link{plog}}
-# '
-# ' @param y       function argument
-# ' @param pShift  shift
-# '
-# ' @return \eqn{plog^{-1}(y)}
-# ' @seealso \code{\link{plog}}
-# ' @export
 def plogReverse(y, pShift=0):
     """
     Inverse of ``plog(f, pShift)``.
 
     :param y:       function argument, number or np.array
     :param pShift:  optional shift
-    :return:    np.exp(|y|) - 1 + pShift
+    :return:    np.sign(y) * (np.exp(|y|) - 1) + pShift
     """
-    return np.exp(np.abs(y)) - 1 + pShift
+    return np.sign(y) * (np.exp(np.abs(y)) - 1) + pShift
+    # /WK/2025/03/06: bug fix for negative y
 
 
 #

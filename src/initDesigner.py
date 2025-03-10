@@ -18,6 +18,7 @@ class InitDesigner:
         :param s_opts: object of class :class:`SACoptions`. Here we use from element ID the
                        elements ``initDesign`` and ``initDesPoints``.
         """
+        self.val = s_opts.cobraSeed
         d = xStart.size
         if s_opts.ID.initDesign == "RANDOM":
             # Create self.A with shape (npts,d) where the first npts-1 points in R^d are uniform random from
@@ -27,10 +28,18 @@ class InitDesigner:
             self.A = self.A @ np.diag(upper-lower) + np.tile(lower, (npts-1,1))
             self.A = np.vstack((self.A, xStart))
         elif s_opts.ID.initDesign == "RAND_R":
-            # same as "RANDOM", but with reproducible random numbers (reproducible also on the R side)
-            npts, seed = s_opts.ID.initDesPoints, 42
-            self.A = self.my_rng(npts - 1, d, seed)  # uniform random in [0,1)
+            # Same as "RANDOM", but with reproducible random numbers (reproducible also on the R side).
+            # The seed is s_opts.cobraSeed.
+            npts = s_opts.ID.initDesPoints
+            self.A = self.my_rng(npts - 1, d, s_opts.cobraSeed)  # uniform random in [0,1)
             self.A = self.A @ np.diag(upper-lower) + np.tile(lower, (npts - 1, 1))
+            self.A = np.vstack((self.A, xStart))
+        elif s_opts.ID.initDesign == "RAND_REP":
+            # Same as "RAND_R", but with better self.my_rng2 (avoid cycles!).
+            # The seed is s_opts.cobraSeed.
+            npts = s_opts.ID.initDesPoints
+            self.A = self.my_rng2(npts - 1, d)  # uniform random in [0,1)
+            self.A = self.A @ np.diag(upper - lower) + np.tile(lower, (npts - 1, 1))
             self.A = np.vstack((self.A, xStart))
         else:
             raise RuntimeError(f"[InitDesigner] Invalid value s_opts.initDesign = '{s_opts.ID.initDesign}' ")
@@ -54,6 +63,16 @@ class InitDesigner:
             for d_ in range(d):
                 val = (val * val) % MOD
                 x[n_, d_] = val / MOD   # map val to range [0,1[
+        return x
+
+    def my_rng2(self, n, d):
+        MOD = 10 ** 5 + 7
+        OFS = 10 ** 5 - 7
+        x = np.zeros((n, d), dtype=np.float32)
+        for n_ in range(n):
+            for d_ in range(d):
+                self.val = (self.val*self.val*np.sqrt(self.val)+OFS) % MOD    # avoid cycles (!)
+                x[n_, d_] = self.val / MOD   # map val to range [0,1[
         return x
 
 

@@ -11,10 +11,12 @@ class ISAoptions:
     def __init__(self,
                  DOSAC = 1,
                  RS=True,
-                 RStype="SIGMOID",  # "CONSTANT",  "SIGMOID"
+                 RStype="CONSTANT",  # "CONSTANT",  "SIGMOID"
                  RSauto=False,
-                 RSmax=0.3,  # maximum probability of a random start
-                 RSmin=0.05,  # minimum probability of a random start
+                 RSmax=0.3,     # maximum probability of a random start
+                 RSmin=0.05,    # minimum probability of a random start
+                 RS_Cs=10,      # if RS_Cs iterations w/o progress, do a random start
+                 RS_rep=False,  # if True, generate reproducible random numbers with my_rng2 (R and Python)
                  aDRC=True,
                  aFF=True,
                  TFRange=1e+05,
@@ -27,8 +29,7 @@ class ISAoptions:
                  onlineFreqPLOG=10,
                  pEffectInit=0,
                  minMaxNormal=False,
-                 onlineMinMax=False,
-                 Cs=10
+                 onlineMinMax=False
                  ):
         self.DOSAC = DOSAC
         self.RS = RS
@@ -36,11 +37,13 @@ class ISAoptions:
         self.RSauto = RSauto
         self.RSmax = RSmax
         self.RSmin = RSmin
+        self.RS_Cs = RS_Cs
+        self.RS_rep= RS_rep
         self.aDRC = aDRC
         self.aFF = aFF
         self.TFRange = TFRange
         self.aCF = aCF
-        self. TGR = TGR
+        self.TGR = TGR
         self.conPLOG = conPLOG
         self.conFitPLOG = conFitPLOG
         self.adaptivePLOG = adaptivePLOG
@@ -49,7 +52,6 @@ class ISAoptions:
         self.pEffectInit = pEffectInit
         self.minMaxNormal = minMaxNormal
         self.onlineMinMax = onlineMinMax
-        self.Cs = Cs
 
 
 class ISAoptions0(ISAoptions):
@@ -58,8 +60,9 @@ class ISAoptions0(ISAoptions):
                  RS=False,
                  RStype="SIGMOID",  # "CONSTANT",  "SIGMOID"
                  RSauto=False,
-                 RSmax=0.3,  # maximum probability of a random start
+                 RSmax=0.3,   # maximum probability of a random start
                  RSmin=0.05,  # minimum probability of a random start
+                 RS_Cs=10,    # if RS_Cs iterations w/o progress, do a random start
                  aDRC=False,
                  aFF=False,
                  TFRange=np.inf,
@@ -72,8 +75,7 @@ class ISAoptions0(ISAoptions):
                  onlineFreqPLOG=10,
                  pEffectInit=0,
                  minMaxNormal=False,
-                 onlineMinMax=False,
-                 Cs=10
+                 onlineMinMax=False
                  ):
         self.DOSAC = DOSAC
         self.RS = RS
@@ -81,11 +83,12 @@ class ISAoptions0(ISAoptions):
         self.RSauto = RSauto
         self.RSmax = RSmax
         self.RSmin = RSmin
+        self.RS_Cs = RS_Cs
         self.aDRC = aDRC
         self.aFF = aFF
         self.TFRange = TFRange
         self.aCF = aCF
-        self. TGR = TGR
+        self.TGR = TGR
         self.conPLOG = conPLOG
         self.conFitPLOG = conFitPLOG
         self.adaptivePLOG = adaptivePLOG
@@ -94,7 +97,6 @@ class ISAoptions0(ISAoptions):
         self.pEffectInit = pEffectInit
         self.minMaxNormal = minMaxNormal
         self.onlineMinMax = onlineMinMax
-        self.Cs = Cs
 
 
 
@@ -104,8 +106,9 @@ class ISAoptions2:
                  RS=True,
                  RStype="CONSTANT",  # "CONSTANT",  "SIGMOID"
                  RSauto=True,
-                 RSmax=0.3,  # maximum probability of a random start
+                 RSmax=0.3,   # maximum probability of a random start
                  RSmin=0.05,  # minimum probability of a random start
+                 RS_Cs=10,    # if RS_Cs iterations w/o progress, do a random start
                  aDRC=True,
                  aFF=True,
                  TFRange=-1,
@@ -118,8 +121,7 @@ class ISAoptions2:
                  onlineFreqPLOG=10,
                  pEffectInit=3,
                  minMaxNormal=False,
-                 onlineMinMax=False,
-                 Cs=10
+                 onlineMinMax=False
                  ):
         self.DOSAC = DOSAC
         self.RS = RS
@@ -127,11 +129,12 @@ class ISAoptions2:
         self.RSauto = RSauto
         self.RSmax = RSmax
         self.RSmin = RSmin
+        self.RS_Cs = RS_Cs
         self.aDRC = aDRC
         self.aFF = aFF
         self.TFRange = TFRange
         self.aCF = aCF
-        self. TGR = TGR
+        self.TGR = TGR
         self.conPLOG = conPLOG
         self.conFitPLOG = conFitPLOG
         self.adaptivePLOG = adaptivePLOG
@@ -140,7 +143,6 @@ class ISAoptions2:
         self.pEffectInit = pEffectInit
         self.minMaxNormal = minMaxNormal
         self.onlineMinMax = onlineMinMax
-        self.Cs = Cs
 
 
 

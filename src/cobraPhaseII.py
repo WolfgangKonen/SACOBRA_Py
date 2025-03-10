@@ -6,13 +6,15 @@ from phase2Vars import Phase2Vars
 import phase2Funcs as pf2
 import seqOptimizer as if2
 from innerFuncs import verboseprint
-from trainSurrogates import trainSurrogates
+from randomStarter import RandomStarter
+from trainSurrogates import trainSurrogates, calcPEffect
 from rescaleWrapper import RescaleWrapper
 from initDesigner import InitDesigner
 from opt.sacOptions import SACoptions
 from opt.isaOptions import ISAoptions
 from seqOptimizer import SeqOptimizer, check_if_cobra_optimizable
 from evaluatorReal import EvaluatorReal
+from updateSaveCobra import updateSaveCobra
 
 class CobraPhaseII:
     """
@@ -22,22 +24,12 @@ class CobraPhaseII:
         and via object :class:`Phase2Vars` ``p2`` (internal variables needed in phase II).
     """
     def __init__(self, cobra: CobraInitializer):
-
-        #
-        # STEP 0: first settings and checks
-        #
-        s_opts = cobra.get_sac_opts()
-        s_opts.ISA.TGR = 42
-
         # initial settings of all phase-II-related variables:
         self.p2 = Phase2Vars(cobra)
         self.p2.ev1 = EvaluatorReal(cobra, self.p2)
-        # print(f"executing dummyFunc: {if2.dummyFunc(cobra)}")
+        self.p2.rs1 = RandomStarter(cobra.sac_opts)
 
-        #
-        # STEP 4: update structures
-        #
-        self.phase = "phase2"
+        cobra.phase = "phase2"
         self.cobra = cobra
 
     def get_cobra(self):
@@ -46,19 +38,24 @@ class CobraPhaseII:
     def get_p2(self):
         return self.p2
 
-    def __call__(self, *args, **kwargs):
-        return self.cobra
-
     def start(self):
         s_opts = self.cobra.sac_opts
         s_res = self.cobra.sac_res
         assert self.p2.ev1.state == "initialized"
+        first_pass = True
         while self.p2.num < s_opts.feval:
             self.p2.gama = s_opts.XI[(self.p2.globalOptCounter % s_opts.XI.size)]
 
             # TODO: MS (model-selection) part
 
+            # train RBF surrogate models:
             self.cobra = trainSurrogates(self.cobra, self.p2)
+
+            if first_pass:
+                # needed just for assertion check in testCOP.test_G06_R:
+                self.p2.fp1 = self.p2.fitnessSurrogate(s_res['xbest'] + 1)
+                self.p2.gp1 = self.p2.constraintSurrogates(s_res['xbest'] + 1)
+                first_pass = False
 
             # TODO: CA (conditioning analysis, whitening part), if(cobra$CA$active)  [OPTIONAL]
 
@@ -66,41 +63,37 @@ class CobraPhaseII:
             # s_res['l'] is set in cobraInit (length of smallest side of search space)
             # TODO: take the EPS set by adjustMargins:   cobra$EPS < - EPS
 
-            # self.cobra = pf2.selectXStart(self.cobra)
-            # # TODO: select xStart (either xbest or RandomStart, see SACOBRA.R)
-            # if s_opts.RS:
-            #     # cobra = RandomStart(cobra)   # TODO
-            #     xStart = s_res['xStart']
-            #     # if(any(cobra$xbest!=xStart)) cobra$noProgressCount<-0
-            # else:
-            #     xStart = s_res['xbest']
-            xStart = s_res['xStart']
+            # select xStart: either xbest or [conditional, if flag ISA.RS] random start (see randomStarter.py)
+            xStart = self.p2.rs1.random_start(self.cobra, self.p2)
 
             check_if_cobra_optimizable(self.cobra, self.p2)
 
             # start sequential optimizer on surrogates and write result to self.p2.opt_res
             # (e.g. the new best x is in xNew = self.p2.opt_res['x']):
             SeqOptimizer(xStart, self.cobra, self.p2)
-            self.p2.globalOptCounter += 1  # this is a counter which counts all main iterates, excluding repair or TR
-            self.p2.ev1.state = "optimized"     # signal ev1 that it is updated after seq. optimization
+            self.p2.globalOptCounter += 1       # a counter which counts all main iterates, excluding repair or TR
+            self.p2.ev1.state = "optimized"     # flag ev1 as being updated after sequential optimization
 
             # evaluate xNew on the real functions + do refine step (if cobra.sac_opts.EQU.active).
             # Result is the updated EvaluatorReal object self.p2.ev1:
             self.p2.ev1.update(self.cobra, self.p2)
 
-            # TODO: [conditional] calcPEffect (SACOBRA) for onlinePLOG
+            # [conditional] calcPEffect (SACOBRA) for onlinePLOG
+            calcPEffect(self.p2, self.p2.ev1.xNew, self.p2.ev1.xNewEval)
 
-            pf2.updateInfoAndCounters(self.cobra, self.p2, self.phase)
+            # update cobra information (A, Fres, Gres and others)
+            pf2.updateInfoAndCounters(self.cobra, self.p2)
             self.p2.num = self.cobra.sac_res['A'].shape[0]
 
-            # TODO: updateSaveCobra
+            # update and save cobra: data frames df, df2, keys xbest, fbest, ibest in sac_res
+            updateSaveCobra(self.cobra, self.p2, self.p2.EPS, pf2.fitFuncPenalRBF, pf2.distRequirement)
 
-            # TODO: adjustMargins
+            # adjust margin p2.EPS and adjust counters (p2.Cfeas, p2.Cinfeas):
+            pf2.adjustMargins(self.cobra, self.p2)
 
             # TODO: [conditional] repairInfeasible
 
             # TODO: [conditional] trustRegion
-
 
         # end while
         # TODO: some final settings to self.cobra, self.p2

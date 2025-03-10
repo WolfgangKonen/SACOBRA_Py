@@ -1,13 +1,14 @@
 import numpy as np
+import pandas as pd
 from cobraInit import CobraInitializer
-from cobraPhaseII import CobraPhaseII
 from phase2Vars import Phase2Vars
+import phase2Funcs as pf2
 from evaluatorReal import getPredY0
-from innerFuncs import plogReverse
+from innerFuncs import plogReverse, distLine
 
 
-def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, gama, EPS,
-                    fitFuncPenalRBF, distRequirement, fitnessSurrogate=None, sigmaD=None, penaF=None):
+def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, EPS,
+                    fitFuncPenalRBF, distRequirement, fitnessSurrogate=None):
     """
         Update and save cobra.
 
@@ -37,12 +38,16 @@ def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, gama, EPS,
     feasPred = p2.ev1.feasPred
     feval = p2.ev1.feval
     optimConv = p2.ev1.optimConv
+    optimTime = p2.ev1.optimTime
     predY = p2.ev1.predY
     predVal = p2.ev1.predVal
     diff = s_res['A'].shape[0] - predY.size
+    CONSTRAINED = s_res['nConstraints'] > 0
 
-    df_RS  = cobra.df.RS
-    df_RS  =  concat(df_RS, not np.all(s_res['xbest'] == s_res['xStart']))
+    if cobra.df is None:
+        df_RS = concat(np.repeat(False, s_opts.ID.initDesPoints), p2.RS_done)
+    else:
+        df_RS = concat(cobra.df.RS, p2.RS_done)  # not np.all(s_res['xbest'] == s_res['xStart']))
     # TODO:
     # if (cobra$DEBUG_XI) {
     #     df_fxStart <- c(cobra$df$fxStart,cobra$fn(cobra$xStart)[1])
@@ -52,19 +57,19 @@ def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, gama, EPS,
 
 
     # TODO:
-    # if (cobra$WRITE_XI) {
-    #     ro < -gama * cobra$l
-    #     sumViol < - distRequirement(xNew, cobra$fitnessSurrogate, ro)$sumViol
-    #     if ( is.null(cobra$df)) {
-    #         df_XI < - c(rep(NA, cobra$initDesPoints), gama)
-    #         df_XIsumViol < - c(rep(NA, cobra$initDesPoints), sumViol)
-    #     } else {
-    #         df_XI < - c(cobra$df$XI, gama)
-    #         df_XIsumViol < - c(cobra$df$XIsumViol, sumViol)
-    #     }
-    # }
+    if (p2.write_XI):
+        ro = p2.gama * s_res['l']
+        # s_res['l'] is set in cobraInit (length of smallest side of search space)
+        # TODO: distRequirement
+        # sumViol = pf2.distRequirement(xNew, p2.fitnessSurrogate, ro)$sumViol
+        if cobra.df is None:
+            df_XI = concat(np.repeat(np.nan, s_opts.ID.initDesPoints), p2.gama)
+            # df_XIsumViol = c(rep(NA, cobra$initDesPoints), sumViol)
+        else:
+            df_XI = concat(cobra.df.XI, p2.gama)
+            # df_XIsumViol = c(cobra$df$XIsumViol, sumViol)
 
-    xNewIndex = cobra.sac_res['numViol'].size
+    xNewIndex = cobra.sac_res['numViol'].size - 1
 
     if s_opts.EQU.active and np.flatnonzero(s_res['is_equ']).size != 0:
         # ... if we handle equality constraints by 'equMargin & two inequality constraints'
@@ -107,13 +112,13 @@ def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, gama, EPS,
     solu = s_res['solu']
     if solu is None:
         solu= p2.opt_res['x']  # p2.opt_res['x']: the optimal solution found so far
-        soluOrig = cobra.rw.inverse(p2.opt_res['x'], cobra)
+        soluOrig = cobra.rw.inverse(p2.opt_res['x'])
     else:
         if s_opts.ID.rescale:
             if solu.ndim==2:
-                solu = np.apply_along_axis(lambda x: cobra.rw.forward(x, cobra), axis=1, arr=solu)
+                solu = np.apply_along_axis(lambda x: cobra.rw.forward(x), axis=1, arr=solu)
             else:
-                solu = cobra.rw.forward(solu, cobra)
+                solu = cobra.rw.forward(solu)
         soluOrig = s_res['solu']
     # now solu is always in *rescaled* input space
 
@@ -132,3 +137,155 @@ def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, gama, EPS,
         df_predSolu = concat(np.repeat(np.nan, s_opts.ID.initDesPoints), predSolu)
     else:
         df_predSolu = concat(cobra.df.predSolu, predSolu)
+
+    # calculate distA and distOrig:
+    origA = np.apply_along_axis(lambda x: cobra.rw.inverse(x), axis=1, arr=s_res['A'])
+    # if (cobra$dimension == 1) origA = t(origA)
+    if solu.ndim==2:   # this is for the case with multiple solutions (like in G11)
+        raise NotImplementedError("[updateSaveCobra] Branch distA for multiple solu not (yet) implemented")
+        # TODO:
+        # da=sapply(1:nrow(solu), function(i)
+        # {distLine(solu[i,], cobra$A)})
+        # # da has nrow(solu) columns, each column has the distance of the ith solu to all points cobra$A.
+        # # Select this column which has the element with minimum distance.
+        # ind = which.min(apply(da, 2, min))
+        # distA = da[, ind]
+        # do = sapply(1:nrow(soluOrig), function(i)
+        # {distLine(soluOrig[i,], origA)})
+        # distOrig = do[, ind]
+    else:
+        distA = distLine(solu, s_res['A'])  # distance in rescaled space, distLine: see RbfInter.R
+        distOrig = distLine(soluOrig, origA)  # distance in original space
+
+    # several assertions
+    assert s_res['Fres'].shape[0] == predY.size, "[updateSaveCobra] predY"
+    assert df_predSolu.size == optimConv.size, "[updateSaveCobra] optimConv"
+    assert s_res['Fres'].shape[0] == optimConv.size, "[updateSaveCobra] optimConv 2"
+    assert s_res['Fres'].shape[0] == optimTime.size, "[updateSaveCobra] optimTime"
+    assert s_res['Fres'].shape[0] == s_res['fbestArray'].size, "[updateSaveCobra] fbestArray"
+    if CONSTRAINED:
+        assert s_res['Fres'].shape[0] == feas.size, "[updateSaveCobra] feas"
+        assert s_res['Fres'].shape[0] == feasPred.size, "[updateSaveCobra] feasPred"
+        assert s_res['Fres'].shape[0] == s_res['numViol'].size, "[updateSaveCobra] numViol"
+        assert s_res['Fres'].shape[0] == s_res['maxViol'].size, "[updateSaveCobra] maxViol"
+
+    # result data frame df:
+    if CONSTRAINED:
+        cobra.df = pd.DataFrame(
+            {'iter': np.arange(predY.size),
+             'y': s_res['Fres'],
+             'predY': predY,  # surrogate fitness
+             'predSolu': df_predSolu,
+             'feasible': feas,
+             'feasPred': feasPred,
+             'nViolations': s_res['numViol'],
+             'maxViolation': s_res['maxViol'],
+             'FEval': feval,
+             'Best': s_res['fbestArray'],
+             'optimizer': np.repeat(s_opts.SEQ.optimizer, s_res['Fres'].shape[0]),
+             'optimConv': optimConv,
+             'optimTime': optimTime,
+             'dist': distA,
+             'distOrig': distOrig,
+             'RS': df_RS,       # TRUE, if it is an iteration with random start point
+             })
+    else:   # i.e. if not CONSTRAINED:
+        raise NotImplementedError("[updateSaveCobra] Branch df and not CONSTRAINED not (yet) implemented")
+        # TODO:
+        # if (is.null(cobra$df$realfeval))
+        #     realfeval < -c()
+        # else
+        #     realfeval < -cobra$df$realfeval
+        #
+        # df < - data.frame(
+        #     y=cobra$Fres,
+        #     predY = predY,  # surrogate fitness
+        #     predSolu = df_predSolu,
+        #     feasible = T,
+        #     FEval = feval,
+        #     realfeval = c(realfeval, nrow(get("ARCHIVE", envir=intern.archive.env))),
+        #     Best = cobra$fbestArray,
+        #     optimizer = rep(cobra$seqOptimizer, length(cobra$Fres)),
+        #     optimizationTime = ev1$optimizationTime,
+        #     conv = optimizerConvergence,
+        #     dist = distA,
+        #     distOrig = distOrig,
+        #     RS = df_RS,  # TRUE, if it is an iteration with random start point
+        #     row.names = NULL
+        # )
+
+    if p2.write_XI:
+        cobra.df['XI'] = df_XI
+        # cobra.df.XIsumViol=df_XIsumViol
+
+    # TODO: write extra columns related to debugging of XI
+    # if (cobra$DEBUG_XI) {
+    #     firstSolu < - solu;
+    #     if ( is.matrix(solu)) firstSolu < - solu[1, ];
+    #     optimum < - cobra$fn(firstSolu)[1];
+    #
+    #     df$fxStart=df_fxStart  # objective function at xStart
+    #     df$fxbest=df_fxbest  # objective function at xbest
+    #     df$exbest=df_fxbest - optimum  # error (objective function - optimum) at xbest
+    #     df$RS2=df_RS2  # the same
+    #     df$iter2=1:nrow(df)
+    #     df$errFy = df$y - optimum  # the error of the optimizer result in every iteration
+    #     # if(tail(df_RS,1)==TRUE) browser()
+    #     # browser()
+    #     testit::assert (df$RS == df_RS2)
+    #     if (any(df$fxbest[!df$RS] != df$fxStart[!df$RS])) {
+    #         browser()
+    #         df$fxbest[!df$RS]=df$fxStart[!df$RS]  # symptomatic fix for the next assert
+    #     }
+    #     testit::assert (df$fxbest[!df$RS] == df$fxStart[!df$RS])
+    # }
+
+    cobra.df['seed'] = s_opts.cobraSeed
+
+    # result data frame df2:
+    last = cobra.df.shape[0] - 1
+    new_row_df2 = pd.DataFrame(
+        {'iter': cobra.df.iter[last],
+         'predY': predY[-1],           # surrogate fitness at current point xNew
+         'predVal': predVal[-1],       # surrogate fitness + penalty at xNew
+         'predSolu': predSolu,             # surrogate fitness at solu (only diagnostics).
+         'predSoluPenal': predSoluPenal,   # surrogate fitness + penalty at solu (only diagnostics).
+         'sigmaD': s_opts.sigmaD[1],    # the 1st of the three elements is the currently active sigmaD
+         'penaF': s_opts.penaF[1],      # the 1st of the three elements is the currently active penaF
+         'XI': p2.gama,
+         'fBest': cobra.df.Best[last],
+         'EPS': EPS,
+         'PLOG': p2.PLOG[-1],
+         'pshift': p2.pshift[-1],
+         'pEffect': p2.pEffect,
+         'err1': p2.err1[-1],
+         'err2': p2.err2[-1]
+        }, index = [0])
+    cobra.df2 = pd.concat([cobra.df2, new_row_df2], axis=0)
+
+    # TODO (later, when TR is ready):
+    # cobra$dftr<-rbind(cobra$dftr,data.frame(
+    #     TRiter=cobra$TRiter,
+    #     TRapprox=cobra$TRapprox,
+    #     TFR=cobra$TFR,
+    #     TSR=cobra$TSR,
+    #     Fratio=cobra$Fratio,
+    #     TRpop=cobra$TRpop,
+    #     TRdelta=cobra$TRdelta
+    # ))
+
+    # consistency check for data frames df and df2:
+    msg = "[updateSaveCobra] wrong nrow for df and df2";
+    if s_opts.phase1DesignPoints is None:
+        assert cobra.df.shape[0] == cobra.df2.shape[0] + s_opts.ID.initDesPoints, msg
+    else:
+        assert cobra.df.shape[0] == cobra.df2.shape[0] + s_opts.phase1DesignPoints, msg
+
+    # TODO: saveIntermediate
+    # if (cobra$saveIntermediate) {
+    #     # save intermediate results
+    #     # cobraResult = list(cobra=cobra, df=df, constraintSurrogates=cobra$constraintSurrogates, fn=fn)
+    #     cobraResult = cobra
+    #     if (is.na(file.info("results")$isdir)) dir.create("results")    # if directory "results" does not exist, create it
+    #     save(cobraResult, file=sprintf("results/cobra-%s-%s-%i.RData",cobra$fName,cobra$seqOptimizer,cobra$cobraSeed))
+    # }

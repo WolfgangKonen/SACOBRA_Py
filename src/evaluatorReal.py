@@ -20,7 +20,7 @@ class EvaluatorReal:
                 # matrix to store predicted constraint values (TODO: is it needed if we have Gres?)
                 self.predC = np.zeros((s_opts.ID.initDesPoints, nConstraints))
                 # feasibility of initial design:
-                self.feas = np.apply_along_axis(lambda x: np.max(x) > 0, axis = 1, arr=cobra.sac_res['Gres'])
+                self.feas = np.apply_along_axis(lambda x: np.max(x) <= 0, axis = 1, arr=cobra.sac_res['Gres'])
 
             self.feasPred = np.repeat(np.nan, s_opts.ID.initDesPoints)
             self.optimConv = np.repeat(1, s_opts.ID.initDesPoints)  # vector to store optimizer convergence
@@ -34,8 +34,8 @@ class EvaluatorReal:
             self.predC = cobra.sac_res['predC']
             self.feas = df.feasible
             self.feasPred = df.feasPred
-            self.optimConv = df.conv
-            self.optimTime = df.optimizationTime
+            self.optimConv = df.optimConv
+            self.optimTime = df.optimTime
             self.feval = df.FEval
 
         self.state = "initialized"

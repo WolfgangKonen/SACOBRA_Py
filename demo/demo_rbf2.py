@@ -16,7 +16,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.interpolate import RBFInterpolator
 
-nobs = 100      # number of observations fed into RBFInterpolator
+nobs = 10      # number of observations fed into RBFInterpolator
 ngrid = 100     # number of grid points per dimension in xgrid
 runs = 10
 
@@ -42,8 +42,14 @@ def my_rng(n, d, seed) -> np.ndarray:
             x[n_,d_] = 2*val/MOD - 1    # map val to float range [-1,1[
     return x
 
+
+def fn2(x):
+    return x[:,0] * 2 + x[:,1] * 3
+
+
 def fn(x):
     return np.sum(x, axis=1)*np.exp(-6*np.sum(x**2, axis=1))
+
 
 def interp_func(d, nobs, ngrid, runs):
     print(f"\n*** [interp_func] starting with d = {d} ... ***")
@@ -112,7 +118,7 @@ def interp_func(d, nobs, ngrid, runs):
     print(ytest)
     if d == 2:
         # Test numerical equivalence with R-implementation.
-        # These are the values generated with demo-rbf2-R.R on the R-side:
+        # These are the values generated with demo-rbf2.R on the R-side:
         if nobs == 10:
             ytest_from_R = np.array([-0.0958555, -0.0950409, -0.0940627, -0.0929260, -0.0916367,
                                      -0.0902010, -0.0886258, -0.0869181, -0.0850855, -0.0831358])

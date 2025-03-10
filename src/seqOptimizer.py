@@ -55,7 +55,7 @@ class SeqOptimizer:
                       'feval': opt.get_numevals(),
                       'time_ms': time_ms
                       }
-        verboseprint(s_opts.verbose, True,
+        verboseprint(s_opts.verbose, False,
                      f"[SeqOptimizer] {p2.ro}: {x} ... finished ({time_ms} msec)")
 
 
@@ -311,7 +311,7 @@ def calcConstrPred(x, cobra: CobraInitializer, p2: Phase2Vars):
         # constraintPrediction2 = -constraintPrediction1[cobra$equIndex]-2 * currentEps  # this creates -h(x)-mu
         # # why 2*currentEps? - because we modify the already created h(x)-mu to -(h(x)-mu)-2*mu = -h(x)-mu
         # # /WK/ NOTE: this is a bug fix of 2025-01-18, since before the line with "-2*currentEps"
-        # #      was commented out and (wrongly) replaced by one wit "-currentEps"
+        # #      was commented out and (wrongly) replaced by one with "-currentEps"
         constraintPrediction2 = 0 # dummy
 
         constraintPrediction = np.concatenate((constraintPrediction1, constraintPrediction2), axis=None) + p2.EPS ** 2
@@ -397,7 +397,7 @@ def check_if_cobra_optimizable(cobra: CobraInitializer, p2: Phase2Vars):
     assert type(s_res['dimension']) == int, "cobra.sac_res()['dimension'] is not set to an int"
     assert type(s_res['nConstraints']) == int, "cobra.sac_res()['nConstraints'] is not set to an int"
     assert s_res['A'].ndim == 2, "cobra.sac_res()['A'] is not a matrix"
-    assert type(s_res['fn']).__name__ == 'function', "cobra.sac_res()['fn'] is not a function"
+    assert type(s_res['fn']).__name__ in ['function','method'], "cobra.sac_res()['fn'] is not a function"
     assert p2.fitnessSurrogate.__class__.__name__ == "RBFmodel", "p2.fitnessSurrogate is not RBFmodel"
     if s_res['nConstraints'] > 0:
         assert p2.constraintSurrogates.__class__.__name__ == "RBFmodel", "p2.constraintSurrogates is not RBFmodel"

@@ -97,7 +97,7 @@ class TestCobraInit(unittest.TestCase):
 
     def test_init_design_R(self):
         """ same as test_init_design, but with reproducible random numbers to compare with results from R
-            (see demo-id-R.R)
+            (see demo-id.R)
         """
         def fn(x):
             return np.array([3 * np.sum(x ** 2), np.sum(x) - 1])
@@ -115,7 +115,7 @@ class TestCobraInit(unittest.TestCase):
         # self.assertEqual(sac_res['upper'][0], 1)
         # self.assertTrue((sac_res['fn'](sac_res['xStart'])==fn(xStart)).all())
 
-        # these are the results computed on the R side (file demo-id-R.R):
+        # these are the results computed on the R side (file demo-id.R):
         A_from_R = np.array( [  [ -0.96472247, -0.7704361],
                                 [  0.16435849,  0.2802904],
                                 [ -0.09018369,  0.1833372],
@@ -158,7 +158,7 @@ class TestCobraInit(unittest.TestCase):
         # self.assertEqual(sac_res['upper'][0], 1)
         # self.assertTrue((sac_res['fn'](sac_res['xStart'])==fn(xStart)).all())
 
-        # these are the results computed on the R side (file demo-id-R.R):
+        # these are the results computed on the R side (file demo-id.R):
         A_from_R = np.array( [  [ -0.96472247, -0.7704361],
                                 [  0.16435849,  0.2802904],
                                 [ -0.09018369,  0.1833372],
