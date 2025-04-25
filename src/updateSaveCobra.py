@@ -2,9 +2,9 @@ import numpy as np
 import pandas as pd
 from cobraInit import CobraInitializer
 from phase2Vars import Phase2Vars
-import phase2Funcs as pf2
 from evaluatorReal import getPredY0
-from innerFuncs import plogReverse, distLine
+from equHandling import updateCobraEqu
+from innerFuncs import distLine
 
 
 def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, EPS,
@@ -45,9 +45,9 @@ def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, EPS,
     CONSTRAINED = s_res['nConstraints'] > 0
 
     if cobra.df is None:
-        df_RS = concat(np.repeat(False, s_opts.ID.initDesPoints), p2.RS_done)
+        df_RS = concat(np.repeat(False, s_opts.ID.initDesPoints), p2.rs_done)
     else:
-        df_RS = concat(cobra.df.RS, p2.RS_done)  # not np.all(s_res['xbest'] == s_res['xStart']))
+        df_RS = concat(cobra.df.RS, p2.rs_done)  # not np.all(s_res['xbest'] == s_res['xStart']))
     # TODO:
     # if (cobra$DEBUG_XI) {
     #     df_fxStart <- c(cobra$df$fxStart,cobra$fn(cobra$xStart)[1])
@@ -55,9 +55,8 @@ def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, EPS,
     #     df_RS2 <-  c(cobra$df$RS2,cobra$DEBUG_RS)
     # }
 
-
     # TODO:
-    if (p2.write_XI):
+    if p2.write_XI:
         ro = p2.gama * s_res['l']
         # s_res['l'] is set in cobraInit (length of smallest side of search space)
         # TODO: distRequirement
@@ -75,9 +74,7 @@ def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, EPS,
         # ... if we handle equality constraints by 'equMargin & two inequality constraints'
         # and have equality constraints in the actual problem:
         # calculate cobra$xbest,fbest,ibest via updateCobraEqu:
-        raise NotImplementedError("[updateSaveCobra] updateCobraEqu not (yet) implemented")
-        # TODO:
-        # cobra < -updateCobraEqu(cobra, xNew)  # in modifyEquCons.R
+        cobra = updateCobraEqu(cobra, p2, xNew)  # in equHandling.py
     elif s_res['numViol'][s_res['ibest']] == 0:  # if the so-far best is feasible...
         assert s_res['Fres'][s_res['ibest']] == s_res['fbest']
         if s_res['numViol'][xNewIndex] == 0 and s_res['Fres'][xNewIndex] < s_res['fbest']:
@@ -100,7 +97,6 @@ def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, EPS,
     # triple (xbest,fbest,ibest) at the setting of cobraInit.py, line 151-159: From all points
     # with minimum number of violated constraints, take the one with smallest Fres.
 
-
     cobra.sac_res['fbestArray'] = concat(s_res['fbestArray'], s_res['fbest'])
     cobra.sac_res['xbestArray'] = np.vstack((s_res['xbestArray'], s_res['xbest']))
 
@@ -111,11 +107,11 @@ def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, EPS,
     # only diagnostics, needed for cobra$df & cobra$df2 /WK/
     solu = s_res['solu']
     if solu is None:
-        solu= p2.opt_res['x']  # p2.opt_res['x']: the optimal solution found so far
+        solu = p2.opt_res['x']  # p2.opt_res['x']: the optimal solution found so far
         soluOrig = cobra.rw.inverse(p2.opt_res['x'])
     else:
         if s_opts.ID.rescale:
-            if solu.ndim==2:
+            if solu.ndim == 2:
                 solu = np.apply_along_axis(lambda x: cobra.rw.forward(x), axis=1, arr=solu)
             else:
                 solu = cobra.rw.forward(solu)
@@ -123,12 +119,12 @@ def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, EPS,
     # now solu is always in *rescaled* input space
 
     predSoluFunc = lambda x: getPredY0(x, fitnessSurrogate, p2)
-    if solu.ndim==2:      # in case of multiple global optima in solu:
+    if solu.ndim == 2:      # in case of multiple global optima in solu:
         predSolu = np.apply_along_axis(predSoluFunc, axis=1, arr=solu)
         predSoluPenal = np.apply_along_axis(fitFuncPenalRBF, axis=1, arr=solu)
     else:
-        predSolu = predSoluFunc(solu);
-        predSoluPenal = fitFuncPenalRBF(solu);
+        predSolu = predSoluFunc(solu)
+        predSoluPenal = fitFuncPenalRBF(solu)
 
     predSolu = min(predSolu)    # Why min? - In case of multiple global optima: predSolu is the
                                 # value of predSoluFunc at the best solution solu
@@ -141,7 +137,7 @@ def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, EPS,
     # calculate distA and distOrig:
     origA = np.apply_along_axis(lambda x: cobra.rw.inverse(x), axis=1, arr=s_res['A'])
     # if (cobra$dimension == 1) origA = t(origA)
-    if solu.ndim==2:   # this is for the case with multiple solutions (like in G11)
+    if solu.ndim == 2:   # this is for the case with multiple solutions (like in G11)
         raise NotImplementedError("[updateSaveCobra] Branch distA for multiple solu not (yet) implemented")
         # TODO:
         # da=sapply(1:nrow(solu), function(i)
@@ -260,7 +256,7 @@ def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, EPS,
          'pEffect': p2.pEffect,
          'err1': p2.err1[-1],
          'err2': p2.err2[-1]
-        }, index = [0])
+         }, index=[0])
     cobra.df2 = pd.concat([cobra.df2, new_row_df2], axis=0)
 
     # TODO (later, when TR is ready):
@@ -275,7 +271,7 @@ def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, EPS,
     # ))
 
     # consistency check for data frames df and df2:
-    msg = "[updateSaveCobra] wrong nrow for df and df2";
+    msg = "[updateSaveCobra] wrong nrow for df and df2"
     if s_opts.phase1DesignPoints is None:
         assert cobra.df.shape[0] == cobra.df2.shape[0] + s_opts.ID.initDesPoints, msg
     else:

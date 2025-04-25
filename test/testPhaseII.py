@@ -2,10 +2,9 @@ import unittest
 import numpy as np
 import nlopt
 from cobraInit import CobraInitializer
-from phase2Vars import Phase2Vars
 from seqOptimizer import SeqFuncFactory
 from cobraPhaseII import CobraPhaseII
-from innerFuncs import verboseprint, plog, plogReverse
+from innerFuncs import plog, plogReverse
 from rescaleWrapper import RescaleWrapper
 from trainSurrogates import trainSurrogates, calcPEffect
 from opt.sacOptions import SACoptions
@@ -14,6 +13,7 @@ from opt.isaOptions import ISAoptions
 from opt.seqOptions import SEQoptions
 
 verb = 1
+
 
 def fn(x):
     return np.array([3 * np.sum(x ** 2), np.sum(x) - 1])
@@ -25,8 +25,8 @@ class TestPhaseII(unittest.TestCase):
     """
     def test_plog(self):
         fxi = np.array([2, 100, -2, -1000])
-        for pshift in [0,1,10,50]:
-            pxi = plog(fxi,pShift=pshift)
+        for pshift in [0, 1, 10, 50]:
+            pxi = plog(fxi, pShift=pshift)
             fxi2 = plogReverse(pxi, pShift=pshift)
             assert np.allclose(fxi, fxi2), f"not close: {fxi}, {fxi2} for pshift = {pshift}"
         print("[test_plog passed]")
@@ -38,7 +38,8 @@ class TestPhaseII(unittest.TestCase):
               fitness function ranges (fnfac = [1, 10, 100])
             - whether p2.fitnessSurrogate and p2.constraintSurrogate (only kernel="cubic", degree=None --> 1)
               interpolate the same values as in R (see yfit and ycon in demo-trainSurr.R)
-            - TODO: whether calcPEffect gives the same results (same errRatio and pEffect as in demo-trainSurr.R)
+            - whether calcPEffect gives the same results (same errRatio and pEffect as in demo-trainSurr.R. Note that
+              the R numbers from calcPEffect are only valid under setting recalc_fit12 = True in trainSurrogates (!))
         """
         nobs = 10
         xStart = np.array([2.5, 2.4])
@@ -48,7 +49,7 @@ class TestPhaseII(unittest.TestCase):
                           [-4.5, -2.3],
                           [ 2.4, -2.1],
                           [-3.9, -1.6]])
-        for fnfac in [1,10,100]:
+        for fnfac in [1, 10, 100]:
             def fn(x):
                 return np.array([3 * fnfac * np.sum(x ** 2), np.sum(x) - 1])
             cobra = CobraInitializer(xStart, fn, "fName", lower, upper,
@@ -77,13 +78,13 @@ class TestPhaseII(unittest.TestCase):
             elif fnfac == 10:
                 Fres_from_R = np.array([7.042457, 4.384303, 3.475352, 4.878163, 5.889709])
                 yfit_from_R = np.array([11.80334, 22.26042, 14.55043, 17.54240])
-                errRatio_from_R = np.array([1.000507, 1.117525, 1.062085, 1.052738])
-                pEffect_from_R = 0.02424406
+                errRatio_from_R = np.array([1.613748e-02, 1.090622e-06, 5.400598e-04, 9.949118e-05])
+                pEffect_from_R = -3.495155          # recalc_fit12 = True
             elif fnfac == 100:
                 Fres_from_R = np.array([9.344256, 6.675600, 5.749686, 7.173874, 8.189800])
                 yfit_from_R = np.array([14.03572, 24.69325, 16.94072, 19.92351])
-                errRatio_from_R = np.array([1.000095, 1.005193, 1.003286, 1.002844])
-                pEffect_from_R = 0.001329133
+                errRatio_from_R = np.array([1.731629e-02, 9.574353e-07, 4.947083e-04, 9.197749e-05])
+                pEffect_from_R = -3.532624          # recalc_fit12 = True
             else:
                 raise NotImplementedError(f"No data from the R side for fnfac={fnfac}")
             assert np.allclose(p2.adFit(), Fres_from_R, rtol=1e-6), "Fres_from_R and Fres after adFit are not close"
@@ -98,12 +99,13 @@ class TestPhaseII(unittest.TestCase):
             for i in range(xflat.shape[0]):
                 xNew = xflat[i,:]
                 xNewEval = fn(xNew)
+                # print(i, p2.fitnessSurrogate1(xNew), p2.fitnessSurrogate2(xNew))
                 calcPEffect(p2, xNew, xNewEval)
                 dummy = 0
             # print(p2.errRatio)
-            #assert np.allclose(p2.errRatio, errRatio_from_R, rtol=1e-5), \
-            #    f"errRatio_from_R and p2.errRatio are not close (fnfac={fnfac})"
-            #assert np.allclose(p2.pEffect, pEffect_from_R, rtol=3e-6), "pEffect_from_R and p2.pEffect are not close"
+            assert np.allclose(p2.errRatio, errRatio_from_R, rtol=1e-5), \
+                f"errRatio_from_R and p2.errRatio are not close (fnfac={fnfac})"
+            assert np.allclose(p2.pEffect, pEffect_from_R, rtol=3e-6), "pEffect_from_R and p2.pEffect are not close"
             print(f"fnfac={fnfac:3d}: p2.PLOG = {p2.PLOG}, p2.pEffect = {p2.pEffect}")
         print("[test_train_surr passed]")
 
@@ -111,10 +113,10 @@ class TestPhaseII(unittest.TestCase):
         """ Test whether package ``nlopt`` works as expected on a simple constrained problem:
 
             - When the objective is the sphere function and the constraint is np.sum(x) >= 1, then the
-              constraint is active and the result should be x = [0.5, 0.5] (the vector with smallest norm that fulfills
-              the constraint) with fn_nl(x) = 1.5.
+              constraint is active and the result should be x = [0.5, 0.5] (the vector with the smallest norm that
+              fulfills the constraint) with fn_nl(x) = 1.5.
             - When the constraint is np.sum(x) <= 1, then the constraint is inactive and the result is the global
-              optimum x = [0.0, 0.0] with fn_nl(x) = 0.0.
+              optimum at x = [0.0, 0.0] with fn_nl(x) = 0.0.
         """
         def fn_nl(x, grad): return 3 * np.sum(x ** 2)
 
@@ -122,8 +124,8 @@ class TestPhaseII(unittest.TestCase):
 
         def gn_inactive(x, grad): return np.sum(x) - 1
 
-        xStart = np.array([2.5,2.5])
-        lower = np.array([-5,-5])
+        xStart = np.array([2.5, 2.5])
+        lower = np.array([-5, -5])
         opt = nlopt.opt(nlopt.LN_COBYLA, xStart.size)
         opt.set_lower_bounds(+lower)
         opt.set_upper_bounds(-lower)
@@ -133,13 +135,13 @@ class TestPhaseII(unittest.TestCase):
         opt.set_maxeval(1000)
         x = opt.optimize(xStart)
         min_f = opt.last_optimum_value()
-        assert np.allclose(x, np.array([0.5,0.5]))
+        assert np.allclose(x, np.array([0.5, 0.5]))
         assert np.allclose(min_f, 1.5)       # 1.5 = 3 * (0.5**2 + 0.5**2)
         opt.remove_inequality_constraints()
         opt.add_inequality_constraint(gn_inactive, 0)
         x = opt.optimize(xStart)
         min_f = opt.last_optimum_value()
-        assert np.linalg.norm(x - np.array([0.0,0.0])) < 1e-5
+        assert np.linalg.norm(x - np.array([0.0, 0.0])) < 1e-5
         assert np.allclose(min_f, 0.0)
         print(f"x = {x}, min_f = {min_f}, result code = {opt.last_optimize_result()}")
         print("[test_nlopt passed]")
@@ -152,6 +154,7 @@ class TestPhaseII(unittest.TestCase):
         xStart = np.array([2.5, 2.4])
         lower = np.array([-5, -5])
         upper = np.array([5, 5])
+
         def fn(x):
             return np.array([3 * np.sum(x ** 2), np.sum(x) - 1])
 
@@ -165,7 +168,7 @@ class TestPhaseII(unittest.TestCase):
                           [ 2.4, -2.1],
                           [-3.9, -1.6]])
         for i in range(xflat.shape[0]):
-            xflat[i,:] = rw.forward(xflat[i,:])
+            xflat[i, :] = rw.forward(xflat[i, :])
         c2 = CobraPhaseII(cobra)
         p2 = c2.get_p2()
 
@@ -201,9 +204,11 @@ class TestPhaseII(unittest.TestCase):
             assert np.allclose(ycon2, ycon2_from_R, rtol=2e-5)
         print("[test_seq_funcs passed]")
 
-    def test_inner_funcs(self):
-        """ Test whether the inner funcs ``subProb2`` and ``gCOBRA`` work as expected (for different distance
-            requirement parameters ``p2.ro``)
+    def test_RS_EPS(self):
+        """ Test whether a short optimization run (feval=20) with Random Start (RS) enabled has the same iterations
+            with RS and the same margin EPS in each iteration as in R (for two different parameters ``rstype``).
+
+            This requires "RAND_R", cobra.sac_opts.ISA.RS_rep = True and cobraSeed = 42 or 52 (depending on rstype).
         """
         xStart = np.array([2.5, 2.4])
         lower = np.array([-5, -5])
@@ -212,23 +217,42 @@ class TestPhaseII(unittest.TestCase):
         def fn(x):
             return np.array([3 * np.sum(x ** 2), -(np.sum(x) - 1)])
 
-        cobra = CobraInitializer(xStart, fn, "fName", lower, upper,
-                                 s_opts=SACoptions(verbose=verb, feval=20,
-                                                   ID=IDoptions(initDesign="RAND_R"),
-                                                   ISA=ISAoptions(TFRange=500),
-                                                   SEQ=SEQoptions(trueFuncForSurrogates=True)))
-        c2 = CobraPhaseII(cobra)
-        p2 = c2.get_p2()
-        c2.start()
+        for rstype in ["SIGMOID", "CONSTANT"]:
+            myseed = 42 if rstype == "SIGMOID" else 52
+            cobra = CobraInitializer(xStart, fn, "fName", lower, upper,
+                                     s_opts=SACoptions(verbose=verb, feval=20, cobraSeed=myseed,
+                                                       ID=IDoptions(initDesign="RAND_R"),
+                                                       ISA=ISAoptions(TFRange=500, RS_rep=True, RStype=rstype),
+                                                       SEQ=SEQoptions(trueFuncForSurrogates=True)))
+            print(f"Starting with RS_type={cobra.sac_opts.ISA.RStype} and cobraSeed={cobra.sac_opts.cobraSeed} ...")
+            cobra.sac_opts.ISA.RS_verb = True         # be verbose in RandomStarter.random_start
+            c2 = CobraPhaseII(cobra)
+            # p2 = c2.get_p2()
+            c2.start()
 
-        print(cobra.df)
-        print(cobra.df2)
-        df2_EPS = np.array(cobra.df2.loc[:,['EPS']]).reshape(15,)
-        df2_EPS_from_R = np.array([1.0000e-02, 1.0000e-02, 5.0000e-03, 5.0000e-03, 2.5000e-03, 2.5000e-03, 1.2500e-03,
-                                   1.2500e-03, 6.2500e-04, 6.2500e-04, 3.1250e-04, 3.1250e-04, 1.5625e-04, 1.5625e-04,
-                                   7.8125e-05])
-        assert np.allclose(df2_EPS, df2_EPS_from_R)
-        dummy = 0
+            # print(cobra.df)
+            # print(cobra.df2)
+            df_rs = np.array(cobra.df.loc[:, ['RS']]).reshape(20, )
+            df2_eps = np.array(cobra.df2.loc[:, ['EPS']]).reshape(15,)
+            # the following variables ...from_R are copied from the output of demo-phaseII.R when running demo_RS_EPS
+            # (note that this requires "RAND_R", cobraSeed depending on rstype and cobra$sac$RS_rep = TRUE):
+            if rstype == "SIGMOID":       # implies cobraSeed=42
+                df_rs_from_R = np.array([False, False, False, False, False,  True, False, False, False, False,
+                                         False, False, False, False, False, False,  True,  True, True,  True])
+                df2_eps_from_R = np.array([1.0000e-02, 1.0000e-02, 5.0000e-03, 5.0000e-03, 2.5000e-03, 2.5000e-03,
+                                           1.2500e-03, 1.2500e-03, 6.2500e-04, 6.2500e-04, 3.1250e-04, 3.1250e-04,
+                                           1.5625e-04, 1.5625e-04, 1.5625e-04])
+            elif rstype == "CONSTANT":     # implies cobraSeed=52
+                df_rs_from_R = np.array([False, False, False, False, False, False, False, True, True, False,
+                                         False, False, False, False, False, True, False, False, True, False])
+                df2_eps_from_R = np.array([1.0000e-02, 1.0000e-02, 5.0000e-03, 5.0000e-03, 2.5000e-03, 2.5000e-03,
+                                           1.2500e-03, 1.2500e-03, 6.2500e-04, 6.2500e-04, 3.1250e-04, 3.1250e-04,
+                                           1.5625e-04, 1.5625e-04, 7.8125e-05])
+            else:
+                raise NotImplementedError(f"No data from the R side for rstype={rstype}")
+            assert np.all(df_rs == df_rs_from_R)
+            assert np.allclose(df2_eps, df2_eps_from_R)
+        print("[test_RS_EPS passed]")
 
 
 if __name__ == '__main__':

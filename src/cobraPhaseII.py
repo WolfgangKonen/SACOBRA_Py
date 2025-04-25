@@ -1,20 +1,14 @@
-import numpy as np
 # need to specify SACOBRA_Py.src as source folder in File - Settings - Project Structure,
 # then the following import statements will work:
 from cobraInit import CobraInitializer
 from phase2Vars import Phase2Vars
 import phase2Funcs as pf2
-import seqOptimizer as if2
-from innerFuncs import verboseprint
 from randomStarter import RandomStarter
 from trainSurrogates import trainSurrogates, calcPEffect
-from rescaleWrapper import RescaleWrapper
-from initDesigner import InitDesigner
-from opt.sacOptions import SACoptions
-from opt.isaOptions import ISAoptions
 from seqOptimizer import SeqOptimizer, check_if_cobra_optimizable
 from evaluatorReal import EvaluatorReal
 from updateSaveCobra import updateSaveCobra
+
 
 class CobraPhaseII:
     """
@@ -42,6 +36,7 @@ class CobraPhaseII:
         s_opts = self.cobra.sac_opts
         s_res = self.cobra.sac_res
         assert self.p2.ev1.state == "initialized"
+        self.p2.currentEps = s_res['muVec'][0]
         first_pass = True
         while self.p2.num < s_opts.feval:
             self.p2.gama = s_opts.XI[(self.p2.globalOptCounter % s_opts.XI.size)]
@@ -57,9 +52,15 @@ class CobraPhaseII:
                 self.p2.gp1 = self.p2.constraintSurrogates(s_res['xbest'] + 1)
                 first_pass = False
 
+            if s_opts.EQU.mu4inequality:
+                # The internal parameter p2.mu4 (will become currentMu in seqOptimizer.py) is normally 0.
+                # It will be set to the last element of cobra.sac_res['muVec'] (cobra$currentEps in R)
+                # if mu4inequality is TRUE.
+                self.p2.mu4 = s_res['muVec'][-1]
+
             # TODO: CA (conditioning analysis, whitening part), if(cobra$CA$active)  [OPTIONAL]
 
-            self.p2.ro = self.p2.gama * s_res['l'] # 0.001 #
+            self.p2.ro = self.p2.gama * s_res['l']  # 0.001 #
             # s_res['l'] is set in cobraInit (length of smallest side of search space)
             # TODO: take the EPS set by adjustMargins:   cobra$EPS < - EPS
 

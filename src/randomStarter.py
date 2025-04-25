@@ -24,6 +24,7 @@ class RandomStarter:
             xStart = self.decide_about_random_start(cobra, p2)
         else:
             xStart = cobra.sac_res['xbest']     # bug fix
+            xStart = xStart.reshape(cobra.sac_res['dimension'])   # if xbest has shape (1,dim) --> reshape to (dim,)
 
         cobra.sac_res['xStart'] = xStart
         return xStart
@@ -43,18 +44,19 @@ class RandomStarter:
             p_const = (s_opts.ISA.RSmax+s_opts.ISA.RSmin)/2  # default: 0.175
 
         if s_opts.ISA.RStype == "SIGMOID":
-            x = - (cobra.sac_res['A'].shape[0] - (s_opts.ID.initDesPoints+15))
-            p_restart = (diff / 2) * np.tanh(x)+(diff / 2) + s_opts.ISA.RSmin
+            x = - (cobra.sac_res['A'].shape[0] - (s_opts.ID.initDesPoints + 15))
+            p_restart = (diff / 2) * np.tanh(x) + (diff / 2) + s_opts.ISA.RSmin
             # Explanation of the SIGMOID case:
-            #   - if the argument of tanh is negative and big, then p_restart -> RSmin
-            #   - if the argument of tanh is positive and big, then p_restart -> RSmax
-            # The argument of tanh is positive in the early iterations and negative in the later iterations
+            #   - if the argument of tanh is negative and big, then p_restart approx. RSmin
+            #   - if the argument of tanh is positive and big, then p_restart approx. RSmax
+            # The argument of tanh is positive in the early iterations (<= 15 iterations after cobraInit)
+            # and negative in the later iterations (> 15 iterations after cobraInit)
         elif s_opts.ISA.RStype == "CONSTANT":
             p_restart = p_const
         else:
             raise RuntimeError(f"[randomStart] s_opts.ISA.RStype = {s_opts.ISA.RStype} is not valid")
 
-        # TODO: decide whether to use/increment p2.noProgressCount
+        # TODO: decide whether to use/increment p2.noProgressCount (currently we don't)
         if anewrand < p_restart or p2.noProgressCount >= s_opts.ISA.RS_Cs:
             # cat(sprintf("RS: iter=%03d, noProgressCount=%03d\n",nrow(cobra$A)+1,cobra$noProgressCount))
             d = cobra.sac_res['dimension']
@@ -67,15 +69,18 @@ class RandomStarter:
             xStart = xStart @ np.diag(upper - lower) + lower
             # this is just for debug logging:
             cobra.sac_res['rs'] = np.concatenate((cobra.sac_res['rs'], p2.num, xStart), axis=None)
-            verboseprint(s_opts.verbose, True,
-                         f"[randomStart] random xStart = {xStart} at iteration {p2.num}")
-            p2.RS_done = True
+            verboseprint(s_opts.verbose, s_opts.ISA.RS_verb,
+                         f"[random_start] random xStart = {xStart} at iteration {p2.num}"
+                         f" (anewrand = {anewrand:.4f}, p_restart = {p_restart:.4f})")
+            p2.rs_done = True
             # cobra$noProgressCount<-0
         else:
             xStart = cobra.sac_res['xbest']
             xStart = xStart.reshape(cobra.sac_res['dimension'])   # if xbest has shape (1,dim) --> reshape to (dim,)
-            p2.RS_done = False
-        #print(p2.num, anewrand, p_restart, p2.RS_done)
+            verboseprint(s_opts.verbose, s_opts.ISA.RS_verb,
+                         f"[random_start] NO random start at iteration {p2.num}"
+                         f" (anewrand = {anewrand:.4f}, p_restart = {p_restart:.4f})")
+            p2.rs_done = False
 
         return xStart
 

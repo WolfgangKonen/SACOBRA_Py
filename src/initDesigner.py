@@ -5,7 +5,7 @@ class InitDesigner:
     def __init__(self, xStart, fn, lower, upper, s_opts: SACoptions):
         """
         Create matrix ``self.A`` with shape ``(P, d)`` of sample points in input space ``[lower, upper]``
-        :math:` \in \mathbb{R}^d`. ``P = initDesPoints``.
+        :math:`\subset \mathbb{R}^d`. ``P = initDesPoints``.
 
         Apply ``fn`` to these points and divide the result in objective
         function values ``self.Fres`` (shape ``(P,)``) and constraint function values ``self.Gres`` (shape

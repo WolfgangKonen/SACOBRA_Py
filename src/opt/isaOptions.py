@@ -6,10 +6,10 @@ class ISAoptions:
         Internal self-adjusting options for SACOBRA.
 
         Defaults for DOSAC=1. Other options are DOSAC=0 (ISAoptions0, COBRA-R settings = turn off SACOBRA),
-        and DOSAC = 2 (ISAoptions2, SACOBRA settings with fewer parameters and more online adjustments.
+        and DOSAC = 2 (ISAoptions2, SACOBRA settings with fewer parameters and more online adjustments).
     """
     def __init__(self,
-                 DOSAC = 1,
+                 DOSAC=1,
                  RS=True,
                  RStype="CONSTANT",  # "CONSTANT",  "SIGMOID"
                  RSauto=False,
@@ -17,6 +17,7 @@ class ISAoptions:
                  RSmin=0.05,    # minimum probability of a random start
                  RS_Cs=10,      # if RS_Cs iterations w/o progress, do a random start
                  RS_rep=False,  # if True, generate reproducible random numbers with my_rng2 (R and Python)
+                 RS_verb=False,  # if True, be verbose in RandomStarter.random_start
                  aDRC=True,
                  aFF=True,
                  TFRange=1e+05,
@@ -38,7 +39,8 @@ class ISAoptions:
         self.RSmax = RSmax
         self.RSmin = RSmin
         self.RS_Cs = RS_Cs
-        self.RS_rep= RS_rep
+        self.RS_rep = RS_rep
+        self.RS_verb = RS_verb
         self.aDRC = aDRC
         self.aFF = aFF
         self.TFRange = TFRange
@@ -56,13 +58,15 @@ class ISAoptions:
 
 class ISAoptions0(ISAoptions):
     def __init__(self,
-                 DOSAC = 0,
+                 DOSAC=0,
                  RS=False,
                  RStype="SIGMOID",  # "CONSTANT",  "SIGMOID"
                  RSauto=False,
                  RSmax=0.3,   # maximum probability of a random start
                  RSmin=0.05,  # minimum probability of a random start
                  RS_Cs=10,    # if RS_Cs iterations w/o progress, do a random start
+                 RS_rep=False,  # if True, generate reproducible random numbers with my_rng2 (R and Python)
+                 RS_verb=False,  # if True, be verbose in RandomStarter.random_start
                  aDRC=False,
                  aFF=False,
                  TFRange=np.inf,
@@ -84,6 +88,8 @@ class ISAoptions0(ISAoptions):
         self.RSmax = RSmax
         self.RSmin = RSmin
         self.RS_Cs = RS_Cs
+        self.RS_rep = RS_rep
+        self.RS_verb = RS_verb
         self.aDRC = aDRC
         self.aFF = aFF
         self.TFRange = TFRange
@@ -99,7 +105,6 @@ class ISAoptions0(ISAoptions):
         self.onlineMinMax = onlineMinMax
 
 
-
 class ISAoptions2:
     def __init__(self,
                  DOSAC=2,
@@ -109,6 +114,8 @@ class ISAoptions2:
                  RSmax=0.3,   # maximum probability of a random start
                  RSmin=0.05,  # minimum probability of a random start
                  RS_Cs=10,    # if RS_Cs iterations w/o progress, do a random start
+                 RS_rep=False,  # if True, generate reproducible random numbers with my_rng2 (R and Python)
+                 RS_verb=False,  # if True, be verbose in RandomStarter.random_start
                  aDRC=True,
                  aFF=True,
                  TFRange=-1,
@@ -130,6 +137,8 @@ class ISAoptions2:
         self.RSmax = RSmax
         self.RSmin = RSmin
         self.RS_Cs = RS_Cs
+        self.RS_rep = RS_rep
+        self.RS_verb = RS_verb
         self.aDRC = aDRC
         self.aFF = aFF
         self.TFRange = TFRange
@@ -143,6 +152,3 @@ class ISAoptions2:
         self.pEffectInit = pEffectInit
         self.minMaxNormal = minMaxNormal
         self.onlineMinMax = onlineMinMax
-
-
-

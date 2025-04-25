@@ -19,22 +19,31 @@ class SeqOptimizer:
         verboseprint(s_opts.verbose, important=False,
                      message=f"[SeqOptimizer] {s_opts.SEQ.optimizer} optimization on surrogate ...")
 
-        # construct **now** cobra$gCOBRA_c from gCOBRA
+        # construct **now** sf_factory with methods subProb2 and gCOBRA, given the current state of cobra and p2
         sf_factory = SeqFuncFactory(cobra, p2)
 
         # cat("Starting optimizer ...\n");
-        if s_opts.SEQ.optimizer == "COBYLA":
-            opt = nlopt.opt(nlopt.LN_COBYLA, xStart.size)
-        elif s_opts.SEQ.optimizer == "ISRESN":
-            opt = nlopt.opt(nlopt.GN_ISRES, xStart.size)
-        else:
-            raise NotImplementedError(f"Optimizer {s_opts.SEQ.optimizer} is not (yet) implemented")
+        switcher = {
+            "COBYLA": nlopt.opt(nlopt.LN_COBYLA, xStart.size),
+            "ISRESN": nlopt.opt(nlopt.GN_ISRES, xStart.size)
+        }
+        opt = switcher.get(s_opts.SEQ.optimizer, "not implemented")
+        assert opt != "not implemented", f"Optimizer {s_opts.SEQ.optimizer} is not (yet) implemented"
+        # --- OLD, can be deleted ---
+        # if s_opts.SEQ.optimizer == "COBYLA":
+        #     opt = nlopt.opt(nlopt.LN_COBYLA, xStart.size)
+        # elif s_opts.SEQ.optimizer == "ISRESN":
+        #     opt = nlopt.opt(nlopt.GN_ISRES, xStart.size)
+        # else:
+        #     raise NotImplementedError(f"Optimizer {s_opts.SEQ.optimizer} is not (yet) implemented")
+        # --- OLD, can be deleted ---
+
         # TODO: add other sequential optimizers
 
         lower = s_res['lower']
         upper = s_res['upper']
-        assert (xStart >= lower).all(), "CobraPhaseII: xStart >= lower violated"
-        assert (xStart <= upper).all(), "CobraPhaseII: xStart <= upper violated"
+        assert (xStart >= lower).all(), "[SeqOptimizer] xStart >= lower violated"
+        assert (xStart <= upper).all(), "[SeqOptimizer] xStart <= upper violated"
         opt.set_lower_bounds(lower)
         opt.set_upper_bounds(upper)
         opt.set_min_objective(sf_factory.subProb2)
@@ -46,7 +55,9 @@ class SeqOptimizer:
             opt.add_equality_mconstraint(sf_factory.h_vec_c, tol_e)
         opt.set_xtol_rel(s_opts.SEQ.tol)
         opt.set_maxeval(s_opts.SEQ.feval)
+
         x = opt.optimize(xStart)
+
         minf = opt.last_optimum_value()
         time_ms = (time.perf_counter() - start) * 1000
         p2.opt_res = {'x': x,
@@ -69,9 +80,10 @@ class SeqFuncFactory:
         self.is_equ = cobra.sac_res['is_equ']
         # equ_ind is an index to the equality constraints in gCOBRA ('+ 1' because the first constraint is dist req):
         self.equ_ind = np.flatnonzero(self.is_equ) + 1
-        # ine_ind is an index to the inequality constraints in gCOBRA ('+ 1' and 'concatenate((0,...))' because the
-        # first inequality constraint is dist req):
-        self.ine_ind = np.flatnonzero(self.is_equ==False) + 1
+        # ine_ind is an index to the inequality constraints in gCOBRA
+        # ['+ 1' and 'concatenate((0,...))' because the first inequality constraint is dist req]:
+        self.ine_ind = np.flatnonzero(self.is_equ == False) + 1
+        # DON'T change here to 'self.is_equ is False' as the PEP hint suggest --> strange error in NLopt (!)
         self.ine_ind = np.concatenate((0, self.ine_ind), axis=None)
         tol = 0
         self.tol_e = np.repeat(tol, self.equ_ind.size)
@@ -82,7 +94,7 @@ class SeqFuncFactory:
         surrogate evaluation of 'f' for constrained optimization methods  - PHASE II
         """
         if np.isnan(x).any():
-            verboseprint(self.cobra.sac_opts.verbose,True,
+            verboseprint(self.cobra.sac_opts.verbose, True,
                          "[subProb2]: x value is NaN, returning Inf")
             return np.inf
 
@@ -103,7 +115,7 @@ class SeqFuncFactory:
             return np.repeat(np.inf, nConstraints+1)
 
         if nConstraints > 0:
-            constraintPrediction = calcConstrPred(x, self.cobra, self.p2);
+            constraintPrediction = calcConstrPred(x, self.cobra, self.p2)
 
         distance = distLine(x, self.cobra.sac_res['A'])
         subC = np.maximum((self.p2.ro - distance), 0)
@@ -114,7 +126,7 @@ class SeqFuncFactory:
         if DBG and h > 0:
             print(f"gCOBRA:  {h} {max(constraintPrediction)}")
 
-        if nConstraints>0:
+        if nConstraints > 0:
             h = (-1.0) * np.concatenate((h, constraintPrediction), axis=None)
                 # TODO -1* ... is required for COBYLA constraints, maybe also for other optimizers?
         else:
@@ -150,12 +162,13 @@ class SeqFuncFactory:
     #     return -self.gCOBRA(x, None)  # new convention h_i <= 0.
 
 
-def subProbPhaseI(x, cobra: CobraInitializer):
+def subProbPhaseI(x, cobra: CobraInitializer, p2: Phase2Vars):
     """
         surrogate penalty function for unconstrained optimization methods  - PHASE I
 
     :param x:       the input point
     :param cobra:   created by CobraInitializer
+    :param p2:      phase II variables
     :return:
     """
     if np.isnan(x).any():
@@ -167,9 +180,9 @@ def subProbPhaseI(x, cobra: CobraInitializer):
     penalty1 = sum(subC)
     num = cobra.sac_res['A'].shape[0]
 
-    constraintPrediction = calcConstrPred(x, cobra)
+    constraintPrediction = calcConstrPred(x, cobra, p2)
 
-    maxViolation = np.maximum(constraintPrediction,0)
+    maxViolation = np.maximum(constraintPrediction, 0)
     # penalty2 <- sum(maxViolation)
     # Constraint handling: Coit et al. (1996)
     NFT = np.repeat(0.1, maxViolation.size)
@@ -215,8 +228,8 @@ def subProbPhaseI(x, cobra: CobraInitializer):
 #
 # constraintPrediction < - calcConstrPred(x, cobra);
 #
-# h < - (-1.0) * c(h[1],
-#                  constraintPrediction)  # TODO -1* ... is required for COBYLA constraints, maybe also for other optimizers?
+# h < - (-1.0) * c(h[1], constraintPrediction)
+#       # TODO -1* ... is required for COBYLA constraints, maybe also for other optimizers?
 # return (h)
 # }
 #
@@ -247,7 +260,9 @@ def subProbPhaseI(x, cobra: CobraInitializer):
 #
 # y < - subProbConstraintHandling(x, cobra, penalty1, penalty2, maxViolation, cobra$sigmaD, cobra$penaF)
 # if (cobra$trueFuncForSurrogates) y < - cobra$fn(x)[1] + (penalty1 * cobra$sigmaD[1] * 100 + penalty2) * cobra$penaF[1]
-# # cat(">>SubProb: ", interpRBF(x, cobra$fitnessSurrogate), " / ", (C * cobra$feval)^alpha * sum(maxViolation)^beta , " ||", (C * cobra$feval)^alpha, " / ", sum(maxViolation)^beta ,"\n")
+# # cat(">>SubProb: ", interpRBF(x, cobra$fitnessSurrogate), " / ",
+# #     (C * cobra$feval)^alpha * sum(maxViolation)^beta , " ||",
+# #     (C * cobra$feval)^alpha, " / ", sum(maxViolation)^beta ,"\n")
 # # cat("<<< leaving subProb\n")
 # return (y)
 # }  # subProb()
@@ -269,7 +284,8 @@ def subProbPhaseI(x, cobra: CobraInitializer):
 #                    lower=cobra$lower, upper = cobra$upper, hin = hin, maxeval = cobra$seqFeval, cobra = cobra);
 # subMin2 < - nloptr::cobyla(xStart, fn=fn, lower=cobra$lower, upper = cobra$upper, hin = hin_c, control = list(
 #     maxeval=cobra$seqFeval, xtol_rel = cobra$seqTol), cobra = cobra, deprecatedBehavior = FALSE);
-# # subMin2 <- nloptr::cobyla(xStart,fn=fn,lower=cobra$lower,upper=cobra$upper,hin=hin, control=list(maxeval=cobra$seqFeval,xtol_rel=cobra$seqTol), cobra=cobra);
+# # subMin2 <- nloptr::cobyla(xStart,fn=fn,lower=cobra$lower,upper=cobra$upper,hin=hin,
+# #                           control=list(maxeval=cobra$seqFeval,xtol_rel=cobra$seqTol), cobra=cobra);
 # if (subMin1$value < subMin2$value) {
 # subMin1$nIsres < - cobra$nIsres+1;
 # subMin1$nCobyla < - cobra$nCobyla;
@@ -285,44 +301,59 @@ def subProbPhaseI(x, cobra: CobraInitializer):
 # # -----------------------------------------------------------------------------------------------
 # # ----------------  helper functions for subprob*, gCOBRA*  -------------------------------------
 # # -----------------------------------------------------------------------------------------------
-#
-# calculate constraintPrediction:
-# -- this includes the proper handling of cobra$equHandle$active and
-# -- cobra$trueFunctionForSurrogates
-# Known callers:
-#   subprobPhaseI, subprob2PhaseI, gCOBRAPhaseI,
-#   subprob, gCOBRA (phase II)
-#
-def calcConstrPred(x, cobra: CobraInitializer, p2: Phase2Vars):
+
+
+def calcConstrPred(x, cobra: CobraInitializer, p2: Phase2Vars) -> np.ndarray:
+    """
+    Calculate constraint_prediction at point ``x``. This includes
+
+    - the proper handling of ``s_opts.EQU.active`` and
+    - ``s_opts.SEQ.trueFuncForSurrogates``
+
+    Known callers:
+
+    - subprobPhaseI, subprob2PhaseI, gCOBRAPhaseI (all phase I), and
+    - subprob, gCOBRA (phase II)
+
+    :param x: the point to evaluate
+    :param cobra: we need here members ``sac_opts`` and ``sac_res``
+    :param p2: we need here members ``constraintSurrogates``, ``mu4`` and ``EPS``
+    :return: a vector of length ``nConstraints``
+    """
     s_opts = cobra.sac_opts
     s_res = cobra.sac_res
     if s_opts.EQU.active:
-        # raise NotImplementedError("EQU.active branch in calcConstrPred not yet implemented!")
-        print("***WARNING***: EQU.active branch in calcConstrPred not yet implemented! ")
-        # TODO: clarify which value is added to currentEps
-        # currentEps = s_res['currentEps'][-1]
+        # We form here the vector
+        #
+        #     ( g_i(x), h_j(x) - mu, - h_j(x) - mu ) + eps**2
+        #
+        # with mu = currentEps, eps=p2.EPS. This vector should be in all components <= 0
+        # in order to fulfill the constraints
+        #
+        currentEps = s_res['currentEps'][-1]
+        currentMu = p2.mu4  # normally 0. Experimental: same value as currentEps, applied to *inequalities*
         if s_opts.SEQ.trueFuncForSurrogates:
-            constraintPrediction1 = s_res['fn'](x)[1:]
+            constraint_pred1 = s_res['fn'](x)[1:]
         else:
-            constraintPrediction1 = p2.constraintSurrogates(x)
+            constraint_pred1 = p2.constraintSurrogates(x)
 
-        # # TODO
-        # constraintPrediction1[cobra$equIndex] = constraintPrediction1[cobra$equIndex]-currentEps  # this creates h(x)-mu
-        # constraintPrediction2 = -constraintPrediction1[cobra$equIndex]-2 * currentEps  # this creates -h(x)-mu
-        # # why 2*currentEps? - because we modify the already created h(x)-mu to -(h(x)-mu)-2*mu = -h(x)-mu
-        # # /WK/ NOTE: this is a bug fix of 2025-01-18, since before the line with "-2*currentEps"
-        # #      was commented out and (wrongly) replaced by one with "-currentEps"
-        constraintPrediction2 = 0 # dummy
+        ine_ind = np.flatnonzero(not s_res['is_equ'])
+        equ_ind = np.flatnonzero(s_res['is_equ'])
+        constraint_pred1[ine_ind] = constraint_pred1[ine_ind] - currentMu    # g(x) - mu, new 2025/04/02
+        constraint_pred1[equ_ind] = constraint_pred1[equ_ind] - currentEps   # this creates h(x)-mu
+        constraint_pred2 = -constraint_pred1[equ_ind] - 2 * currentEps       # this creates -h(x)-mu
+        # why 2*currentEps? - because we modify the already created h(x)-mu to -(h(x)-mu)-2*mu = -h(x)-mu
 
-        constraintPrediction = np.concatenate((constraintPrediction1, constraintPrediction2), axis=None) + p2.EPS ** 2
+        constraint_prediction = np.concatenate((constraint_pred1, constraint_pred2), axis=None) + p2.EPS ** 2
 
     else:  # i.e. if not s_opts.EQU.active
         if s_opts.SEQ.trueFuncForSurrogates:
-            constraintPrediction = s_res['fn'](x)[1:] + p2.EPS ** 2
+            constraint_prediction = s_res['fn'](x)[1:] + p2.EPS ** 2
         else:
-            constraintPrediction = p2.constraintSurrogates(x) + p2.EPS ** 2
+            constraint_prediction = p2.constraintSurrogates(x) + p2.EPS ** 2
 
-    return constraintPrediction
+    return constraint_prediction
+
 #
 # # constraint handling for suProb, the surrogate penalty function for unconstrained
 # # optimization methods in cobraPhaseII.R
@@ -392,12 +423,13 @@ def calcConstrPred(x, cobra: CobraInitializer, p2: Phase2Vars):
 
 def check_if_cobra_optimizable(cobra: CobraInitializer, p2: Phase2Vars):
     s_res = cobra.sac_res
-    assert type(p2.ro) == float or type(p2.ro) == np.float64, "p2.ro is not set to a numeric"
-    assert type(p2.EPS) == float or type(p2.EPS) == np.float64, "p2.EPS is not set to a numeric"
-    assert type(s_res['dimension']) == int, "cobra.sac_res()['dimension'] is not set to an int"
-    assert type(s_res['nConstraints']) == int, "cobra.sac_res()['nConstraints'] is not set to an int"
-    assert s_res['A'].ndim == 2, "cobra.sac_res()['A'] is not a matrix"
-    assert type(s_res['fn']).__name__ in ['function','method'], "cobra.sac_res()['fn'] is not a function"
+    assert type(p2.ro) is float or type(p2.ro) is np.float64, "p2.ro is not set to a numeric"
+    assert type(p2.EPS) is float or type(p2.EPS) is np.float64, "p2.EPS is not set to a numeric"
+    assert type(s_res['dimension']) is int, "cobra.sac_res['dimension'] is not set to an int"
+    assert type(s_res['nConstraints']) is int, "cobra.sac_res['nConstraints'] is not set to an int"
+    assert s_res['A'].ndim == 2, "cobra.sac_res['A'] is not a matrix"
+    assert s_res['xStart'].ndim == 1, "cobra.sac_res['xStart'] is not a vector"
+    assert type(s_res['fn']).__name__ in ['function', 'method'], "cobra.sac_res['fn'] is not a function"
     assert p2.fitnessSurrogate.__class__.__name__ == "RBFmodel", "p2.fitnessSurrogate is not RBFmodel"
     if s_res['nConstraints'] > 0:
         assert p2.constraintSurrogates.__class__.__name__ == "RBFmodel", "p2.constraintSurrogates is not RBFmodel"
@@ -405,6 +437,3 @@ def check_if_cobra_optimizable(cobra: CobraInitializer, p2: Phase2Vars):
 # if (cobra$seqOptimizer == ")ISRESCOBYLA") {
 #     assert ("cobra$nCobyla is not set to a numeric",is.numeric(cobra$nCobyla));
 #     assert ("cobra$nIsres is not set to a numeric",is.numeric(cobra$nIsres));
-
-
-

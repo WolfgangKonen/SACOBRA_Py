@@ -1,4 +1,3 @@
-import numpy as np
 from opt.equOptions import EQUoptions
 from opt.idOptions import IDoptions
 from opt.isaOptions import ISAoptions
@@ -6,7 +5,6 @@ from opt.msOptions import MSoptions
 from opt.rbfOptions import RBFoptions
 from opt.seqOptions import SEQoptions
 from opt.trOptions import TRoptions
-
 
 
 class SACoptions:
@@ -23,7 +21,7 @@ class SACoptions:
                  SEQ=SEQoptions(),
                  # repairInfeas=False, ri=defaultRI(),
                  MS=MSoptions(),
-                 EQU = EQUoptions(),
+                 EQU=EQUoptions(),
                  TR=TRoptions(),
                  DOSAC=1,
                  ISA=ISAoptions(),
@@ -59,4 +57,3 @@ class SACoptions:
         self.TR = TR
         self.saveIntermediate = saveIntermediate
         self.saveSurrogates = saveSurrogates
-        dummy = 0

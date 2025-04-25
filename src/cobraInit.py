@@ -11,9 +11,9 @@ from opt.isaOptions import ISAoptions, ISAoptions0, ISAoptions2
 
 # long and short DRC:
 # DRCL: Distance Requirement Cycle, long version:
-DRCL = np.array([0.3,0.05, 0.001, 0.0005,0.0])
+DRCL = np.array([0.3, 0.05, 0.001, 0.0005, 0.0])
 # DRCS: Distance Requirement Cycle, short version:
-DRCS = np.array([0.001,0.0])
+DRCS = np.array([0.001, 0.0])
 
 
 class CobraInitializer:
@@ -21,8 +21,8 @@ class CobraInitializer:
         Initialize SACOBRA optimization:
 
         - problem formulation: xStart, fn, lower, upper, is_equ, solu
-        - parameter settings: s_opts
-        - create initial design: A, Fres, Gres
+        - parameter settings: s_opts via :class:`SACoptions`
+        - create initial design: A, Fres, Gres via :class:`InitDesigner`
     """
     def __init__(self, xStart, fn, fName, lower, upper,
                  is_equ: Union[np.ndarray, None] = None,
@@ -30,11 +30,12 @@ class CobraInitializer:
                  ):
         """
 
-        :param xStart: start point, its dimension defines input space dimension
+        :param xStart: start point, if given, then its dim has to be the same as ``lower``. If it  is/has NaN or None
+                    on input, it is replaced by a random point from ``[lower, upper]``
         :param fn:  function returning (1+nConstraints)-dim vector: [objective to minimize, constraints]
         :param fName: function name
-        :param lower: lower bound (same dim as xStart)
-        :param upper: upper bound (same dim as xStart)
+        :param lower: lower bound, its dimension defines input space dimension
+        :param upper: upper bound (same dim as lower)
         :param is_equ: nConstraints-dim boolean vector: which constraints are equality constraints
         :param solu:  (optional, for diagnostics) true solution vector or solution matrix: which x are feasible
                     and deliver minimal objective value
@@ -43,22 +44,27 @@ class CobraInitializer:
         #
         # STEP 0: first settings and checks
         #
-        dimension = xStart.size
+        dimension = lower.size
+        # set.seed(s_opts.cobraSeed)    # TODO: proper RNG seeding   # moved up here (before potential xStart generation)
         if s_opts.ID.initDesPoints is None:
             s_opts.ID.initDesPoints = 2 * dimension + 1
         if s_opts.XI is None:
             s_opts.XI = DRCL
         # The threshold parameter for the number of consecutive iterations that yield ...
         s_opts.Tfeas = np.floor(2 * np.sqrt(dimension))  # ... feasible solutions before the margin is reduced
-        s_opts.Tinfeas=np.floor(2 * np.sqrt(dimension))  # ... infeasible solutions before the margin is increased
+        s_opts.Tinfeas = np.floor(2 * np.sqrt(dimension))  # ... infeasible solutions before the margin is increased
 
         lower = np.array(lower)
         upper = np.array(upper)
-        assert (lower < upper).all(), "CobraInitializer: lower < upper violated"
-        assert not np.isnan(xStart).any(), "CobraInitializer: xStart contains NaNs"
-        assert len(xStart.shape) == 1, "CobraInitializer: xStart is not 1-dimensional"
+        if np.isnan(xStart).any() or (xStart == None).any():
+            xStart = np.random.rand(dimension) * (upper-lower) + lower
+        assert lower.size == upper.size, "[CobraInitializer] size of lower and upper differs"
+        assert (lower < upper).all(), "[CobraInitializer] lower < upper violated"
+        assert len(xStart.shape) == 1, "[CobraInitializer] xStart is not 1-dimensional"
+        assert xStart.size == lower.size, "[CobraInitializer] size of xStart and lower differs"
         assert s_opts.ID.initDesPoints < s_opts.feval, "CobraInitializer: Too many init design points"
-
+        xStart = np.maximum(xStart,lower)
+        xStart = np.minimum(xStart,upper)
         #
         # STEP 1: (optional) rescaling
         #
@@ -72,7 +78,7 @@ class CobraInitializer:
         self.rw = RescaleWrapper(originalfn, originalL, originalU, lb, ub)
 
         if s_opts.ID.rescale:
-            xStart = np.array([np.interp(xStart[i],(lower[i],upper[i]), (lb[i],ub[i]))
+            xStart = np.array([np.interp(xStart[i], (lower[i], upper[i]), (lb[i], ub[i]))
                                for i in range(dimension)])
             if solu is not None:
                 solu = np.array([np.interp(solu[i], (lower[i], upper[i]), (lb[i], ub[i]))
@@ -100,16 +106,15 @@ class CobraInitializer:
         if not CONSTRAINED:
             verboseprint(verbose=s_opts.verbose, important=True, message="An unconstrained problem is being addressed")
 
-        l = min(upper - lower)  # length of smallest side of search space
-        if s_opts.epsilonInit is None: s_opts.epsilonInit = 0.005 * l
-        if s_opts.epsilonMax is None:  s_opts.epsilonMax = 2 * 0.005 * l
+        ell = min(upper - lower)  # length of smallest side of search space
+        if s_opts.epsilonInit is None: s_opts.epsilonInit = 0.005 * ell
+        if s_opts.epsilonMax is None:  s_opts.epsilonMax = 2 * 0.005 * ell
         if s_opts.ID.initDesOptP is None: s_opts.ID.initDesOptP = s_opts.ID.initDesPoints
         s_opts.phase1DesignPoints = None
 
         #
         # STEP 3: create initial design
         #
-        # set.seed(s_opts.cobraSeed)    # TODO: RNG seeding
         # TODO archive functionality
         A, Fres, Gres = InitDesigner(xStart, fn, lower, upper, s_opts)()
         verboseprint(s_opts.verbose, important=False,
@@ -123,7 +128,8 @@ class CobraInitializer:
         self.sac_res = {'fn': fn,
                         'lower': lower,
                         'upper': upper,
-                        'xStart': xStart,
+                        'x0': xStart,
+                        'xStart': xStart,    # will be overwritten with xbest below and in phase II
                         'dimension': dimension,
                         'originalfn': originalfn,
                         'originalL': originalL,
@@ -138,41 +144,71 @@ class CobraInitializer:
                         'Fres': Fres,
                         'Gres': Gres,
                         'nConstraints': nConstraints,
-                        'l': l
+                        'l': ell
                         }
         self.for_rbf = {'A': A,
                         'Fres': Fres,
                         'Gres': Gres
                         }
 
-        # TODO: cobra$equIndex
         # TODO: default settings DEBUG_RBF, CA, MS, RI, TR
+        self.sac_res['GRfact'] = 1  # will be later overwritten by adCon, when the TODO 'equalityConstraints' is done.
+        self.sac_res['finMarginCoef'] = 1  # also set in adCon, used in equHandling.py
+        self.sac_opts = s_opts
+        if s_opts.ISA.aCF and nConstraints != 0:
+            verboseprint(s_opts.verbose, important=False, message="adjusting constraint functions")
+            self.adCon()
+            # cobra$fn = fn
 
         #
         # STEP 5: compute numViol, maxViol
         #
         z0 = np.zeros(Gres.shape[0])
-        numViol = np.sum(Gres>0, axis=1) if Gres.size>0 else z0   # number of initial constraint violations
-        maxViol = np.max(np.maximum(Gres,0), axis=1) if Gres.size>0 else z0    # maximum of initial constraint violation
+        numViol = np.sum(Gres > 0, axis=1) if Gres.size > 0 else z0   # number of initial constraint violations
+        maxViol = np.max(np.maximum(Gres, 0), axis=1) if Gres.size > 0 else z0    # max. of initial constraint violation
         trueMaxViol = maxViol
-        # currentEps = # TODO: clarify if we need sac_res['currentEps']
+        self.sac_res['muVec'] = np.repeat(0.0, s_opts.ID.initDesPoints)
+        # just to have a valid entry, will be replaced below in case s_opts.EQU.active==True
+        # (self.sac_res['muVec'] is what is named cobra$currentEps in R)
 
         equ_index = np.flatnonzero(self.sac_res['is_equ'] == True)
         if equ_index.size == 0:
             s_opts.EQU.active = False
         if s_opts.EQU.active:
-            raise NotImplementedError("[CobraInit] Branch s_opts.EQU.active not yet implemented!")
-            # TODO: equality-related changes to numViol, maxViol, trueMaxViol (if(equHandle$active))
-            # [this is the branch starting in cobraInit.R with "else if(equHandle$active)" (line 721 ff)]
+            # equality-related changes to numViol, maxViol, trueMaxViol, self.sac_res['muVec']
+            # [this is the branch starting in cobraInit.R with "else if(equHandle$active)" (line 821 ff)]
+            equ_index = np.flatnonzero(is_equ == True)
+            # equ2Index = np.concat(equ_index, nConstraints + np.arange(0, equ_index.size))
+            #
+            tempG = Gres.copy()     # .copy important here, otherwise changes to tempG would change Gres as well (!)
+            tempG[:, equ_index] = abs(tempG[:, equ_index])
+            trueMaxViol = np.maximum(0, np.max(tempG, axis=1) * self.sac_res['GRfact'])
+            def tav_func(tempG):
+                tempG = np.maximum(tempG, 0)
+                return np.median(np.sum(tempG, axis=1))
+            switcher = {
+                "useGrange": self.sac_res['GrangeEqu'],
+                "TAV": tav_func(tempG),
+                "TMV": np.median(maxViol),
+                "EMV": np.median(np.max(tempG[:, equ_index], axis=1))
+            }
+            currentEps = switcher.get(s_opts.EQU.initType, "Invalid initType")
+            assert currentEps != "Invalid initType", f"[cobraInit] Wrong s_opts.EQU.initType = {s_opts.EQU.initType}"
+            currentEps = np.max(currentEps, s_opts.EQU.equEpsFinal)
+            self.sac_res['muVec'] = np.repeat(currentEps, s_opts.ID.initDesPoints)
+            tempG[:, equ_index] = tempG[:, equ_index] - currentEps  # /WK/2025/03/23: bug fix
+            conTol = s_opts.SEQ.conTol
+            maxViol = np.maximum(conTol, np.max(tempG, axis=1))     # /WK/2025/03/23: bug fix conTol
+            numViol = np.sum(tempG>conTol, axis=1)                  # /WK/2025/03/23: bug fix conTol
 
         #
         # STEP 6: best feasible/infeasible solution, based on numViol
         #
         if 0 in numViol:
             # if there are feasible points, select among them the one with minimal Fres:
-            fbest = min(Fres[numViol==0])
-            xbest = A[Fres == fbest,:]
-            ibest = np.flatnonzero(Fres==fbest)[0]
+            fbest = min(Fres[numViol == 0])
+            xbest = A[Fres == fbest, :]
+            ibest = np.flatnonzero(Fres == fbest)[0]
         else:
             # if there is no feasible point yet: take the set of points with min number of violated constraints ...
             minNumIndex = np.flatnonzero(numViol == min(numViol))
@@ -181,7 +217,7 @@ class CobraInitializer:
             ind = np.flatnonzero(FresMin == min(FresMin))[0]
             index = minNumIndex[ind]
             fbest = Fres[index]
-            xbest = A[index,:]
+            xbest = A[index, :]
             ibest = index
         fbestArray = np.repeat(fbest, s_opts.ID.initDesPoints)
         xbestArray = np.tile(xbest, (s_opts.ID.initDesPoints, 1))
@@ -190,7 +226,6 @@ class CobraInitializer:
         # STEP 7: update structures
         #
         self.phase = "init"
-        self.sac_opts = s_opts
         phaseVec = np.repeat(self.phase, s_opts.ID.initDesPoints)
         sac_res2 = {'numViol': numViol,
                     'maxViol': maxViol,
@@ -202,7 +237,7 @@ class CobraInitializer:
                     'fbestArray': fbestArray,
                     'xbestArray': xbestArray,
                     'phase': phaseVec,
-                    'xStart': xbest,         # bug fix
+                    'xStart': xbest.reshape(dimension,),         # bug fix
                     'rs': np.array([])      # will be populated by random_start
                     }
         self.sac_res.update(sac_res2)       # update dict sac_res with the content of sac_res2
@@ -210,7 +245,6 @@ class CobraInitializer:
         self.df2 = pd.DataFrame()
 
         # TODO:
-        # cobra$equIndex = which(colnames(Gres) == "equ")
         # if (is.character(cobra$CA$ITER)) if (cobra$CA$ITER == "all") cobra$CA$ITER = seq(initDesPoints, feval, 1)
         #
         # cobra$radi = np.repeat(cobra$TRlist$radiInit, initDesPoints)
@@ -230,19 +264,12 @@ class CobraInitializer:
                 elif np.any(s_opts.XI != DRCL):
                     print("Warning: XI is different from default (DRCL), but sac$aDRC==TRUE, so XI will be set by automatic DRC adjustment!")
 
-
                 verboseprint(s_opts.verbose, important=False, message="adjusting DRC")
                 DRC = self.adDRC(max(self.sac_res['Fres']), min(self.sac_res['Fres']))
                 s_opts.XI = DRC
 
             # --- adFit is now called in *each* iteration of cobraPhaseII (adaptive plog) ---
 
-            self.sac_res['GRfact'] = 1   # will be later overwritten by adCon, when the TODO 'equalityConstraints' is done.
-            self.sac_res['finMarginCoef'] = 1  # also set in adCon, used in modifyEquCons.R
-            if s_opts.ISA.aCF and nConstraints != 0:
-                verboseprint(s_opts.verbose, important=False, message="adjusting constraint functions")
-                self.adCon()
-                # cobra$fn = fn
 
             self.sac_res['RSDONE'] = np.repeat(np.nan, s_opts.ID.initDesPoints)
 
@@ -257,7 +284,7 @@ class CobraInitializer:
     def adDRC(self, maxF, minF):
         """ Adjust DRC (distance requirement cycle) """
         FRange = (maxF - minF)
-        if (FRange > 1e+03):
+        if FRange > 1e+03:
             DRC = DRCS
             print(f"FR={FRange} is large, XI is set to Short DRC")
         else:
@@ -270,6 +297,7 @@ class CobraInitializer:
         fnold = self.sac_res['fn']
         Gres = self.sac_res['Gres']
         assert not np.any(np.isnan(Gres)), "[adCon] self.sac_res['Gres'] contains NaN elements"
+        equ_index = np.flatnonzero(self.sac_res['is_equ'] == True)
 
         GRL = np.apply_along_axis(self.detLen, axis=0, arr=Gres)
         # axis=0 means that arr is sliced along axis 0, i.e. detLen is applied to the columns of Gres
@@ -281,18 +309,17 @@ class CobraInitializer:
         if GR > s_opts.ISA.TGR:
             verboseprint(s_opts.verbose, True, "Normalizing Constraint Functions ...")
             GRfact = np.hstack((1, GRL * (1 / np.mean(GRL))))
-            # TODO
-            #
+
             # # finding the normalizing coefficient of the equality constraints
-            # if (length(cobra$equIndex) != 0:
-            #     GRF = GRfact[-1]
-            #     EQUfact = GRF[cobra$equIndex]
-            #     # define a coefficient for the final equality margin
-            #     equEpsFinal = cobra$equHandle$equEpsFinal
-            #     finMarginCoef = min(c(equEpsFinal / EQUfact, equEpsFinal)) / equEpsFinal
-            #     cobra$equHandle$equEpsFinal = finMarginCoef * equEpsFinal
-            #     cobra$GRfact = GRF
-            #     cobra$finMarginCoef = finMarginCoef
+            if equ_index.size != 0:
+                GRF = GRfact[1:]
+                EQUfact = GRF[equ_index]
+                # define a coefficient for the final equality margin
+                equEpsFinal = s_opts.EQU.equEpsFinal
+                finMarginCoef = min([equEpsFinal / EQUfact, equEpsFinal]) / equEpsFinal
+                s_opts.EQU.equEpsFinal = finMarginCoef * equEpsFinal
+                self.sac_res['GRfact'] = GRF
+                self.sac_res['finMarginCoef'] = finMarginCoef
 
             def fn(x):
                 return fnold(x) / GRfact
@@ -301,20 +328,16 @@ class CobraInitializer:
 
             self.sac_res['Gres'] = Gres @ np.diag(1/GRfact[1:])
 
-        # TODO
-        #
-        # cobra$Grange = mean(GRL)
-        # equIndex = which(names(GRL) == "equ")
-        # cobra$GrangeEqu = mean(GRL[equIndex])
+        self.sac_res['Grange'] = np.mean(GRL)
+        self.sac_res['GrangeEqu'] = np.mean(GRL[equ_index]) if equ_index.size>0 else np.mean(GRL)
 
     def detLen(self, x):
         maxL = max(x)
         minL = min(x)
         return maxL - minL
 
-    def detLen2(x):
+    def detLen2(self, x):
         # never used
         maxL = np.quantile(x, 0.9)
         minL = np.quantile(x, 0.1)
         return (maxL - minL) / 2
-

@@ -1,11 +1,11 @@
 import unittest
 import numpy as np
-from SACOBRA_Py.src.cobraInit import CobraInitializer
-from SACOBRA_Py.src.cobraPhaseII import CobraPhaseII
-from SACOBRA_Py.src.rescaleWrapper import RescaleWrapper
-from SACOBRA_Py.src.opt.idOptions import IDoptions
-from SACOBRA_Py.src.opt.sacOptions import SACoptions
-from SACOBRA_Py.src.opt.trOptions import TRoptions
+from cobraInit import CobraInitializer
+from cobraPhaseII import CobraPhaseII
+from rescaleWrapper import RescaleWrapper
+from opt.idOptions import IDoptions
+from opt.sacOptions import SACoptions
+from opt.trOptions import TRoptions
 
 verb = 1
 
@@ -29,10 +29,10 @@ class TestCobraInit(unittest.TestCase):
         # these assertions should be valid for all values of fn, xStart, lower, upper:
         self.assertEqual(sac_res['lower'][0], -1)
         self.assertEqual(sac_res['upper'][0], 1)
-        self.assertEqual(sac_res['fn'](sac_res['xStart']), fn(xStart))
+        self.assertEqual(sac_res['fn'](sac_res['x0']), fn(xStart))
         self.assertTrue((rescaler.inverse(rescaler.forward(xStart))==xStart).all())
         # these assertions are valid only for the specific values above of fn, xStart, lower, upper:
-        self.assertEqual(sac_res['fn'](sac_res['xStart']), 37.5)
+        self.assertEqual(sac_res['fn'](sac_res['x0']), 37.5)
         self.assertTrue((rescaler.forward(xStart)==np.array([0.5,0.5])).all())
         print("test_rescale:\n", fn(xStart))
 
@@ -51,10 +51,10 @@ class TestCobraInit(unittest.TestCase):
         # these assertions should be valid for all values of fn, xStart, lower, upper:
         self.assertEqual(sac_res['lower'][0], -1)
         self.assertEqual(sac_res['upper'][0], 1)
-        self.assertTrue((sac_res['fn'](sac_res['xStart'])==fn(xStart)).all())
+        self.assertTrue((sac_res['fn'](sac_res['x0'])==fn(xStart)).all())
         self.assertTrue((rescaler.inverse(rescaler.forward(xStart))==xStart).all())
         # these assertions are valid only for the specific values above of fn, xStart, lower, upper:
-        self.assertTrue((sac_res['fn'](sac_res['xStart'])==np.array([37.5,4])).all())
+        self.assertTrue((sac_res['fn'](sac_res['x0'])==np.array([37.5,4])).all())
         self.assertTrue((rescaler.forward(xStart)==np.array([0.5,0.5])).all())
         print("test_rescale2:\n", fn(xStart))
         # arr = np.vstack((xStart,xStart-2, xStart-5))
@@ -75,7 +75,7 @@ class TestCobraInit(unittest.TestCase):
                                  s_opts=SACoptions(verbose=verb, TR=TRoptions(radiInit=0.42)))
         sac_res =  cobra.get_sac_res()
         A = sac_res['A']
-        newXStart = sac_res['xStart']
+        newXStart = sac_res['x0']
         Fres = sac_res['Fres']
         Gres = sac_res['Gres']
         newfn = sac_res['fn']
@@ -90,7 +90,7 @@ class TestCobraInit(unittest.TestCase):
         for j in range(Gres.shape[1]):
             self.assertEqual(Gres[-1, j], fnEval[1 + j])
         # self.assertEqual(sac_res['upper'][0], 1)
-        # self.assertTrue((sac_res['fn'](sac_res['xStart'])==fn(xStart)).all())
+        # self.assertTrue((sac_res['fn'](sac_res['x0'])==fn(xStart)).all())
         print("test_init_design:\n", cobra.get_sac_opts().TR.radiInit)
         print(A)
         print(newXStart)
@@ -201,11 +201,13 @@ class TestCobraInit(unittest.TestCase):
         upper = np.array([5, 5])
         cobra = CobraInitializer(xStart, fn, "fName", lower, upper,
                                  s_opts=SACoptions(verbose=verb, ID=IDoptions(initDesign="RAND_R")))
-        print(cobra.phase)
-        print(cobra.sac_opts.isa2.TGR)
-        cobra = CobraPhaseII(cobra)
-        print(cobra.phase)
-        print(cobra.sac_opts.isa2.TGR)
+        print("\ntest_phaseII:")
+        assert cobra.phase == "init"
+        print(cobra.sac_opts.ISA.TGR)
+        c2 = CobraPhaseII(cobra)
+        cobra = c2.get_cobra()
+        assert cobra.phase == "phase2"
+        print(cobra.sac_opts.ISA.TGR)
 
     def detLen(self, x):
         maxL = max(x)

@@ -17,6 +17,7 @@ class GCOP:
         self.info = None
         if name == "G01": self._call_G01()
         elif name == "G02": self._call_G02(dimension)
+        elif name == "G03": self._call_G03(dimension)
         elif name == "G05": self._call_G05()
         elif name == "G06": self._call_G06()
         elif name == "G11": self._call_G11()
@@ -44,7 +45,7 @@ class GCOP:
                                       -2*x[7]-x[8]+x[11]])
 
     def _call_G02(self, dim):
-        assert dim is not None, "dimension has to be integer, not None"
+        assert dim is not None, "[call_G02] dimension has to be integer, not None"
         self.dimension = dim
         self.lower = np.repeat(1e-16, dim)
         self.upper = np.repeat(19, dim)
@@ -56,11 +57,23 @@ class GCOP:
                                               0.3633289, 0.3592627, 0.3547453, 0.3510025] )
         else: self.solu = None
         # no xStart provided
+
         def denom(x):
             return np.sqrt(np.sum(np.array([(i+1)*x[i] for i in range(dim)])))
         self.fn = lambda x: np.array([-np.abs(np.sum(np.cos(x)**4)-(2*np.prod(np.cos(x)**2))/denom(x)),
                                       0.75-np.prod(x),
                                       (np.sum(x)-7.5*dim)])
+
+    def _call_G03(self, dim):
+        assert dim is not None, "[call_G03] dimension has to be integer, not None"
+        self.dimension = dim
+        self.lower = np.repeat(0, dim)
+        self.upper = np.repeat(1, dim)
+        self.nConstraints = 1
+        self.is_equ = np.repeat(True, 1)
+        self.solu = np.repeat(1/np.sqrt(dim), dim)
+        self.fn = lambda x: np.array([-((np.sqrt(dim)) ^ dim) * np.prod(x)
+                                      -np.sum(x*x)-1 ])
 
     def _call_G05(self):
         self.dimension = 4

@@ -4,6 +4,7 @@ import numpy as np
 from cobraInit import CobraInitializer
 from phase2Vars import Phase2Vars
 from innerFuncs import verboseprint, distLine
+from equHandling import modifyMu
 
 
 def fitFuncPenalRBF(x):
@@ -69,7 +70,7 @@ def updateInfoAndCounters(cobra: CobraInitializer, p2: Phase2Vars, currentEps=0)
     # cobra$TA = rbind(cobra$TA,xNew)
     cobra.sac_res['Fres'] = concat(cobra.sac_res['Fres'], p2.ev1.xNewEval[0])
     cobra.sac_res['Gres'] = np.vstack((cobra.sac_res['Gres'], p2.ev1.xNewEval[1:]))
-    # cobra$currentEps<-c(cobra$currentEps,currentEps)  # TODO: clarify if we need cobra$currentEps
+    cobra.sac_res['muVec'] = concat(cobra.sac_res['muVec'], p2.currentEps)
     cobra.sac_res['numViol'] = concat(cobra.sac_res['numViol'], p2.ev1.newNumViol)
     cobra.sac_res['maxViol'] = concat(cobra.sac_res['maxViol'], p2.ev1.newMaxViol)
     cobra.sac_res['trueMaxViol'] = concat(cobra.sac_res['trueMaxViol'], p2.ev1.trueMaxViol)
@@ -128,12 +129,10 @@ def adjustMargins(cobra: CobraInitializer, p2: Phase2Vars):
     if p2.Cinfeas >= Tinfeas:
         epsMax = cobra.sac_opts.epsilonMax
         p2.EPS = min(2 * p2.EPS, epsMax)
-        # TODO:
-        # p2.currentEps = min(currentEps*(cobra$equHandle$inc),cobra$currentEps[1])
         verboseprint(verbose, important=False, message=f"increasing epsilon to {p2.EPS}")
         verboseprint(verbose, important=False, message=f"increasing equality margin to {p2.currentEps}")
 
         p2.Cinfeas = 0
 
-    # TODO (when equ-branch is ready):
-    # if cobra.sac_opts.EQU.active: p2.currentEps = modifyMu(p2.Cfeas, p2.Cinfeas, Tfeas, p2.currentEps, cobra)
+    if cobra.sac_opts.EQU.active:
+        p2.currentEps = modifyMu(p2.Cfeas, p2.Cinfeas, Tfeas, p2.currentEps, cobra, p2)
