@@ -175,7 +175,9 @@ def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, EPS,
              'feasible': feas,
              'feasPred': feasPred,
              'nViolations': s_res['numViol'],
+             'trueNViol': s_res['trueNumViol'],
              'maxViolation': s_res['maxViol'],
+             'trueMaxViol': s_res['trueMaxViol'],
              'FEval': feval,
              'Best': s_res['fbestArray'],
              'optimizer': np.repeat(s_opts.SEQ.optimizer, s_res['Fres'].shape[0]),
@@ -251,12 +253,18 @@ def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, EPS,
          'XI': p2.gama,
          'fBest': cobra.df.Best[last],
          'EPS': EPS,
+         'muVec': p2.currentEps,        # this is df2$currentEps in R
          'PLOG': p2.PLOG[-1],
          'pshift': p2.pshift[-1],
          'pEffect': p2.pEffect,
          'err1': p2.err1[-1],
-         'err2': p2.err2[-1]
-         }, index=[0])
+         'err2': p2.err2[-1],
+         'nv_cB': p2.ev1.nv_conB,  # diagnostics for refine mechanism
+         'nv_cA': p2.ev1.nv_conA,
+         'nv_tB': p2.ev1.nv_trueB,  # diagnostics for refine mechanism
+         'nv_tA': p2.ev1.nv_trueA,
+         'state': p2.ev1.state
+    }, index=[0])
     cobra.df2 = pd.concat([cobra.df2, new_row_df2], axis=0)
 
     # TODO (later, when TR is ready):

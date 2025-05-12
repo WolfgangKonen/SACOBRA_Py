@@ -36,3 +36,5 @@ class Phase2Vars:
         self.pEffect = None     # number, will be set in trainSurrogates.py
         self.PLOG = np.array([], dtype=np.bool)
         self.pshift = np.array([], dtype=np.float64)
+        self.fin_err = None     # number, will be set in ex_COP.py
+        self.fe_thresh = None   # number, will be set in ex_COP.py

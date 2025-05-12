@@ -1,3 +1,6 @@
+# Just some tests of substitutes for the missing switch construct in Python.
+# Not directly related to SACOBRA.
+
 def switch_demo(argument):
     switcher = {
         1: "January",
@@ -38,6 +41,5 @@ def numbers_to_months(argument):
     # Execute the function
     print(func())
 
-#switch_demo(13)
-
+switch_demo(13)
 numbers_to_months(2)

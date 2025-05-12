@@ -38,8 +38,11 @@ class CobraPhaseII:
         assert self.p2.ev1.state == "initialized"
         self.p2.currentEps = s_res['muVec'][0]
         first_pass = True
+        final_gama = None
         while self.p2.num < s_opts.feval:
             self.p2.gama = s_opts.XI[(self.p2.globalOptCounter % s_opts.XI.size)]
+            if final_gama is not None:      # final_gama is set at the end of while loop if s_opts.finalEpsXiZero is
+                self.p2.gama = final_gama   # TRUE and if it is just before the last iter
 
             # TODO: MS (model-selection) part
 
@@ -73,11 +76,12 @@ class CobraPhaseII:
             # (e.g. the new best x is in xNew = self.p2.opt_res['x']):
             SeqOptimizer(xStart, self.cobra, self.p2)
             self.p2.globalOptCounter += 1       # a counter which counts all main iterates, excluding repair or TR
-            self.p2.ev1.state = "optimized"     # flag ev1 as being updated after sequential optimization
+            self.p2.ev1.state = "optimized"     # flag ev1 as being in the state after sequential optimization
 
             # evaluate xNew on the real functions + do refine step (if cobra.sac_opts.EQU.active).
             # Result is the updated EvaluatorReal object self.p2.ev1:
-            self.p2.ev1.update(self.cobra, self.p2)
+            xNew = self.p2.opt_res['x']
+            self.p2.ev1.update(xNew, self.cobra, self.p2, self.p2.currentEps)
 
             # [conditional] calcPEffect (SACOBRA) for onlinePLOG
             calcPEffect(self.p2, self.p2.ev1.xNew, self.p2.ev1.xNewEval)
@@ -89,13 +93,19 @@ class CobraPhaseII:
             # update and save cobra: data frames df, df2, keys xbest, fbest, ibest in sac_res
             updateSaveCobra(self.cobra, self.p2, self.p2.EPS, pf2.fitFuncPenalRBF, pf2.distRequirement)
 
-            # adjust margin p2.EPS and adjust counters (p2.Cfeas, p2.Cinfeas):
+            # adjust margin self.p2.EPS and adjust counters (self.p2.Cfeas, self.p2.Cinfeas):
             pf2.adjustMargins(self.cobra, self.p2)
 
             # TODO: [conditional] repairInfeasible
 
             # TODO: [conditional] trustRegion
 
-        # end while
+            if s_opts.finalEpsXiZero:
+                if self.p2.num == s_opts.feval-1:  # last iter: exploit maximally with EPS=gama=0.0 (might require
+                    self.p2.EPS = 0.0              # s_opts.SEQ.conTol=1e-7)
+                    final_gama = 0.0
+
+        # end while self.p2.num
+
         # TODO: some final settings to self.cobra, self.p2
         return self.cobra

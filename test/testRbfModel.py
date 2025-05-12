@@ -23,11 +23,11 @@ class TestRbfModel(unittest.TestCase):
         def fn_rbf(x):
             return np.array([3 * np.sum(x ** 2), np.sum(x) - 1])
 
-        xStart = np.array([2.5, 2.4])
-        d = xStart.size
+        x0 = np.array([2.5, 2.4])
+        d = x0.size
         lower = np.array([-1, -1])
         upper = np.array([ 1,  1])
-        cobra = CobraInitializer(xStart, fn_rbf, "fName", lower, upper,
+        cobra = CobraInitializer(x0, fn_rbf, "fName", lower, upper,
                                  s_opts=SACoptions(verbose=verb, feval=2*nobs,
                                                    ID=IDoptions(initDesign="RAND_REP",
                                                                 initDesPoints=nobs)))

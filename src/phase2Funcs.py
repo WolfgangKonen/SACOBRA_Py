@@ -46,7 +46,6 @@ def distRequirement(x,fitnessSurrogate,ro):
     # }
 
 
-
 def updateInfoAndCounters(cobra: CobraInitializer, p2: Phase2Vars, currentEps=0):
     """
         Update cobra information (A, Fres, Gres and others) and update counters (Cfeas, Cinfeas).
@@ -56,22 +55,23 @@ def updateInfoAndCounters(cobra: CobraInitializer, p2: Phase2Vars, currentEps=0)
 
     # LinAlgError ('Singular Matrix') is raised by RBFInterpolator if matrix A contains identical rows
     # (identical infill points). We avoid this with cobra.for_rbf['A'] (instead of cobra.sac_res['A']),
-    # where a new infill point is added in updateInfoAndCounters ONLY if min(xNewDist), the minimum distance
-    # of the new infill points to all rows of cobra.for_rbf['A'] is greater than 0:
+    # where a new infill point is added in updateInfoAndCounters ONLY if min(xNewDist), the minimum Euclid distance
+    # of the new infill points to all rows of cobra.for_rbf['A'] is greater than a small thresh:
     xNewDist = distLine(p2.ev1.xNew, cobra.sac_res['A'])
-    if min(xNewDist) > 0.0:
+    if min(xNewDist) >  1e-9: # 0.0:     # a value 1e-9 is needed by G04 to avoid LinAlgError
         cobra.for_rbf['A'] = np.vstack((cobra.for_rbf['A'], p2.ev1.xNew))
         cobra.for_rbf['Fres'] = concat(cobra.for_rbf['Fres'], p2.ev1.xNewEval[0])
         cobra.for_rbf['Gres'] = np.vstack((cobra.for_rbf['Gres'], p2.ev1.xNewEval[1:]))
         # The new elements of dict cobra.for_rbf are used in trainSurrogates as a safe replacement for the
-        # former elements of cobra.sac_res. The elements cobra.sac_res['A', 'Fres', 'Gres'] are kept to keep
-        # track of every iteration.
+        # former elements of cobra.sac_res.
+    # The elements cobra.sac_res['A', 'Fres', 'Gres'] are filled in any case to keep track of every iteration.
     cobra.sac_res['A'] = np.vstack((cobra.sac_res['A'], p2.ev1.xNew))
     # cobra$TA = rbind(cobra$TA,xNew)
     cobra.sac_res['Fres'] = concat(cobra.sac_res['Fres'], p2.ev1.xNewEval[0])
     cobra.sac_res['Gres'] = np.vstack((cobra.sac_res['Gres'], p2.ev1.xNewEval[1:]))
     cobra.sac_res['muVec'] = concat(cobra.sac_res['muVec'], p2.currentEps)
     cobra.sac_res['numViol'] = concat(cobra.sac_res['numViol'], p2.ev1.newNumViol)
+    cobra.sac_res['trueNumViol'] = concat(cobra.sac_res['trueNumViol'], p2.ev1.trueNumViol)
     cobra.sac_res['maxViol'] = concat(cobra.sac_res['maxViol'], p2.ev1.newMaxViol)
     cobra.sac_res['trueMaxViol'] = concat(cobra.sac_res['trueMaxViol'], p2.ev1.trueMaxViol)
     cobra.sac_res['phase'] = concat(cobra.sac_res['phase'], cobra.phase)
@@ -92,7 +92,7 @@ def updateInfoAndCounters(cobra: CobraInitializer, p2: Phase2Vars, currentEps=0)
     realXbest = cobra.rw.inverse(cobra.sac_res['xbest'].reshape(dim,))
     if cobra.sac_opts.EQU.active:
         verboseprint(verbose, important = cobra.sac_opts.important,
-                     message = f"Best Result.[{num}]: {realXbest[0]} {realXbest[1]} | {cobra.sac_res['fbest'][0]} | "
+                     message = f"Best Result.[{num}]: {realXbest[0]} {realXbest[1]} | {cobra.sac_res['fbest']} | "
                                f"{cobra.sac_res['trueMaxViol'][cobra.sac_res['ibest']]} |  {currentEps}")
 
     else:

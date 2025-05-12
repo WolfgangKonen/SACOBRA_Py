@@ -2,7 +2,7 @@ import numpy as np
 from opt.sacOptions import SACoptions
 
 class InitDesigner:
-    def __init__(self, xStart, fn, lower, upper, s_opts: SACoptions):
+    def __init__(self, x0, fn, lower, upper, s_opts: SACoptions):
         """
         Create matrix ``self.A`` with shape ``(P, d)`` of sample points in input space ``[lower, upper]``
         :math:`\subset \mathbb{R}^d`. ``P = initDesPoints``.
@@ -11,7 +11,7 @@ class InitDesigner:
         function values ``self.Fres`` (shape ``(P,)``) and constraint function values ``self.Gres`` (shape
         ``(P,nC)`` with ``nC`` = number of constraints).
 
-        :param xStart:  the last point ``self.A[-1,:]`` is ``xStart``
+        :param x0:  the last point ``self.A[-1,:]`` is ``x0``
         :param fn:
         :param lower:
         :param upper:
@@ -19,28 +19,28 @@ class InitDesigner:
                        elements ``initDesign`` and ``initDesPoints``.
         """
         self.val = s_opts.cobraSeed
-        d = xStart.size
+        d = x0.size
         if s_opts.ID.initDesign == "RANDOM":
             # Create self.A with shape (npts,d) where the first npts-1 points in R^d are uniform random from
-            # [lower, upper] and the last point is xStart.
+            # [lower, upper] and the last point is x0.
             npts = s_opts.ID.initDesPoints
             self.A = np.random.rand(npts-1,d)      # uniform random in [0,1)
             self.A = self.A @ np.diag(upper-lower) + np.tile(lower, (npts-1,1))
-            self.A = np.vstack((self.A, xStart))
+            self.A = np.vstack((self.A, x0))
         elif s_opts.ID.initDesign == "RAND_R":
             # Same as "RANDOM", but with reproducible random numbers (reproducible also on the R side).
             # The seed is s_opts.cobraSeed.
             npts = s_opts.ID.initDesPoints
             self.A = self.my_rng(npts - 1, d, s_opts.cobraSeed)  # uniform random in [0,1)
             self.A = self.A @ np.diag(upper-lower) + np.tile(lower, (npts - 1, 1))
-            self.A = np.vstack((self.A, xStart))
+            self.A = np.vstack((self.A, x0))
         elif s_opts.ID.initDesign == "RAND_REP":
             # Same as "RAND_R", but with better self.my_rng2 (avoid cycles!).
             # The seed is s_opts.cobraSeed.
             npts = s_opts.ID.initDesPoints
             self.A = self.my_rng2(npts - 1, d)  # uniform random in [0,1)
             self.A = self.A @ np.diag(upper - lower) + np.tile(lower, (npts - 1, 1))
-            self.A = np.vstack((self.A, xStart))
+            self.A = np.vstack((self.A, x0))
         else:
             raise RuntimeError(f"[InitDesigner] Invalid value s_opts.initDesign = '{s_opts.ID.initDesign}' ")
 

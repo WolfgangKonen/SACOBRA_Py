@@ -13,6 +13,8 @@ class EQUoptions:
                  dec=1.5,
                  refine=True,
                  refineMaxit=1000, # 100,
+                 refineAlgo="COBYLA",   # COBYLA  L-BGFS-B
+                 refinePrint=False,
                  muGrow=0,
                  mu4inequality=False
                  ):
@@ -32,6 +34,8 @@ class EQUoptions:
         :param refine: enables the refine mechanism for equality handling
         :param refineMaxit: maximum number of iterations used in the refine step. Note that the refine
           step runs on the surrogate models and does not impose any extra real function evaluation
+        :param refineAlgo: optimizer for refine step ["COBYLA"|"L-BFGS-B"]
+        :param refinePrint: whether to print "cg-values (before,after,true)" after each refine step
         :param muGrow: every muGrow (e.g. 100) iterations, re-enlarge the :math:`\mu`-band. If 0, then
           re-enlarge never
         """
@@ -42,5 +46,7 @@ class EQUoptions:
         self.dec = dec
         self.refine = refine
         self.refineMaxit = refineMaxit
+        self.refineAlgo = refineAlgo
+        self.refinePrint = refinePrint
         self.muGrow = muGrow
         self.mu4inequality = mu4inequality

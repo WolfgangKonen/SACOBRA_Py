@@ -42,9 +42,10 @@ class TestPhaseII(unittest.TestCase):
               the R numbers from calcPEffect are only valid under setting recalc_fit12 = True in trainSurrogates (!))
         """
         nobs = 10
-        xStart = np.array([2.5, 2.4])
+        x0 = np.array([2.5, 2.4])
         lower = np.array([-5, -5])
         upper = np.array([5, 5])
+        idp = 2*x0.size + 1
         xflat = np.array([[ 1.3,  4.1],
                           [-4.5, -2.3],
                           [ 2.4, -2.1],
@@ -52,9 +53,9 @@ class TestPhaseII(unittest.TestCase):
         for fnfac in [1, 10, 100]:
             def fn(x):
                 return np.array([3 * fnfac * np.sum(x ** 2), np.sum(x) - 1])
-            cobra = CobraInitializer(xStart, fn, "fName", lower, upper,
+            cobra = CobraInitializer(x0, fn, "fName", lower, upper,
                                      s_opts=SACoptions(verbose=verb, feval=2*nobs,
-                                                       ID=IDoptions(initDesign="RAND_R"),
+                                                       ID=IDoptions(initDesign="RAND_R", initDesPoints=idp),
                                                        ISA=ISAoptions(TFRange=500)))
             c2 = CobraPhaseII(cobra)
             p2 = c2.get_p2()
@@ -124,22 +125,22 @@ class TestPhaseII(unittest.TestCase):
 
         def gn_inactive(x, grad): return np.sum(x) - 1
 
-        xStart = np.array([2.5, 2.5])
+        x0 = np.array([2.5, 2.5])
         lower = np.array([-5, -5])
-        opt = nlopt.opt(nlopt.LN_COBYLA, xStart.size)
+        opt = nlopt.opt(nlopt.LN_COBYLA, x0.size)
         opt.set_lower_bounds(+lower)
         opt.set_upper_bounds(-lower)
         opt.set_min_objective(fn_nl)
         opt.add_inequality_constraint(gn_active, 0)
         opt.set_xtol_rel(1e-6)
         opt.set_maxeval(1000)
-        x = opt.optimize(xStart)
+        x = opt.optimize(x0)
         min_f = opt.last_optimum_value()
         assert np.allclose(x, np.array([0.5, 0.5]))
         assert np.allclose(min_f, 1.5)       # 1.5 = 3 * (0.5**2 + 0.5**2)
         opt.remove_inequality_constraints()
         opt.add_inequality_constraint(gn_inactive, 0)
-        x = opt.optimize(xStart)
+        x = opt.optimize(x0)
         min_f = opt.last_optimum_value()
         assert np.linalg.norm(x - np.array([0.0, 0.0])) < 1e-5
         assert np.allclose(min_f, 0.0)
@@ -151,16 +152,17 @@ class TestPhaseII(unittest.TestCase):
             (for different distance requirement parameters ``p2.ro``)
         """
         nobs = 10
-        xStart = np.array([2.5, 2.4])
+        x0 = np.array([2.5, 2.4])
         lower = np.array([-5, -5])
         upper = np.array([5, 5])
+        idp = 2*x0.size + 1
 
         def fn(x):
             return np.array([3 * np.sum(x ** 2), np.sum(x) - 1])
 
-        cobra = CobraInitializer(xStart, fn, "fName", lower, upper,
+        cobra = CobraInitializer(x0, fn, "fName", lower, upper,
                                  s_opts=SACoptions(verbose=verb, feval=2*nobs,
-                                                   ID=IDoptions(initDesign="RAND_R"),
+                                                   ID=IDoptions(initDesign="RAND_R", initDesPoints=idp),
                                                    ISA=ISAoptions(TFRange=500)))
         rw = RescaleWrapper(fn, lower, upper, cobra.sac_res['lower'], cobra.sac_res['upper'])
         xflat = np.array([[ 1.3,  4.1],
@@ -205,23 +207,31 @@ class TestPhaseII(unittest.TestCase):
         print("[test_seq_funcs passed]")
 
     def test_RS_EPS(self):
-        """ Test whether a short optimization run (feval=20) with Random Start (RS) enabled has the same iterations
-            with RS and the same margin EPS in each iteration as in R (for two different parameters ``rstype``).
+        """ A short optimization run (feval=20) on a simple COP (sphere + 1 inequality constraint with Random Start (RS)
+            enabled Test (for two different parameters ``rstype``)
 
-            This requires "RAND_R", cobra.sac_opts.ISA.RS_rep = True and cobraSeed = 42 or 52 (depending on rstype).
+            - whether the Python side has the same iterations with RS as the R side
+            - whether the Python side has the same margin EPS as the R side in each iteration
+            - that the intermediate infill points (sac_res['A']) differ somewhat
+            - that the final infill points are very much the same (abs tol < 1e-5)
+            - that the best infill points are very much the same (abs tol < 1e-5)
+
+            The R side is demo_RS_EPS in demo-phaseII.R. It requires "RAND_R", cobra.sac_opts.ISA.RS_rep = True
+            and cobraSeed = 42 or 52 (depending on rstype).
         """
-        xStart = np.array([2.5, 2.4])
+        x0 = np.array([2.5, 2.4])
         lower = np.array([-5, -5])
         upper = np.array([5, 5])
+        idp = 2*x0.size + 1
 
         def fn(x):
             return np.array([3 * np.sum(x ** 2), -(np.sum(x) - 1)])
 
         for rstype in ["SIGMOID", "CONSTANT"]:
             myseed = 42 if rstype == "SIGMOID" else 52
-            cobra = CobraInitializer(xStart, fn, "fName", lower, upper,
+            cobra = CobraInitializer(x0, fn, "fName", lower, upper,
                                      s_opts=SACoptions(verbose=verb, feval=20, cobraSeed=myseed,
-                                                       ID=IDoptions(initDesign="RAND_R"),
+                                                       ID=IDoptions(initDesign="RAND_R", initDesPoints=idp),
                                                        ISA=ISAoptions(TFRange=500, RS_rep=True, RStype=rstype),
                                                        SEQ=SEQoptions(trueFuncForSurrogates=True)))
             print(f"Starting with RS_type={cobra.sac_opts.ISA.RStype} and cobraSeed={cobra.sac_opts.cobraSeed} ...")
@@ -234,6 +244,7 @@ class TestPhaseII(unittest.TestCase):
             # print(cobra.df2)
             df_rs = np.array(cobra.df.loc[:, ['RS']]).reshape(20, )
             df2_eps = np.array(cobra.df2.loc[:, ['EPS']]).reshape(15,)
+
             # the following variables ...from_R are copied from the output of demo-phaseII.R when running demo_RS_EPS
             # (note that this requires "RAND_R", cobraSeed depending on rstype and cobra$sac$RS_rep = TRUE):
             if rstype == "SIGMOID":       # implies cobraSeed=42
@@ -242,16 +253,45 @@ class TestPhaseII(unittest.TestCase):
                 df2_eps_from_R = np.array([1.0000e-02, 1.0000e-02, 5.0000e-03, 5.0000e-03, 2.5000e-03, 2.5000e-03,
                                            1.2500e-03, 1.2500e-03, 6.2500e-04, 6.2500e-04, 3.1250e-04, 3.1250e-04,
                                            1.5625e-04, 1.5625e-04, 1.5625e-04])
+                A_567 = cobra.sac_res['A'][5:8, :]
+                #               [[ 0.7721366 , -0.05473517],
+                #                [ 0.10000958,  0.10001042],
+                #                [ 0.09858802,  0.10141698]]
+                A_567_from_R = np.array([[0.7721366, -0.05473518],
+                                         [0.1000102, 0.10000976],
+                                         [0.1014172, 0.09858782]])
+                A_20 = cobra.sac_res['A'][19:20, :]
+                #               [[ 0.10000041, 0.0999996 ]],
+                A_20_from_R = np.array([0.09999936, 0.10000064])
+                xbest = cobra.get_xbest()   # [0.50000204, 0.49999798]
+                xbest_from_R = np.array([0.4999968, 0.5000032])
             elif rstype == "CONSTANT":     # implies cobraSeed=52
                 df_rs_from_R = np.array([False, False, False, False, False, False, False, True, True, False,
                                          False, False, False, False, False, True, False, False, True, False])
                 df2_eps_from_R = np.array([1.0000e-02, 1.0000e-02, 5.0000e-03, 5.0000e-03, 2.5000e-03, 2.5000e-03,
                                            1.2500e-03, 1.2500e-03, 6.2500e-04, 6.2500e-04, 3.1250e-04, 3.1250e-04,
                                            1.5625e-04, 1.5625e-04, 7.8125e-05])
+                A_567 = cobra.sac_res['A'][5:8, :]
+                #               [[-0.05704648,  0.25706648],
+                #                [ 0.10000958,  0.10001042],
+                #                [ 0.10141617,  0.09858883]]
+                A_567_from_R = np.array([[-0.05704629, 0.25706629],
+                                         [ 0.10000952, 0.10001048],
+                                         [ 0.10141633, 0.09858867]])
+                A_20 = cobra.sac_res['A'][19:20, :]
+                #               [[ 0.09999958, 0.10000043]]
+                A_20_from_R = np.array([0.09999936, 0.10000064])
+                xbest = cobra.get_xbest()   # [0.49999788, 0.50000213]
+                xbest_from_R = np.array([0.5000016, 0.4999984])
             else:
                 raise NotImplementedError(f"No data from the R side for rstype={rstype}")
             assert np.all(df_rs == df_rs_from_R)
             assert np.allclose(df2_eps, df2_eps_from_R)
+            # assert np.allclose(A_567, A_567_from_R)      # this assertion would fail, different intermediate infills
+            # this assertion with abs tol = 1e-2 holds, the infill points are not *too* different:
+            assert np.allclose(A_567, A_567_from_R, atol=1e-2)
+            assert np.allclose(A_20, A_20_from_R, atol=1e-5)     # these assertions work on a higher abs tol, final
+            assert np.allclose(xbest, xbest_from_R, atol=1e-5)   # result and xbest are close
         print("[test_RS_EPS passed]")
 
 

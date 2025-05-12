@@ -88,15 +88,16 @@ def calcPEffect(p2: Phase2Vars, xNew: np.ndarray, xNewEval: np.ndarray):
     # newErr2 = abs(newPredY2-xNewEval[0])
     p2.err1 = np.concat((p2.err1, newErr1))
     p2.err2 = np.concat((p2.err2, newErr2))
-    p2.errRatio = p2.err1 / p2.err2
+    nu = 1e-20   # regularizing constant to avoid 0/0-situation in p2.errRatio
+    p2.errRatio = (p2.err1 + nu) / (p2.err2 + nu)
 
     if np.isinf(newErr2):
         p2.errRatio[-1] = 0
     elif np.isinf(newErr1):
         p2.errRatio[-1] = np.inf
 
-    p2.pEffect = np.log10(np.nanmedian(p2.errRatio))      # nanmedian: compute median while ignoring NaNs
-
+    z = np.nanmedian(p2.errRatio)       # nanmedian: compute median while ignoring NaNs
+    p2.pEffect = np.log10(z) if z > 0 else 0
 
 def trainSurrogates(cobra: CobraInitializer, p2: Phase2Vars):
     """

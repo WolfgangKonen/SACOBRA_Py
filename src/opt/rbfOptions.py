@@ -9,8 +9,6 @@ class RBFoptions:
                  gaussRule="One",
                  rho=0.0,
                  degree= None
-                 # ptail=True,
-                 # squares=True
                  ):
         self.model = model
         self.width = width
@@ -18,5 +16,3 @@ class RBFoptions:
         self.widthFactor = widthFactor
         self.gaussRule = gaussRule
         self.degree = degree
-        #self.ptail = ptail
-        #self.squares = squares

@@ -27,18 +27,29 @@ class TestCOP(unittest.TestCase):
             What we test:
 
             - that A, Fres, Gres after initial design are exactly the same in R and Python
+            - that fp1 and gp1, certain surrogate values when starting cobraPhaseII, are xactly the same in R and Python
             - that df.XI contains after the initial np.nan's tiles that are exact copies of cobra.sac_opts.XI
             - that two ways to calculate pEffect produce the same result
-            - that the iterations with restart and their xStart are exactly equal in R and Python ('rs')
+            - that the iterations with restart and their x0 are exactly equal in R and Python ('rs')
+
+            What we NOT test (or find NOT confirmed):
+
+            - that the iteration path is the same in R and Python
+            - (as a consequence) that the final error is exactly the same
+            - TODO: finalEpsXiZero (!)
         """
         G06 = GCOP("G06")
 
-        cobra = CobraInitializer(G06.xStart, G06.fn, G06.name, G06.lower, G06.upper,
+        cobra = CobraInitializer(G06.x0, G06.fn, G06.name, G06.lower, G06.upper,
                                  s_opts=SACoptions(verbose=verb, feval=40, cobraSeed=42,
+                                                   finalEpsXiZero=True,
                                                    ID=IDoptions(initDesign="RAND_REP", initDesPoints=5),
                                                    RBF=RBFoptions(degree=1),
-                                                   SEQ=SEQoptions()))       # trueFuncForSurrogates=True
+                                                   SEQ=SEQoptions(conTol=1e-7)))       # trueFuncForSurrogates=True
+        # cobra.sac_opts.ISA.RS = False  # temp
         cobra.sac_opts.ISA.RS_rep = True
+
+        # all ..._from_R values are obtained with solve_G06_R in ex_COP.R
         A_from_R = np.array([[-0.77165545,  0.50386505],
                              [-0.96567336,  0.06279872],
                              [-0.07241825,  0.10488204],
@@ -57,6 +68,8 @@ class TestCOP(unittest.TestCase):
         c2 = CobraPhaseII(cobra)
         c2.start()
 
+        # fp1: fitness surrogate at 'xbest + 1' in cobraPhaseII.py, first while loop pass
+        # gp1: constraint surrogates at 'xbest + 1'
         fp1_from_R = 13.10047615
         gp1_from_R = np.array([-5797.53931915, 5698.52931915])
         assert np.allclose(c2.p2.fp1, fp1_from_R)
@@ -107,11 +120,12 @@ class TestCOP(unittest.TestCase):
         fin_err_list = np.array([])
         runs = 15
         for run in range(runs):
-            cobra = CobraInitializer(G06.xStart, G06.fn, G06.name, G06.lower, G06.upper,
+            cobra = CobraInitializer(G06.x0, G06.fn, G06.name, G06.lower, G06.upper,
                                      s_opts=SACoptions(verbose=verb, feval=40, cobraSeed=39+run,
+                                                       finalEpsXiZero=True,
                                                        ID=IDoptions(initDesign="RAND_REP", initDesPoints=6),
                                                        RBF=RBFoptions(degree=2),
-                                                       SEQ=SEQoptions()))       # trueFuncForSurrogates=True
+                                                       SEQ=SEQoptions(conTol=1e-7)))     # trueFuncForSurrogates=True
 
             c2 = CobraPhaseII(cobra)
             c2.start()
@@ -126,7 +140,8 @@ class TestCOP(unittest.TestCase):
         print(np.array(sorted(fin_err_list), dtype=float))   # to get rid of 'np.float64(...)'
         med_fin_err = np.median(fin_err_list)
         print(f"min: {np.min(fin_err_list)},  max: {np.max(fin_err_list)}")
-        thresh = 5e-6
+        # thresh = 5e-6       # this is for s_opts.finalEpsXiZero=False
+        thresh = 5e-8       # this is for s_opts.finalEpsXiZero=True and s_opts.SEQ.conTol=1e-7
         assert med_fin_err <= thresh, f"median(fin_err_list) = {med_fin_err} > {thresh}, which is too large"
         print(f"[test_G06] median(final error) = {med_fin_err} < {thresh}: OK")
         print(f"[test_G06] ... finished ({(time.perf_counter() - start)/runs*1000:.4f} msec per run, {runs} runs)")

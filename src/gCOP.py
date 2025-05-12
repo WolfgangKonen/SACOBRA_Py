@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class GCOP:
     """
     Constraint Optimization Problem Benchmark (G Function Suite)
@@ -13,11 +14,12 @@ class GCOP:
         all_names = [f"G{i+1:02d}" for i in range(24)]
         assert name in all_names, f"{name} is not an allowed G-function name"
         self.name = name
-        self.xStart = None
+        self.x0 = None
         self.info = None
         if name == "G01": self._call_G01()
         elif name == "G02": self._call_G02(dimension)
         elif name == "G03": self._call_G03(dimension)
+        elif name == "G04": self._call_G04()
         elif name == "G05": self._call_G05()
         elif name == "G06": self._call_G06()
         elif name == "G11": self._call_G11()
@@ -32,7 +34,7 @@ class GCOP:
         self.nConstraints = 9
         self.is_equ = np.repeat(False, 9)
         self.solu = np.concatenate((np.repeat(1,9), np.repeat(3, 3), 1), axis=None)
-        self.xStart = np.repeat(0, self.dimension)
+        self.x0 = np.repeat(0, self.dimension)
         self.fn = lambda x: np.array([np.sum(5*x[0:4])-(5*sum(x[0:4]*x[0:4]))-(sum(x[4:13])),
                                       (2*x[0]+2*x[1]+x[9]+x[10] - 10),
                                       (2*x[0]+2*x[2]+x[9]+x[11] - 10),
@@ -56,7 +58,7 @@ class GCOP:
                                               2.9572856, 1.4654789, 0.3684877,
                                               0.3633289, 0.3592627, 0.3547453, 0.3510025] )
         else: self.solu = None
-        # no xStart provided
+        # no x0 provided
 
         def denom(x):
             return np.sqrt(np.sum(np.array([(i+1)*x[i] for i in range(dim)])))
@@ -72,21 +74,52 @@ class GCOP:
         self.nConstraints = 1
         self.is_equ = np.repeat(True, 1)
         self.solu = np.repeat(1/np.sqrt(dim), dim)
-        self.fn = lambda x: np.array([-((np.sqrt(dim)) ^ dim) * np.prod(x)
-                                      -np.sum(x*x)-1 ])
+        # no x0 provided
+        self.fn = lambda x: np.array([-((np.sqrt(dim)) ** dim) * np.prod(x),
+                                      np.sum(x*x)-1])
+
+    def _call_G04(self):
+        self.dimension = 5
+        self.lower = np.concatenate(((78, 33), np.repeat(27, 3)))
+        self.upper = np.concatenate(((102, 45), np.repeat(45, 3)))
+        self.nConstraints = 6
+        self.is_equ = np.repeat(False, 6)
+        # self.solu = np.array([78.00000000000000000,       # old optimum from R
+        #                       33.00000000000000000,
+        #                       29.99525602568341398,
+        #                       44.99999999847009491,
+        #                       36.77581290640451783])
+        self.solu = np.array([78.00000000000000000,         # slightly better optimum from cop.solve_G04(47),
+                              33.00000000000000000,         # gives fully feasible solution and avoids 'negative errors'
+                              29.99525602568163,
+                              45.00000000000000000,
+                              36.77581290578813])
+        # self$x0=c(runif(1,min=78,max=102), #x1    # random point in R
+        #           runif(1,min=33,max=45),  #x2
+        #           runif(3,min=27,max=45))
+        self.x0 = np.array([80,40,35,35,35])        # fixed choice for reproducible results
+        self.fn = lambda x: np.array([(5.3578547*(x[2]**2))+(0.8356891*x[0]*x[4])+(37.293239*x[0])-40792.141,
+                                      -(85.334407+0.0056858*x[1]*x[4]+0.0006262*x[0]*x[3]-0.0022053*x[2]*x[4]),
+                                      85.334407+0.0056858*x[1]*x[4]+0.0006262*x[0]*x[3]-0.0022053*x[2]*x[4]-92,
+                                      90-(80.51249+(0.0071317*x[1]*x[4])+(0.0029955*x[0]*x[1])+(0.0021813*x[2]**2)),
+                                      80.51249+(0.0071317*x[1]*x[4])+(0.0029955*x[0]*x[1])+(0.0021813*x[2]**2)-110,
+                                      20-(9.300961+(0.0047026*x[2]*x[4])+(0.0012547*x[0]*x[2])+(0.0019085*x[2]*x[3])),
+                                      9.300961+(0.0047026*x[2]*x[4])+(0.0012547*x[0]*x[2])+(0.0019085*x[2]*x[3])-25])
 
     def _call_G05(self):
         self.dimension = 4
-        self.lower = np.concatenate(np.repeat(0,2), np.repeat(-0.55, 2))
-        self.upper = np.concatenate(np.repeat(1200, 2), np.repeat(0.55, 2))
+        self.lower = np.concatenate((np.repeat(0,2), np.repeat(-0.55, 2)))
+        self.upper = np.concatenate((np.repeat(1200, 2), np.repeat(0.55, 2)))
         self.nConstraints = 5
         self.is_equ = np.array([False, False, True, True, True])
         self.solu = np.array([679.94531748791177961,
                               1026.06713513571594376,
                               0.11887636617838561,
                               -0.39623355240329272])
-        self.xStart = np.concatenate(np.random.rand(2)*1200,            # x1, x2
-                                     0.55*(np.random.rand(2)*2 - 1))     # x3, x4
+        # self.x0 = np.concatenate((np.random.rand(2) * 1200,             # x1, x2  # original: random start point
+        #                          0.55 * (np.random.rand(2)*2 - 1)))     # x3, x4
+        self.x0 = np.concatenate((np.array([0.4,0.6]) * 1200,             # x1, x2  # fixed choice for reproducible
+                                 0.55 * (np.array([0.4,0.6])*2 - 1)))     # x3, x4  # results
         self.fn = lambda x: np.array([3*x[0]+1e-6*(x[0]**3)+2*x[1]+(2*1e-6/3)*(x[1]**3),
                                       x[2] - x[3] - 0.55,
                                       x[3] - x[2] - 0.55,
@@ -101,7 +134,7 @@ class GCOP:
         self.nConstraints = 2
         self.is_equ = np.array([False, False])
         self.solu = np.array([14.095, 5 - np.sqrt(100 - (14.095 - 5) ** 2)])
-        self.xStart = np.array([20.1, 5.84])
+        self.x0 = np.array([20.1, 5.84])
         self.fn = lambda x: np.array([((x[0] - 10) ** 3) + ((x[1] - 20) ** 3),
                                       -((((x[0] - 5) ** 2) + ((x[1] - 5) ** 2) - 100)),
                                       ((x[0] - 6) ** 2) + ((x[1] - 5) ** 2) - 82.81])

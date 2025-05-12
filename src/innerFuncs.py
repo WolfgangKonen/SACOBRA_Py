@@ -58,128 +58,18 @@ def plogReverse(y, pShift=0):
     # /WK/2025/03/06: bug fix for negative y
 
 
-#
-# # --- TODO subProb's for Phase I
-#
-# # surrogate penalty function for unconstrained optimization methods  - PHASE II
-# subProb < -function(x, cobra)
-# {
-# # x<-x%*%cobra$TM
-# # x<-as.numeric(x)
-# # browser()
-#
-# if (any( is.nan(x))){
-# warning("subProb: x value is NaN, returning Inf")
-# return (Inf)
-# }
-# # cat(">>> Entering subProb\n")
-# distance < - distLine(x, cobra$A)
-# subC < -pmax((cobra$ro-distance), 0)
-# penalty1 < -sum(subC)
-# penalty2 < -0
-# if (cobra$CONSTRAINED)
-# {
-# constraintPrediction < - calcConstrPred(x, cobra);
-# # if (cobra$trueFuncForSurrogates) constraintPrediction <-  cobra$fn(x)[-1]+cobra$EPS^2
-# maxViolation < - sapply(1: length(constraintPrediction), FUN = function(i)
-# max(0, constraintPrediction[i]))
-# penalty2 < - sum(maxViolation)
-# }
-#
-# y < - subProbConstraintHandling(x, cobra, penalty1, penalty2, maxViolation, cobra$sigmaD, cobra$penaF)
-# if (cobra$trueFuncForSurrogates) y < - cobra$fn(x)[1] + (penalty1 * cobra$sigmaD[1] * 100 + penalty2) * cobra$penaF[1]
-# # cat(">>SubProb: ", interpRBF(x, cobra$fitnessSurrogate), " / ", (C * cobra$feval)^alpha * sum(maxViolation)^beta , " ||", (C * cobra$feval)^alpha, " / ", sum(maxViolation)^beta ,"\n")
-# # cat("<<< leaving subProb\n")
-# return (y)
-# }  # subProb()
-#
-# # surrogate evaluation of 'f' for constraint optimization methods  - PHASE II
-# subProb2 < - function(x, cobra)
-# {
-#
-# if (any( is.nan(x))){
-# warning("subProb2: x value is NaN, returning Inf")
-# return (Inf)
-# }
-#
-# if (cobra$trueFuncForSurrogates) {
-# y < -cobra$fn(x)[1]
-# } else {
-# y < -predict.RBFinter(cobra$fitnessSurrogate, matrix(x, ncol=cobra$dimension))
-# }
-#
-# return (y)
-# }
-#
-# # surrogate evaluation of '\vec{g}' for constrained optimization methods - PHASE II
-# gCOBRA < - function(x, cobra)
-# {
-#
-# if (any( is.nan(x))){
-# warning("gCOBRA: x value is NaN, returning Inf")
-# return (c(Inf, rep(Inf, cobra$nConstraints)))
-# }
-#
-# if (cobra$CONSTRAINED)constraintPrediction < - calcConstrPred(x, cobra);
-# h < - c()
-# distance < - distLine(x, cobra$A)
-# subC < -pmax((cobra$ro-distance), 0)
-# # h[1] <- sum(subC)*cobra$drFactor
-# h[1] < - sum(subC)
-#
-#
-# DBG=FALSE
-# if (DBG & h[1] > 0) {
-# cat("gCOBRA: ", h, max(constraintPrediction), "\n")
-# if (h < 770) browser()
-# }
-#
-# if (cobra$CONSTRAINED){
-# h < - (-1.0) * c(h[1],
-#                  constraintPrediction)  # TODO -1* ... is required for COBYLA constraints, maybe also for other optimizers?
-# } else {
-# h < --h
-# }
-# # if(cobra$seqOptimizer=="COBYLA"){
-# #   h <- -h
-# # }
-# return (h)
-# }
-#
-# # gCOBRA_cobyla <- function(x,cobra) {
-# #   return(-gCOBRA(x,cobra))
-# # }
-#
-# ### --- snip
-#
-# isresCobyla < - function(xStart, fn=subProb2, hin=gCOBRA, cobra)
-# {
-# # maxeval=cobra$seqFeval;
-# # subMin$feval=subMin$iter;
-# hin_c = cobra$gCOBRA_c
-# subMin1 < - isres2(xStart, fn=fn,
-#                    lower=cobra$lower, upper = cobra$upper, hin = hin, maxeval = cobra$seqFeval, cobra = cobra);
-# subMin2 < - nloptr::cobyla(xStart, fn=fn, lower=cobra$lower, upper = cobra$upper, hin = hin_c, control = list(
-#     maxeval=cobra$seqFeval, xtol_rel = cobra$seqTol), cobra = cobra, deprecatedBehavior = FALSE);
-# # subMin2 <- nloptr::cobyla(xStart,fn=fn,lower=cobra$lower,upper=cobra$upper,hin=hin, control=list(maxeval=cobra$seqFeval,xtol_rel=cobra$seqTol), cobra=cobra);
-# if (subMin1$value < subMin2$value) {
-# subMin1$nIsres < - cobra$nIsres+1;
-# subMin1$nCobyla < - cobra$nCobyla;
-# return (subMin1);
-# } else {
-# subMin2$nCobyla < - cobra$nCobyla + 1;
-# subMin1$nIsres < - cobra$nIsres;
-# return (subMin2);
-# }
-# }
-#
-#
 # # -----------------------------------------------------------------------------------------------
-# # ----------------  helper functions for subprob*, gCOBRA*  -------------------------------------
+# # ----------------  helper functions     subprob*, gCOBRA*  -------------------------------------
 # # -----------------------------------------------------------------------------------------------
 #
-# calcConstrPred < - function(x, cobra)   is now in secOptimizer.py
+# calcConstrPred < - function(x, cobra)   is now in seqOptimizer.py
+#
+# subProb2 and gCOBRA are as member functions of SeqFuncFactory in seqOptimizer.py
+#
+# subProbPhase1 is in seqOptimizer.py
+# subProb, gCOBRA_cobyla, isresCobyla are in seqOptimizer.py (currently commented out)
+# subProb2Phase1, gCOBRAPhase1, isresCobyla are in seqOptimizer.py (currently commented out)
 #
 # subProbConstraintHandling < - function(x, cobra, penalty1, penalty2, maxViolation, sigmaD, penaF)
 # is now also in seqOptimizer.py (currently commented out)
-
+#
