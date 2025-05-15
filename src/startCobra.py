@@ -1,7 +1,8 @@
 from innerFuncs import verboseprint
-from SACOBRA_Py.src.cobraInit import CobraInitializer
-from SACOBRA_Py.src.cobraPhaseI import CobraPhaseI
-from SACOBRA_Py.src.cobraPhaseII import CobraPhaseII
+from cobraInit import CobraInitializer
+from cobraPhaseI import CobraPhaseI
+from cobraPhaseII import CobraPhaseII
+
 
 def startCobra(cobra: CobraInitializer):
     """

@@ -1,11 +1,12 @@
 from typing import Union
 import numpy as np
 import pandas as pd
+
 # need to specify SACOBRA_Py.src as source folder in File - Settings - Project Structure,
 # then the following import statements will work:
 from rescaleWrapper import RescaleWrapper
 from initDesigner import InitDesigner
-from innerFuncs import verboseprint
+from innerFuncs import distLine, verboseprint, plogReverse
 from opt.sacOptions import SACoptions
 from opt.isaOptions import ISAoptions0, ISAoptions2
 
@@ -31,14 +32,14 @@ class CobraInitializer:
         """
 
         :param x0: start point, if given, then its dim has to be the same as ``lower``. If it  is/has NaN or None
-                    on input, it is replaced by a random point from ``[lower, upper]``
-        :param fn:  function returning (1+nConstraints)-dim vector: [objective to minimize, constraints]
+                    on input, it is replaced by a random point from ``[lower, upper]``.
+        :param fn:  function returning ``(1+nConstraints)``-dim vector: [objective to minimize, constraints]
         :param fName: function name
         :param lower: lower bound, its dimension defines input space dimension
         :param upper: upper bound (same dim as lower)
-        :param is_equ: nConstraints-dim boolean vector: which constraints are equality constraints
-        :param solu:  (optional, for diagnostics) true solution vector or solution matrix: which x are feasible
-                    and deliver minimal objective value
+        :param is_equ: boolean vector with dim ``nConstraints``: which constraints are equality constraints?
+        :param solu:  (optional, for diagnostics) true solution vector or solution matrix (one solution per row):
+                      one or several feasible x that deliver minimal objective value
         :param s_opts: the options, see :class:`SACoptions`
         """
         #
@@ -75,19 +76,29 @@ class CobraInitializer:
         #
         originalfn = fn
         originalXStart = x0
-        originalSolu = solu
+        # originalSolu = solu
         originalL = lower
         originalU = upper
         lb = np.repeat(s_opts.ID.newLower, dimension)
         ub = np.repeat(s_opts.ID.newUpper, dimension)
         self.rw = RescaleWrapper(originalfn, originalL, originalU, lb, ub)
+        self.solu = solu
+        # self.solution = SoluContainer(solu, s_opts, self)    # includes optional rescaling of solu
 
         if s_opts.ID.rescale:
-            x0 = np.array([np.interp(x0[i], (lower[i], upper[i]), (lb[i], ub[i]))
-                           for i in range(dimension)])
-            if solu is not None:
-                solu = np.array([np.interp(solu[i], (lower[i], upper[i]), (lb[i], ub[i]))
-                                for i in range(dimension)])
+            x0 = self.rw.forward(x0)
+            #
+            # --- OLD version: ---
+            # x0 = np.array([np.interp(x0[i], (lower[i], upper[i]), (lb[i], ub[i]))
+            #                for i in range(dimension)])
+            # --- this is now in SoluContainer:
+            # if solu is not None:
+            #     if solu.ndim == 2:
+            #         solu = np.apply_along_axis(self.rw.forward, axis=1, arr=solu)
+            #     elif solu.ndim == 1:
+            #         solu = self.rw.forward(solu)
+            #     else:
+            #         raise ValueError(f"solu.ndim = {solu.ndim} is not allowed!")
             fn = self.rw.apply
             lower = lb
             upper = ub
@@ -141,8 +152,8 @@ class CobraInitializer:
                         'originalL': originalL,
                         'originalU': originalU,
                         'originalXStart': originalXStart,
-                        'originalSolu': originalSolu,
-                        'solu': solu,
+                        #'originalSolu': self.solution.get_original_solu(),
+                        #'solu': self.solution.get_solu(),
                         'is_equ': is_equ,
                         'iteration': 0,
                         'fe': fe,
@@ -188,7 +199,7 @@ class CobraInitializer:
             #
             tempG = Gres.copy()     # .copy important here, otherwise changes to tempG would change Gres as well (!)
             tempG[:, equ_ind] = abs(tempG[:, equ_ind])
-            z = self.sac_res['GRfact']
+            # z = self.sac_res['GRfact']
             # tempG2 = tempG * z if nConstraints == 1 else tempG @ np.diag(z)
             # trueMaxViol = np.maximum(0, np.max(tempG2, axis=1))
             trueMaxViol = np.maximum(0, np.max(tempG, axis=1))
@@ -198,7 +209,6 @@ class CobraInitializer:
             # The simpler alternative would be:
             #       trueMaxViol = np.maximum(0, np.max(tempG, axis=1))
             # but this is not the way it is in R.
-            dummy = 0
 
             def tav_func(temp_g):
                 temp_g = np.maximum(temp_g, 0)
@@ -280,9 +290,11 @@ class CobraInitializer:
 
             if s_opts.ISA.aDRC:
                 if s_opts.XI.size != DRCL.size:
-                    print("Warning: XI is different from default (DRCL), but sac$aDRC==TRUE, so XI will be set by automatic DRC adjustment!")
+                    print("Warning: XI is different from default (DRCL), but sac$aDRC==TRUE, "
+                          "so XI will be set by automatic DRC adjustment!")
                 elif np.any(s_opts.XI != DRCL):
-                    print("Warning: XI is different from default (DRCL), but sac$aDRC==TRUE, so XI will be set by automatic DRC adjustment!")
+                    print("Warning: XI is different from default (DRCL), but sac$aDRC==TRUE, "
+                          "so XI will be set by automatic DRC adjustment!")
 
                 verboseprint(s_opts.verbose, important=False, message="adjusting DRC")
                 DRC = self.adDRC(max(self.sac_res['Fres']), min(self.sac_res['Fres']))
@@ -302,7 +314,7 @@ class CobraInitializer:
 
     def get_xbest_cobra(self):
         """
-        :return: best solution in COBRA space (may be rescaled)
+        :return: best solution in COBRA space (maybe rescaled)
         """
         return self.sac_res['xbest']
 
@@ -385,3 +397,31 @@ class CobraInitializer:
         maxL = np.quantile(x, 0.9)
         minL = np.quantile(x, 0.1)
         return (maxL - minL) / 2
+
+
+# class SoluContainer:
+#     """
+#     Helper class that contains the true solution (optional, may be None, only for diagnostics).
+#
+#     See class SoluContainer for a derived class with extra methods.
+#     """
+#     def __init__(self, solu: Union[np.ndarray, None], s_opts: SACoptions, cobra: CobraInitializer):
+#         self.originalSolu = solu
+#
+#         if s_opts.ID.rescale:
+#             if solu is not None:
+#                 if solu.ndim == 2:
+#                     solu = np.apply_along_axis(cobra.rw.forward, axis=1, arr=solu)
+#                 elif solu.ndim == 1:
+#                     solu = cobra.rw.forward(solu)
+#                 else:
+#                     raise ValueError(f"solu.ndim = {solu.ndim} is not allowed!")
+#
+#         self.solu = solu
+#
+#     def get_solu(self):
+#         return self.solu
+#
+#     def get_original_solu(self):
+#         return self.originalSolu
+

@@ -22,10 +22,18 @@ class GCOP:
         elif name == "G04": self._call_G04()
         elif name == "G05": self._call_G05()
         elif name == "G06": self._call_G06()
+        elif name == "G07": self._call_G07()
         elif name == "G11": self._call_G11()
+        elif name == "G13": self._call_G13()
         else:
             str = f"G-function {name} not yet implemented"
             raise NotImplementedError(str)
+
+        if self.solu is None:
+            self.fbest = None
+        else:
+            first_solu = self.solu[0, :] if self.solu.ndim == 2 else self.solu
+            self.fbest = self.fn(first_solu)[0]     # objective at solution point
 
     def _call_G01(self):
         self.dimension = 13
@@ -139,6 +147,29 @@ class GCOP:
                                       -((((x[0] - 5) ** 2) + ((x[1] - 5) ** 2) - 100)),
                                       ((x[0] - 6) ** 2) + ((x[1] - 5) ** 2) - 82.81])
 
+    def _call_G07(self):
+        self.dimension = 10
+        self.lower = np.repeat(-10, self.dimension)
+        self.upper = np.repeat(+10, self.dimension)
+        self.nConstraints = 8
+        self.is_equ = np.repeat(False, self.dimension)
+        self.solu = np.array([2.171997834812, 2.363679362798, 8.773925117415,
+                              5.095984215855, 0.990655966387, 1.430578427576,
+                              1.321647038816, 9.828728107011, 8.280094195305, 8.375923511901 ])
+        self.x0 = None
+        self.fn = lambda x: np.array([(x[0]**2)+(x[1]**2)+(x[0]*x[1])-(14*x[0])-(16*x[1])+((x[2]-10)**2)+
+                                      (4*((x[3]-5)**2))+ ((x[4]-3)**2) +( 2*((x[5]-1)**2)) +(5*(x[6]**2))+
+                                      ( 7*((x[7]-11)**2))+(2*((x[8]-10)**2 ))+ ((x[9]-7)**2) + 45,
+                                      ((4.0*x[0])+(5.0*x[1])-(3.0*x[6])+(9.0*x[7]) - 105.0),        # g1
+                                      (10*x[0]-8*x[1]-17*x[6]+2*x[7]),                              # g2
+                                      (-8 * x[0] + 2 * x[1] + 5 * x[8] - 2 * x[9] - 12),            # g3
+                                      (3 * ((x[0] - 2) ** 2) + 4 * (x[1] - 3) ** 2 + 2 * x[2] ** 2 - 7 * x[3] - 120),
+                                      (5 * x[0] ** 2 + 8 * x[1] + (x[2] - 6) ** 2 - 2 * x[3] - 40),
+                                      (x[0] ** 2 + 2 * (x[1] - 2) ** 2 - (2 * x[0] * x[1]) + 14 * x[4] - 6 * x[5]),
+                                      (0.5 * (x[0] - 8) ** 2 + 2 * (x[1] - 4) ** 2 + 3 * (x[4] ** 2) - x[5] - 30),
+                                      (-3 * x[0] + 6 * x[1] + 12 * (x[8] - 8) ** 2 - 7 * x[9])
+                                    ])
+
     def _call_G11(self):
         self.dimension = 2
         self.lower = np.array([-1, -1])
@@ -149,6 +180,26 @@ class GCOP:
         self.fn = lambda x: np.array([x[0]**2 + (x[1]-1)**2,
                                       x[1] - x[0]**2 ])
 
+    def _call_G13(self):
+        self.dimension = 5
+        self.lower = np.concatenate((np.repeat(-2.3,2),np.repeat(-3.2,3)))
+        self.upper = np.concatenate((np.repeat(+2.3,2),np.repeat(+3.2,3)))
+        self.nConstraints = 3
+        self.is_equ = np.repeat(True, 3)
+        self.fn = lambda x: np.array([np.exp(x[0]*x[1]*x[2]*x[3]*x[4]),
+                                      x[0]**2+x[1]**2+x[2]**2+x[3]**2+x[4]**2-10,
+                                      x[1] * x[2] - 5 * x[3] * x[4],
+                                      x[0] ** 3 + x[1] ** 3 + 1
+                                     ])
+        solu0 = np.array([-1.7171435947203,1.5957097321519,1.8272456947885,-0.7636422812896,-0.7636439027742])
+        self.solu = solu0.copy()
+        self.solu = np.vstack((self.solu, np.array([solu0[0],solu0[1],-solu0[2],-solu0[3],+solu0[4]])))
+        self.solu = np.vstack((self.solu, np.array([solu0[0],solu0[1],-solu0[2],+solu0[3],-solu0[4]])))
+        self.solu = np.vstack((self.solu, np.array([solu0[0],solu0[1],+solu0[2],-solu0[3],-solu0[4]])))
+        self.solu = np.vstack((self.solu, np.array([solu0[0],solu0[1],-solu0[2],+solu0[3],-solu0[4]])))
+        self.solu = np.vstack((self.solu, np.array([solu0[0],solu0[1],-solu0[2],-solu0[3],+solu0[4]])))
+        self.x0 = None
+        self.info = "Please note that G13 has multiple global optima, all stored in solu"
 
 if __name__ == '__main__':
     G01 = GCOP("G01")

@@ -1,10 +1,12 @@
 import numpy as np
 import pandas as pd
+
+from soluContainer import SoluContainer
 from cobraInit import CobraInitializer
 from phase2Vars import Phase2Vars
 from evaluatorReal import getPredY0
 from equHandling import updateCobraEqu
-from innerFuncs import distLine
+# from innerFuncs import distLine
 
 
 def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, EPS,
@@ -88,7 +90,7 @@ def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, EPS,
             cobra.sac_res['xbest'] = xNew  # ... take xNew, if it is feasible
             cobra.sac_res['fbest'] = s_res['Fres'][xNewIndex]
             cobra.sac_res['ibest'] = xNewIndex
-        else:  # new solution is infeasible: look for the best infeasible solu
+        else:  # new solution is infeasible: look for the best infeasible solution
             if s_res['maxViol'][xNewIndex] < s_res['maxViol'][s_res['ibest']]:
                 cobra.sac_res['xbest'] = xNew  # ... take xNew, if it has smaller maxViol
                 cobra.sac_res['fbest'] = s_res['Fres'][xNewIndex]
@@ -105,53 +107,55 @@ def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, EPS,
     # xbestIndex = which.min(cobra$Fres[feasibleIndices])  # finding index of the best point so far
 
     # only diagnostics, needed for cobra$df & cobra$df2 /WK/
-    solu = s_res['solu']
-    if solu is None:
-        solu = p2.opt_res['x']  # p2.opt_res['x']: the optimal solution found so far
-        soluOrig = cobra.rw.inverse(p2.opt_res['x'])
-    else:
-        if s_opts.ID.rescale:
-            if solu.ndim == 2:
-                solu = np.apply_along_axis(lambda x: cobra.rw.forward(x), axis=1, arr=solu)
-            else:
-                solu = cobra.rw.forward(solu)
-        soluOrig = s_res['solu']
-    # now solu is always in *rescaled* input space
+    cobra.solution2 = SoluContainer(cobra.solu, cobra)
+    predSolu, predSoluPenal = cobra.solution2.predict_at_solu(p2, fitnessSurrogate, fitFuncPenalRBF)
+    #
+    # --- OLD version: ---
+    # solu = s_res['solu']
+    # if solu is None:
+    #     # TODO: questionable, better leave it as None
+    #     solu = p2.opt_res['x']  # p2.opt_res['x']: the optimal solution found so far
+    #     soluOrig = cobra.rw.inverse(p2.opt_res['x'])
+    # else:
+    #     # --- the following was wrong, since solu was already rescaled in cobraInit, if s_opts.ID.rescale
+    #     # if s_opts.ID.rescale:
+    #     #     if solu.ndim == 2:
+    #     #         solu = np.apply_along_axis(lambda x: cobra.rw.forward(x), axis=1, arr=solu)
+    #     #     else:
+    #     #         solu = cobra.rw.forward(solu)
+    #     # soluOrig = s_res['solu']
+    #     soluOrig = s_res['originalSolu']
+    # # now solu is always in *rescaled* input space
+    #
+    # predSoluFunc = lambda x: getPredY0(x, fitnessSurrogate, p2)
+    # if solu.ndim == 2:      # in case of multiple global optima in solu:
+    #     predSolu = np.apply_along_axis(predSoluFunc, axis=1, arr=solu)
+    #     predSoluPenal = np.apply_along_axis(fitFuncPenalRBF, axis=1, arr=solu)
+    # else:
+    #     predSolu = predSoluFunc(solu)
+    #     predSoluPenal = fitFuncPenalRBF(solu)
+    #
+    # predSolu = min(predSolu)    # Why min? - In case of multiple global optima: predSolu is the
+    #                             # value of predSoluFunc at the best solution solu
+    # predSoluPenal = min(predSoluPenal)
 
-    predSoluFunc = lambda x: getPredY0(x, fitnessSurrogate, p2)
-    if solu.ndim == 2:      # in case of multiple global optima in solu:
-        predSolu = np.apply_along_axis(predSoluFunc, axis=1, arr=solu)
-        predSoluPenal = np.apply_along_axis(fitFuncPenalRBF, axis=1, arr=solu)
-    else:
-        predSolu = predSoluFunc(solu)
-        predSoluPenal = fitFuncPenalRBF(solu)
-
-    predSolu = min(predSolu)    # Why min? - In case of multiple global optima: predSolu is the
-                                # value of predSoluFunc at the best solution solu
-    predSoluPenal = min(predSoluPenal)
     if cobra.df is None:
         df_predSolu = concat(np.repeat(np.nan, s_opts.ID.initDesPoints), predSolu)
     else:
         df_predSolu = concat(cobra.df.predSolu, predSolu)
 
     # calculate distA and distOrig:
-    origA = np.apply_along_axis(lambda x: cobra.rw.inverse(x), axis=1, arr=s_res['A'])
-    # if (cobra$dimension == 1) origA = t(origA)
-    if solu.ndim == 2:   # this is for the case with multiple solutions (like in G11)
-        raise NotImplementedError("[updateSaveCobra] Branch distA for multiple solu not (yet) implemented")
-        # TODO:
-        # da=sapply(1:nrow(solu), function(i)
-        # {distLine(solu[i,], cobra$A)})
-        # # da has nrow(solu) columns, each column has the distance of the ith solu to all points cobra$A.
-        # # Select this column which has the element with minimum distance.
-        # ind = which.min(apply(da, 2, min))
-        # distA = da[, ind]
-        # do = sapply(1:nrow(soluOrig), function(i)
-        # {distLine(soluOrig[i,], origA)})
-        # distOrig = do[, ind]
-    else:
-        distA = distLine(solu, s_res['A'])  # distance in rescaled space, distLine: see RbfInter.R
-        distOrig = distLine(soluOrig, origA)  # distance in original space
+    distA, distOrig = cobra.solution2.distance_to_solu(cobra)
+    #
+    # --- OLD version: ---
+    # A = s_res['A']
+    # origA = np.apply_along_axis(lambda x: cobra.rw.inverse(x), axis=1, arr=s_res['A'])
+    # # if (cobra$dimension == 1) origA = t(origA)
+    # if solu.ndim == 2:   # this is for the case with multiple solutions (like in G11)
+    #     distA, distOrig = cobra.solution.distanceSolution()
+    # else:
+    #     distA = distLine(solu, s_res['A'])  # distance in rescaled space, distLine: see RbfInter.R
+    #     distOrig = distLine(soluOrig, origA)  # distance in original space
 
     # several assertions
     assert s_res['Fres'].shape[0] == predY.size, "[updateSaveCobra] predY"
@@ -183,12 +187,12 @@ def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, EPS,
              'optimizer': np.repeat(s_opts.SEQ.optimizer, s_res['Fres'].shape[0]),
              'optimConv': optimConv,
              'optimTime': optimTime,
-             'dist': distA,
-             'distOrig': distOrig,
+             'dist': distA,         # distance of solu to infill points, rescaled space (min dist for multiple solu's)
+             'distOrig': distOrig,  # the same, but in original space
              'RS': df_RS,       # TRUE, if it is an iteration with random start point
              })
     else:   # i.e. if not CONSTRAINED:
-        raise NotImplementedError("[updateSaveCobra] Branch df and not CONSTRAINED not (yet) implemented")
+        raise NotImplementedError("[updateSaveCobra] Branch df for CONSTRAINED==False not (yet) implemented")
         # TODO:
         # if (is.null(cobra$df$realfeval))
         #     realfeval < -c()
