@@ -6,7 +6,7 @@ from opt.idOptions import IDoptions         # needed for docstring
 
 
 class InitDesigner:
-    def __init__(self, x0: np.ndarray, fn,
+    def __init__(self, x0: np.ndarray, fn, rng,
                  lower: np.ndarray, upper: np.ndarray, s_opts: SACoptions):
         """
         Create matrix ``self.A`` with shape ``(P, d)`` of sample points in input space ``[lower, upper]``
@@ -29,7 +29,7 @@ class InitDesigner:
         if s_opts.ID.initDesign == "RANDOM":
             # Create self.A with shape (npts,d) where the first npts-1 points in R^d are uniform random from
             # [lower, upper] and the last point is x0.
-            self.A = np.random.rand(npts-1, d)      # uniform random in [0,1)
+            self.A = rng.random(size=(npts-1, d))      # uniform random in [0,1)
         elif s_opts.ID.initDesign == "RAND_R":
             # Same as "RANDOM", but with reproducible random numbers (reproducible also on the R side).
             # The seed is s_opts.cobraSeed.

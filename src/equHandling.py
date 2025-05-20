@@ -13,6 +13,7 @@ def updateCobraEqu(cobra: CobraInitializer, p2: Phase2Vars, xNew):
     has lower maxViol than the maxViol of ``cobra.sac_res['xbest']``, take it as the new ``cobra.sac_res['xbest']``.
 
     :param cobra: an object of class :class:`CobraInitializer`
+    :param p2:
     :param xNew:  the last evaluated point
     :return: ``cobra``, an object of class :class:`CobraInitializer` , with potentially
              modified ``cobra.sac_res['xbest', 'fbest', 'ibest']``
@@ -65,7 +66,7 @@ def updateCobraEqu(cobra: CobraInitializer, p2: Phase2Vars, xNew):
     # for inequality constraint handling).
     ibest = currentFeas[fminInd[0]]
     cobra.sac_res['ibest'] = ibest
-    cobra.sac_res['xbest'] = s_res['A'][ibest,:]
+    cobra.sac_res['xbest'] = s_res['A'][ibest, :]
     cobra.sac_res['fbest'] = s_res['Fres'][ibest]
     cobra.sac_res['currentFeas'] = currentFeas
 
@@ -110,5 +111,3 @@ def modifyMu(Cfeas, Cinfeas, Tfeas, currentEps, cobra: CobraInitializer, p2: Pha
     assert currentEps != "Invalid epsType", f"[modifyMu] invalid s_opts.EQU.epsType = {s_opts.EQU.epsType}"
 
     return currentEps
-
-

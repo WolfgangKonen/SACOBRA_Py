@@ -4,9 +4,7 @@ import pandas as pd
 from soluContainer import SoluContainer
 from cobraInit import CobraInitializer
 from phase2Vars import Phase2Vars
-from evaluatorReal import getPredY0
 from equHandling import updateCobraEqu
-# from innerFuncs import distLine
 
 
 def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, EPS,
@@ -107,55 +105,16 @@ def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, EPS,
     # xbestIndex = which.min(cobra$Fres[feasibleIndices])  # finding index of the best point so far
 
     # only diagnostics, needed for cobra$df & cobra$df2 /WK/
-    cobra.solution2 = SoluContainer(cobra.solu, cobra)
-    predSolu, predSoluPenal = cobra.solution2.predict_at_solu(p2, fitnessSurrogate, fitFuncPenalRBF)
-    #
-    # --- OLD version: ---
-    # solu = s_res['solu']
-    # if solu is None:
-    #     # TODO: questionable, better leave it as None
-    #     solu = p2.opt_res['x']  # p2.opt_res['x']: the optimal solution found so far
-    #     soluOrig = cobra.rw.inverse(p2.opt_res['x'])
-    # else:
-    #     # --- the following was wrong, since solu was already rescaled in cobraInit, if s_opts.ID.rescale
-    #     # if s_opts.ID.rescale:
-    #     #     if solu.ndim == 2:
-    #     #         solu = np.apply_along_axis(lambda x: cobra.rw.forward(x), axis=1, arr=solu)
-    #     #     else:
-    #     #         solu = cobra.rw.forward(solu)
-    #     # soluOrig = s_res['solu']
-    #     soluOrig = s_res['originalSolu']
-    # # now solu is always in *rescaled* input space
-    #
-    # predSoluFunc = lambda x: getPredY0(x, fitnessSurrogate, p2)
-    # if solu.ndim == 2:      # in case of multiple global optima in solu:
-    #     predSolu = np.apply_along_axis(predSoluFunc, axis=1, arr=solu)
-    #     predSoluPenal = np.apply_along_axis(fitFuncPenalRBF, axis=1, arr=solu)
-    # else:
-    #     predSolu = predSoluFunc(solu)
-    #     predSoluPenal = fitFuncPenalRBF(solu)
-    #
-    # predSolu = min(predSolu)    # Why min? - In case of multiple global optima: predSolu is the
-    #                             # value of predSoluFunc at the best solution solu
-    # predSoluPenal = min(predSoluPenal)
+    cobra.solu_cont = SoluContainer(cobra.solu, cobra)
+    predSolu, predSoluPenal = cobra.solu_cont.predict_at_solu(p2, fitnessSurrogate, fitFuncPenalRBF)
 
     if cobra.df is None:
         df_predSolu = concat(np.repeat(np.nan, s_opts.ID.initDesPoints), predSolu)
     else:
         df_predSolu = concat(cobra.df.predSolu, predSolu)
 
-    # calculate distA and distOrig:
-    distA, distOrig = cobra.solution2.distance_to_solu(cobra)
-    #
-    # --- OLD version: ---
-    # A = s_res['A']
-    # origA = np.apply_along_axis(lambda x: cobra.rw.inverse(x), axis=1, arr=s_res['A'])
-    # # if (cobra$dimension == 1) origA = t(origA)
-    # if solu.ndim == 2:   # this is for the case with multiple solutions (like in G11)
-    #     distA, distOrig = cobra.solution.distanceSolution()
-    # else:
-    #     distA = distLine(solu, s_res['A'])  # distance in rescaled space, distLine: see RbfInter.R
-    #     distOrig = distLine(soluOrig, origA)  # distance in original space
+    # calculate distA and distOrig (distance to solu in rescaled and original space):
+    distA, distOrig = cobra.solu_cont.distance_to_solu(cobra)
 
     # several assertions
     assert s_res['Fres'].shape[0] == predY.size, "[updateSaveCobra] predY"
@@ -255,6 +214,7 @@ def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, EPS,
          'sigmaD': s_opts.sigmaD[1],    # the 1st of the three elements is the currently active sigmaD
          'penaF': s_opts.penaF[1],      # the 1st of the three elements is the currently active penaF
          'XI': p2.gama,
+         'rho': s_opts.RBF.rho,
          'fBest': cobra.df.Best[last],
          'EPS': EPS,
          'muVec': p2.currentEps,        # this is df2$currentEps in R
@@ -268,7 +228,7 @@ def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, EPS,
          'nv_tB': p2.ev1.nv_trueB,  # diagnostics for refine mechanism
          'nv_tA': p2.ev1.nv_trueA,
          'state': p2.ev1.state
-    }, index=[0])
+        }, index=[0])
     cobra.df2 = pd.concat([cobra.df2, new_row_df2], axis=0)
 
     # TODO (later, when TR is ready):
@@ -294,6 +254,6 @@ def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, EPS,
     #     # save intermediate results
     #     # cobraResult = list(cobra=cobra, df=df, constraintSurrogates=cobra$constraintSurrogates, fn=fn)
     #     cobraResult = cobra
-    #     if (is.na(file.info("results")$isdir)) dir.create("results")    # if directory "results" does not exist, create it
+    #     if (is.na(file.info("results")$isdir)) dir.create("results")    # if dir "results" does not exist, create it
     #     save(cobraResult, file=sprintf("results/cobra-%s-%s-%i.RData",cobra$fName,cobra$seqOptimizer,cobra$cobraSeed))
     # }

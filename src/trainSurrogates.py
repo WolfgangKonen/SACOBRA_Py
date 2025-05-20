@@ -138,8 +138,10 @@ def trainSurrogates(cobra: CobraInitializer, p2: Phase2Vars):
         Gres = cobra.for_rbf['Gres']
         # important: use here the Gres from cobra.for_rbf (!), avoids LinAlgError
         if not s_opts.MS.apply or not s_opts.MS.active:
-            p2.fitnessSurrogate = RBFmodel(A, Fres, kernel=s_opts.RBF.model, degree=s_opts.RBF.degree)
-            p2.constraintSurrogates = RBFmodel(A, Gres, kernel=s_opts.RBF.model, degree=s_opts.RBF.degree)
+            p2.fitnessSurrogate = RBFmodel(A, Fres, kernel=s_opts.RBF.model,
+                                           degree=s_opts.RBF.degree, rho=s_opts.RBF.rho)
+            p2.constraintSurrogates = RBFmodel(A, Gres, kernel=s_opts.RBF.model,
+                                               degree=s_opts.RBF.degree, rho=s_opts.RBF.rho)
         else:
             # TODO: the model selection (MS) part
             raise NotImplementedError("[trainSurrogates] MS-part in branch 'if CONSTRAINED' not yet implemented! ")
@@ -152,7 +154,7 @@ def trainSurrogates(cobra: CobraInitializer, p2: Phase2Vars):
             # TODO: the model selection (MS) part
             raise NotImplementedError("[trainSurrogates] MS-part in branch 'if not CONSTRAINED' not yet implemented! ")
 
-        p2.fitnessSurrogate = RBFmodel(A, Fres, kernel=kernel, degree=s_opts.RBF.degree)
+        p2.fitnessSurrogate = RBFmodel(A, Fres, kernel=kernel, degree=s_opts.RBF.degree, rho=s_opts.RBF.rho)
 
         # if (cobra$DEBUG_RBF$active){
         # print(nrow(A))
@@ -167,8 +169,10 @@ def trainSurrogates(cobra: CobraInitializer, p2: Phase2Vars):
         # two models are built after every onlineFreqPLOG iterations:
         Fres1 = cobra.for_rbf['Fres']
         Fres2 = plog(cobra.for_rbf['Fres'])
-        p2.fitnessSurrogate1 = RBFmodel(A, Fres1, kernel=s_opts.RBF.model, degree=s_opts.RBF.degree)
-        p2.fitnessSurrogate2 = RBFmodel(A, Fres2, kernel=s_opts.RBF.model, degree=s_opts.RBF.degree)
+        p2.fitnessSurrogate1 = RBFmodel(A, Fres1, kernel=s_opts.RBF.model,
+                                        degree=s_opts.RBF.degree, rho=s_opts.RBF.rho)
+        p2.fitnessSurrogate2 = RBFmodel(A, Fres2, kernel=s_opts.RBF.model,
+                                        degree=s_opts.RBF.degree, rho=s_opts.RBF.rho)
 
     DO_ASSERT=False
     if DO_ASSERT:

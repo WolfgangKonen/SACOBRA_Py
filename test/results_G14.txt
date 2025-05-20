@@ -1,0 +1,43 @@
+feval=300, SEQ.conTol=1e-4, muGrow=100, rho=2.5, rhoGrow=0, cobraSeed=54...63
+[G14] sorted 10 final errors:
+[0.00589295 0.00635198 0.02386386 0.02415474 0.0241724  0.03457879
+ 0.03458551 0.05419984 0.16371637 0.16495003]
+[G14] min: 5.892946e-03,  max: 1.649500e-01
+[G14] median(final error) = 2.937560e-02
+[G14] median(|final error|) = 2.937560e-02
+[G14] ... finished (16433.4532 msec per run, 10 runs)
+
+feval=500, SEQ.conTol=1e-7, muGrow=100, rho=2.5, rhoGrow=0, cobraSeed=54...63
+[G14] sorted 10 final errors:
+[0.00448677 0.00540401 0.0058897  0.0058903  0.0058922  0.00602421
+ 0.02414589 0.02422237 0.0345735  0.16506362]
+[G14] min: 4.486774e-03,  max: 1.650636e-01
+[G14] median(final error) = 5.958205e-03
+[G14] median(|final error|) = 5.958205e-03
+[G14] ... finished (38092.0951 msec per run, 10 runs)
+
+feval=500, SEQ.conTol=1e-7, muGrow=100, rho=0.0, rhoGrow=0, cobraSeed=54...63
+[G14] sorted 10 final errors:
+[0.00450619 0.00521518 0.00586759 0.00589285 0.02422027 0.0242248
+ 0.02422487 0.02422624 0.10062899 0.1082463 ]
+[G14] min: 4.506194e-03,  max: 1.082463e-01
+[G14] median(final error) = 2.422254e-02
+[G14] median(|final error|) = 2.422254e-02
+[G14] ... finished (40591.3935 msec per run, 10 runs)
+
+feval=500, SEQ.conTol=1e-7, muGrow=100, rho=2.5, rhoGrow=100, cobraSeed=54...63
+[G14] sorted 10 final errors:
+[0.00587658 0.00587733 0.00588965 0.02414461 0.02421679 0.02422211
+ 0.02422251 0.03457792 0.03457941 0.0543525 ]
+[G14] min: 5.876582e-03,  max: 5.435250e-02
+[G14] median(final error) = 2.421945e-02 is smaller than thresh = 0.1
+[G14] median(|final error|) = 2.421945e-02
+[G14] ... finished (79328.6462 msec per run, 10 runs)
+
+feval=500, SEQ.conTol=1e-7, muGrow=0, rho=2.5, rhoGrow=0, cobraSeed=54...63
+[G14] sorted 6 final errors:
+[0.00589024 0.00589031 0.02408505 0.02422466 0.05445751 0.14186889]
+[G14] min: 5.890239e-03,  max: 1.418689e-01
+[G14] median(final error) = 2.415486e-02 is smaller than thresh = 0.1
+[G14] median(|final error|) = 2.415486e-02
+[G14] ... finished (33731.1788 msec per run, 6 runs)

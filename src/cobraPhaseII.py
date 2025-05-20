@@ -104,6 +104,7 @@ class CobraPhaseII:
                 if self.p2.num == s_opts.feval-1:  # last iter: exploit maximally with EPS=gama=0.0 (might require
                     self.p2.EPS = 0.0              # s_opts.SEQ.conTol=1e-7)
                     final_gama = 0.0
+                    # s_opts.EQU.refine = False
 
         # end while self.p2.num
 

@@ -14,7 +14,7 @@ verb = 1
 
 class TestCOP(unittest.TestCase):
     """
-        Several tests for more ambitious COPs from the G function benchmark.
+        Several tests for the more ambitious COP G06 from the G function benchmark.
 
         - G06 is a COP with two circular inequality constraints that form a very small and narrow feasible region.
     """
@@ -40,7 +40,7 @@ class TestCOP(unittest.TestCase):
         """
         G06 = GCOP("G06")
 
-        cobra = CobraInitializer(G06.x0, G06.fn, G06.name, G06.lower, G06.upper,
+        cobra = CobraInitializer(G06.x0, G06.fn, G06.name, G06.lower, G06.upper, G06.is_equ,
                                  s_opts=SACoptions(verbose=verb, feval=40, cobraSeed=42,
                                                    finalEpsXiZero=True,
                                                    ID=IDoptions(initDesign="RAND_REP", initDesPoints=5),
@@ -120,7 +120,7 @@ class TestCOP(unittest.TestCase):
         fin_err_list = np.array([])
         runs = 15
         for run in range(runs):
-            cobra = CobraInitializer(G06.x0, G06.fn, G06.name, G06.lower, G06.upper,
+            cobra = CobraInitializer(G06.x0, G06.fn, G06.name, G06.lower, G06.upper, G06.is_equ,
                                      s_opts=SACoptions(verbose=verb, feval=40, cobraSeed=39+run,
                                                        finalEpsXiZero=True,
                                                        ID=IDoptions(initDesign="RAND_REP", initDesPoints=6),

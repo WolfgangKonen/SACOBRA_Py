@@ -2,7 +2,7 @@ import nlopt
 import numpy as np
 import pandas as pd
 from scipy.optimize import fmin_l_bfgs_b
-from scipy.optimize import minimize, rosen, rosen_der
+from scipy.optimize import minimize
 
 from cobraInit import CobraInitializer
 from phase2Vars import Phase2Vars
@@ -50,7 +50,7 @@ class EvaluatorReal:
         # equ_ind is the index to all equality constraints in p2.constraintSurrogates:
         self.equ_ind = np.flatnonzero(self.is_equ)
         # ine_ind is the index to all inequality constraints in p2.constraintSurrogates:
-        self.ine_ind = np.flatnonzero(self.is_equ == False)
+        self.ine_ind = np.flatnonzero(self.is_equ is False)
         # DON'T change here to 'self.is_equ is False' as the PEP hint suggest --> strange error in NLopt (!)
 
         # add fields that will be filled later (e.g. in update, equ_refine, equ_num_max_viol):
@@ -175,7 +175,7 @@ class EvaluatorReal:
                 conR = p2.constraintSurrogates(x)[0]        # why [0]? - constraintSurrogates
                 # returns a (1,nC)-matrix, but we want a (nc,)-vector here (nC = nConstraints)
                 return np.sum(concat(np.maximum(0, conR[self.ine_ind]) ** 2, conR[self.equ_ind] ** 2))
-                #return np.sum(conR[self.equ_ind] ** 2)     # deprecated
+                # return np.sum(conR[self.equ_ind] ** 2)     # deprecated
 
             if s_opts.SEQ.trueFuncForSurrogates:
                 def myf(x, grad):
@@ -191,8 +191,8 @@ class EvaluatorReal:
                                     # 2: nlopt with method 'nlopt.LD_LBFGS' (does not work)
                 lbfgs_bounds = zip(s_res['lower'].tolist(), s_res['upper'].tolist())
                 if BFGS_METH == 0:
-                    x_opt, f_opt, info = fmin_l_bfgs_b(myf2, x0=self.xNew, bounds = list(lbfgs_bounds),
-                                                       maxiter= s_opts.EQU.refineMaxit,
+                    x_opt, f_opt, info = fmin_l_bfgs_b(myf2, x0=self.xNew, bounds=list(lbfgs_bounds),
+                                                       maxiter=s_opts.EQU.refineMaxit,
                                                        approx_grad=True)
                     self.refi = {'x': x_opt,
                                  'minf': f_opt,
@@ -206,8 +206,8 @@ class EvaluatorReal:
                                  'res_code': res.message,    # the return code
                                  'feval': res.nfev,
                                  }
-                else: # i.e. BFGS_METH == 2
-                    ###raise RuntimeError("This method does not work (raises nlopt.runtime_error)")
+                else:  # i.e. BFGS_METH == 2
+                    # ##raise RuntimeError("This method does not work (raises nlopt.runtime_error)")
                     # opt = nlopt.opt(nlopt.LD_LBFGS, self.xNew.size)
                     # opt.set_lower_bounds(s_res['lower'])
                     # opt.set_upper_bounds(s_res['upper'])
@@ -236,15 +236,14 @@ class EvaluatorReal:
                                  'res_code': "none",  # the return code
                                  'feval': 0}
 
-                    fntest = s_res['fn'](x)[:]
-                    dummy = 0
+                    # fntest = s_res['fn'](x)[:]
             else:  # i.e. "COBYLA"
                 opt = nlopt.opt(nlopt.LN_COBYLA, self.xNew.size)
                 opt.set_lower_bounds(s_res['lower'])
                 opt.set_upper_bounds(s_res['upper'])
                 opt.set_min_objective(myf)
                 opt.set_xtol_rel(-1)    # this may give an NLopt Roundoff-Limited error in opt.optimize
-                #opt.set_xtol_rel(1e-20)  #  (1e-8) #
+                # opt.set_xtol_rel(1e-20)  #  (1e-8) #
                 opt.set_maxeval(s_opts.EQU.refineMaxit)
                 # opt.set_exceptions_enabled(False)       # not found!
 

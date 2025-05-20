@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.interpolate import RBFInterpolator
 
+
 class RBFmodel:
     """
     Wrapper for RBFInterpolator to provide a syntax similar to RbfInter.R.
@@ -8,21 +9,24 @@ class RBFmodel:
         myModel = RBFmodel(xobs,yobs)   # equivalent to trainCubicRBF
         yflat = myModel(xflat)          # combines interpRBF and predict.RBFinter, with xflat.shape = [d,n]
     """
-    def __init__(self, xobs: np.ndarray, yobs: np.ndarray, kernel="cubic", degree: int = None):
+    def __init__(self, xobs: np.ndarray, yobs: np.ndarray, kernel="cubic", degree: int = None, rho=0.0):
         """
         Create RBF model(s) from observations (xobs,yobs)
 
         :param xobs:    (n x d)-matrix of n d-dimensional vectors x_i
         :param yobs:    vector of shape (n,) with observations f(x_i) - or -
-                        matrix of shape (n,m) with observations f_j(x_i), j=1,...m, for m functions
+                        matrix of shape (n,m) with observations f_j(x_i) for m functions f_j, j=1,...,m
         :param kernel:
         :param degree:  the default None means, that the kernel-specific defaults specified in
                         RBFInterpolator are taken (e.g. degree=1 for "cubic")
+        :param rho:     set smoothing parameter to ``N*rho`` where ``N=xobs.shape[0]``
         """
         self.d = xobs.shape[1]
         self.nmodels = 1 if yobs.ndim == 1 else yobs.shape[1]
+        N = xobs.shape[0]
         try:
-            self.model = RBFInterpolator(xobs, yobs, kernel=kernel, degree=degree)
+            self.model = RBFInterpolator(xobs, yobs, kernel=kernel, degree=degree, smoothing=N*rho)
+            # TODO: check if this works also for matrix yobs
         except np.linalg.LinAlgError:
             # LinAlgError ('Singular Matrix') is raised by RBFInterpolator if xobs contains identical rows
             # (identical infill points). We avoid this with cobra.for_rbf['A'] (instead of cobra.sac_res['A']),
@@ -44,7 +48,7 @@ class RBFmodel:
 
     # with signature __call__(self, *args, **kwargs)), we would use xflat = args[0]
 
-# probably obsolete:
-class RBFmodelCubic(RBFmodel):
-    def __init__(self, xobs, yobs):
-        super().__init__(xobs, yobs, kernel="cubic")
+# # probably obsolete:
+# class RBFmodelCubic(RBFmodel):
+#     def __init__(self, xobs, yobs):
+#         super().__init__(xobs, yobs, kernel="cubic")

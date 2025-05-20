@@ -136,3 +136,9 @@ def adjustMargins(cobra: CobraInitializer, p2: Phase2Vars):
 
     if cobra.sac_opts.EQU.active:
         p2.currentEps = modifyMu(p2.Cfeas, p2.Cinfeas, Tfeas, p2.currentEps, cobra, p2)
+
+    if cobra.sac_opts.RBF.rhoGrow > 0:
+        if p2.num % cobra.sac_opts.RBF.rhoGrow == 0:
+            cobra.sac_opts.RBF.rho = cobra.df2['rho'].values[0]  # every rhoGrow (e.g. 100) iterations, re-enlarge rho
+
+    cobra.sac_opts.RBF.rho /= cobra.sac_opts.RBF.rhoDec

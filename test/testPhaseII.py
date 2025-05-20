@@ -53,7 +53,8 @@ class TestPhaseII(unittest.TestCase):
         for fnfac in [1, 10, 100]:
             def fn(x):
                 return np.array([3 * fnfac * np.sum(x ** 2), np.sum(x) - 1])
-            cobra = CobraInitializer(x0, fn, "fName", lower, upper,
+            is_equ = np.array([False])
+            cobra = CobraInitializer(x0, fn, "fName", lower, upper, is_equ,
                                      s_opts=SACoptions(verbose=verb, feval=2*nobs,
                                                        ID=IDoptions(initDesign="RAND_R", initDesPoints=idp),
                                                        ISA=ISAoptions(TFRange=500)))
@@ -159,8 +160,9 @@ class TestPhaseII(unittest.TestCase):
 
         def fn(x):
             return np.array([3 * np.sum(x ** 2), np.sum(x) - 1])
+        is_equ=np.array([False])
 
-        cobra = CobraInitializer(x0, fn, "fName", lower, upper,
+        cobra = CobraInitializer(x0, fn, "fName", lower, upper, is_equ,
                                  s_opts=SACoptions(verbose=verb, feval=2*nobs,
                                                    ID=IDoptions(initDesign="RAND_R", initDesPoints=idp),
                                                    ISA=ISAoptions(TFRange=500)))
@@ -226,10 +228,11 @@ class TestPhaseII(unittest.TestCase):
 
         def fn(x):
             return np.array([3 * np.sum(x ** 2), -(np.sum(x) - 1)])
+        is_equ=np.array([False])
 
         for rstype in ["SIGMOID", "CONSTANT"]:
             myseed = 42 if rstype == "SIGMOID" else 52
-            cobra = CobraInitializer(x0, fn, "fName", lower, upper,
+            cobra = CobraInitializer(x0, fn, "fName", lower, upper, is_equ,
                                      s_opts=SACoptions(verbose=verb, feval=20, cobraSeed=myseed,
                                                        ID=IDoptions(initDesign="RAND_R", initDesPoints=idp),
                                                        ISA=ISAoptions(TFRange=500, RS_rep=True, RStype=rstype),

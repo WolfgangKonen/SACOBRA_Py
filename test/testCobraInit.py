@@ -22,7 +22,8 @@ class TestCobraInit(unittest.TestCase):
         x0 = np.array([2.5,2.5])
         lower =np.array([-5,-5])
         upper =np.array([ 5, 5])
-        cobra = CobraInitializer(x0, fn, "fName", lower, upper, s_opts=SACoptions(verbose=verb))
+        is_equ = np.array([])
+        cobra = CobraInitializer(x0, fn, "fName", lower, upper, is_equ, s_opts=SACoptions(verbose=verb))
         sac_res =  cobra.get_sac_res()
         sac_opts = cobra.get_sac_opts()
         rescaler = RescaleWrapper(fn, lower, upper, sac_res['lower'], sac_res['upper'])
@@ -44,7 +45,8 @@ class TestCobraInit(unittest.TestCase):
         x0 = np.array([2.5,2.5])
         lower =np.array([-5,-5])
         upper =np.array([ 5, 5])
-        cobra = CobraInitializer(x0, fn, "fName", lower, upper, s_opts=SACoptions(verbose=verb))
+        is_equ=np.array([False])
+        cobra = CobraInitializer(x0, fn, "fName", lower, upper, is_equ, s_opts=SACoptions(verbose=verb))
         sac_res =  cobra.get_sac_res()
         sac_opts = cobra.get_sac_opts()
         rescaler = RescaleWrapper(fn, lower, upper, sac_res['lower'], sac_res['upper'])
@@ -71,7 +73,8 @@ class TestCobraInit(unittest.TestCase):
         x0 = np.array([2.5,2.4])
         lower =np.array([-5,-5])
         upper =np.array([ 5, 5])
-        cobra = CobraInitializer(x0, fn, "fName", lower, upper,
+        is_equ=np.array([False])
+        cobra = CobraInitializer(x0, fn, "fName", lower, upper, is_equ,
                                  s_opts=SACoptions(verbose=verb, TR=TRoptions(radiInit=0.42)))
         sac_res =  cobra.get_sac_res()
         A = sac_res['A']
@@ -106,7 +109,8 @@ class TestCobraInit(unittest.TestCase):
         lower = np.array([-5, -5])
         upper = np.array([5, 5])
         idp = 2*x0.size + 1
-        cobra = CobraInitializer(x0, fn, "fName", lower, upper,
+        is_equ=np.array([False])
+        cobra = CobraInitializer(x0, fn, "fName", lower, upper, is_equ,
                                  s_opts=SACoptions(verbose=verb,
                                                    ID=IDoptions(initDesign="RAND_R", initDesPoints=idp)))
         sac_res = cobra.get_sac_res()
@@ -151,7 +155,8 @@ class TestCobraInit(unittest.TestCase):
         lower = np.array([-5, -5])
         upper = np.array([5, 5])
         idp = 2*x0.size + 1
-        cobra = CobraInitializer(x0, fn, "fName", lower, upper,
+        is_equ=np.array([False, False])
+        cobra = CobraInitializer(x0, fn, "fName", lower, upper, is_equ,
                                  s_opts=SACoptions(verbose=verb,
                                                    ID=IDoptions(initDesign="RAND_R", initDesPoints=idp)))
         sac_res = cobra.get_sac_res()
@@ -203,7 +208,8 @@ class TestCobraInit(unittest.TestCase):
         x0 = np.array([2.5, 2.4])
         lower = np.array([-5, -5])
         upper = np.array([5, 5])
-        cobra = CobraInitializer(x0, fn, "fName", lower, upper,
+        is_equ=np.array([False, False])
+        cobra = CobraInitializer(x0, fn, "fName", lower, upper, is_equ,
                                  s_opts=SACoptions(verbose=verb, ID=IDoptions(initDesign="RAND_R")))
         print("\ntest_phaseII:")
         assert cobra.phase == "init"

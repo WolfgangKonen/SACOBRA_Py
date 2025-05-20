@@ -8,11 +8,10 @@ from phase2Vars import Phase2Vars
 
 class SoluContainer():
     """
-    Helper class containing the true solution (optional, may be None, only for diagnostics) and methods to act on it.
-    Used by ``updateSaveCobra``.
+    Helper class containing the true solution (optional, may be None, only for diagnostics) ``solu`` in
+    rescaled space and ``originalSolu`` in original space together with methods to act on them.
 
-    We need to separate class :class:`SoluContainer` from :class:`SoluContainer` in order to avoid circular imports.
-    (``import Phase2Vars`` is not allowed to appear in ``cobraInit.py``.)
+    Used by ``updateSaveCobra``.
     """
     def __init__(self, solu, cobra: CobraInitializer):
         self.originalSolu = solu

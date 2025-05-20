@@ -10,7 +10,7 @@ class EQUoptions:
                  equEpsFinal=1e-07,
                  initType="TAV",    # "useGrange", "TAV", "TMV", "EMV"
                  epsType="expFunc", # expFunc SAexpFunc funcDim funcSDim Zhang CONS
-                 dec=1.5,
+                 dec=1.5,           # decay factor for mu
                  refine=True,
                  refineMaxit=1000, # 100,
                  refineAlgo="COBYLA",   # COBYLA  L-BGFS-B

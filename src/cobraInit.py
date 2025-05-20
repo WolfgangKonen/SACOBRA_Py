@@ -25,8 +25,8 @@ class CobraInitializer:
         - parameter settings: s_opts via :class:`SACoptions`
         - create initial design: A, Fres, Gres via :class:`InitDesigner`
     """
-    def __init__(self, x0, fn, fName, lower, upper,
-                 is_equ: Union[np.ndarray, None] = None,
+    def __init__(self, x0, fn, fName, lower: np.ndarray, upper: np.ndarray,
+                 is_equ: np.ndarray[bool],
                  solu: Union[np.ndarray, None] = None, s_opts=SACoptions(50),
                  ):
         """
@@ -46,7 +46,9 @@ class CobraInitializer:
         # STEP 0: first settings and checks
         #
         dimension = lower.size
-        # set.seed(s_opts.cobraSeed)   # TODO: proper RNG seeding   # moved up here (before potential x0 generation)
+        print(f"*** Starting run with seed {s_opts.cobraSeed} ***")
+        self.rng = np.random.default_rng(seed=s_opts.cobraSeed)    # moved up here (before potential x0 generation)
+        # set.seed(s_opts.cobraSeed)   # TODO: proper RNG seeding
         if s_opts.ID.initDesPoints is None:
             # s_opts.ID.initDesPoints = 2 * dimension + 1   # /WK/2025/05/06: old and wrong (from R side)
             # these are the necessary minimum initDesPoints for kernel="cubic":
@@ -63,10 +65,10 @@ class CobraInitializer:
         lower = np.array(lower)
         upper = np.array(upper)
         if x0 is None or np.isnan(x0).any():
-            x0 = np.random.rand(dimension) * (upper - lower) + lower
+            x0 = self.rng.random(size=dimension) * (upper - lower) + lower
         assert lower.size == upper.size, "[CobraInitializer] size of lower and upper differs"
         assert (lower < upper).all(), "[CobraInitializer] lower < upper violated"
-        assert len(x0.shape) == 1, "[CobraInitializer] x0 is not 1-dimensional"
+        assert x0.ndim == 1, "[CobraInitializer] x0 is not 1-dimensional"
         assert x0.size == lower.size, "[CobraInitializer] size of x0 and lower differs"
         assert s_opts.ID.initDesPoints < s_opts.feval, "CobraInitializer: Too many init design points"
         x0 = np.maximum(x0, lower)
@@ -76,29 +78,15 @@ class CobraInitializer:
         #
         originalfn = fn
         originalXStart = x0
-        # originalSolu = solu
         originalL = lower
         originalU = upper
         lb = np.repeat(s_opts.ID.newLower, dimension)
         ub = np.repeat(s_opts.ID.newUpper, dimension)
         self.rw = RescaleWrapper(originalfn, originalL, originalU, lb, ub)
         self.solu = solu
-        # self.solution = SoluContainer(solu, s_opts, self)    # includes optional rescaling of solu
 
         if s_opts.ID.rescale:
             x0 = self.rw.forward(x0)
-            #
-            # --- OLD version: ---
-            # x0 = np.array([np.interp(x0[i], (lower[i], upper[i]), (lb[i], ub[i]))
-            #                for i in range(dimension)])
-            # --- this is now in SoluContainer:
-            # if solu is not None:
-            #     if solu.ndim == 2:
-            #         solu = np.apply_along_axis(self.rw.forward, axis=1, arr=solu)
-            #     elif solu.ndim == 1:
-            #         solu = self.rw.forward(solu)
-            #     else:
-            #         raise ValueError(f"solu.ndim = {solu.ndim} is not allowed!")
             fn = self.rw.apply
             lower = lb
             upper = ub
@@ -109,13 +97,13 @@ class CobraInitializer:
         fn_x0 = fn(x0)
         nConstraints = fn_x0.size - 1
         assert nConstraints >= 0
-        CONSTRAINED = (nConstraints > 0)
-        if is_equ is None:      # the default assumes that all constraints are inequality constraints:
-            is_equ = np.zeros(nConstraints, dtype=bool)
+        # if is_equ is None:      # the default assumes that all constraints are inequality constraints:
+        #     is_equ = np.zeros(nConstraints, dtype=bool)
         assert is_equ.size == nConstraints, f"Wrong size is_equ.size = {is_equ.size} (nConstraints = {nConstraints})"
+
+        CONSTRAINED = (nConstraints > 0)
         # assert not CONSTRAINED or not conditioningAnalysis.active, \
         #        "This version does not support conditioning analysis for constrained problems "
-
         # if not CONSTRAINED:
         #   assert not TrustRegion, \
         #          "cobraInit: This version does not support trust Region functionality for unconstrained Problems"
@@ -133,7 +121,7 @@ class CobraInitializer:
         # STEP 3: create initial design
         #
         # TODO archive functionality
-        A, Fres, Gres = InitDesigner(x0, fn, lower, upper, s_opts)()
+        A, Fres, Gres = InitDesigner(x0, fn, self.rng, lower, upper, s_opts)()
         verboseprint(s_opts.verbose, important=False,
                      message=f"Shapes of A, Fres, Gres: {A.shape}, {Fres.shape}, {Gres.shape}")
         # print(A[-1,:])
@@ -152,8 +140,6 @@ class CobraInitializer:
                         'originalL': originalL,
                         'originalU': originalU,
                         'originalXStart': originalXStart,
-                        #'originalSolu': self.solution.get_original_solu(),
-                        #'solu': self.solution.get_solu(),
                         'is_equ': is_equ,
                         'iteration': 0,
                         'fe': fe,
@@ -397,31 +383,4 @@ class CobraInitializer:
         maxL = np.quantile(x, 0.9)
         minL = np.quantile(x, 0.1)
         return (maxL - minL) / 2
-
-
-# class SoluContainer:
-#     """
-#     Helper class that contains the true solution (optional, may be None, only for diagnostics).
-#
-#     See class SoluContainer for a derived class with extra methods.
-#     """
-#     def __init__(self, solu: Union[np.ndarray, None], s_opts: SACoptions, cobra: CobraInitializer):
-#         self.originalSolu = solu
-#
-#         if s_opts.ID.rescale:
-#             if solu is not None:
-#                 if solu.ndim == 2:
-#                     solu = np.apply_along_axis(cobra.rw.forward, axis=1, arr=solu)
-#                 elif solu.ndim == 1:
-#                     solu = cobra.rw.forward(solu)
-#                 else:
-#                     raise ValueError(f"solu.ndim = {solu.ndim} is not allowed!")
-#
-#         self.solu = solu
-#
-#     def get_solu(self):
-#         return self.solu
-#
-#     def get_original_solu(self):
-#         return self.originalSolu
 
