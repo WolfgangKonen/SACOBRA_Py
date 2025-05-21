@@ -1,6 +1,6 @@
 import numpy as np
 # need to specify full path here for test units to run smoothly:
-from SACOBRA_Py.src.cobraInit import CobraInitializer
+from cobraInit import CobraInitializer
 
 
 class CobraPhaseI:

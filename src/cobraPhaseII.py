@@ -109,4 +109,4 @@ class CobraPhaseII:
         # end while self.p2.num
 
         # TODO: some final settings to self.cobra, self.p2
-        return self.cobra
+        return self

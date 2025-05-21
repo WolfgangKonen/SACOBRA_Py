@@ -32,7 +32,7 @@ class SACoptions:
                  saveIntermediate=False,
                  saveSurrogates=False,
                  epsilonInit=None, epsilonMax=None,
-                 finalEpsXiZero=False,  # if True, then set EPS=XI=0 in final iteration (full exploit, might require
+                 finalEpsXiZero=True,  # if True, then set EPS=XI=0 in final iteration (full exploit, might require
                                         # SEQ.conTol=1e-7 instead of 0.0)
                  verbose=1, verboseIter=10, important=True,
                  cobraSeed=42
