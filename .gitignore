@@ -1,4 +1,5 @@
-SACOBRA_Py_Project/.idea/
+# 
+SACOBRA_Py_Project/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

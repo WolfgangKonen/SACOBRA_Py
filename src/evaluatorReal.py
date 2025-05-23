@@ -186,7 +186,7 @@ class EvaluatorReal:
                 def myf2(x):
                     return myf(x, None)
 
-                BFGS_METH = 2       # 0: fmin_l_bfgs_b,
+                BFGS_METH = 1       # 0: fmin_l_bfgs_b,
                                     # 1: minimize with method 'L-BFGS-B',
                                     # 2: nlopt with method 'nlopt.LD_LBFGS' (does not work)
                 lbfgs_bounds = zip(s_res['lower'].tolist(), s_res['upper'].tolist())
@@ -196,7 +196,7 @@ class EvaluatorReal:
                                                        approx_grad=True)
                     self.refi = {'x': x_opt,
                                  'minf': f_opt,
-                                 'res_code': info,    # the return code
+                                 'res_code': info['warnflag'],    # the return code
                                  'feval': 0,
                                  }
                 elif BFGS_METH == 1:
@@ -207,7 +207,7 @@ class EvaluatorReal:
                                  'feval': res.nfev,
                                  }
                 else:  # i.e. BFGS_METH == 2
-                    # ##raise RuntimeError("This method does not work (raises nlopt.runtime_error)")
+                    raise RuntimeError(f"BFGS_METH={BFGS_METH} does not work (raises nlopt.runtime_error)")
                     # opt = nlopt.opt(nlopt.LD_LBFGS, self.xNew.size)
                     # opt.set_lower_bounds(s_res['lower'])
                     # opt.set_upper_bounds(s_res['upper'])
@@ -227,16 +227,15 @@ class EvaluatorReal:
                     #              'feval': opt.get_numevals(),
                     #              }
 
-                    # just a debug test: would a G03-specific normalization to sphere surface solve the refine issue?
-                    # Answer: No: It works for d<=7, but fails for d>7, as the other methods.
-                    x = self.xNew.copy()
-                    x = x / np.sqrt(np.sum(x*x))
-                    self.refi = {'x': x,
-                                 'minf': 0,
-                                 'res_code': "none",  # the return code
-                                 'feval': 0}
+                    # # just a debug test: would a G03-specific normalization to sphere surface solve the refine issue?
+                    # # Answer: No: It works for d<=7, but fails for d>7, as the other methods.
+                    # x = self.xNew.copy()
+                    # x = x / np.sqrt(np.sum(x*x))
+                    # self.refi = {'x': x,
+                    #              'minf': 0,
+                    #              'res_code': 0,  # the return code
+                    #              'feval': 0}
 
-                    # fntest = s_res['fn'](x)[:]
             else:  # i.e. "COBYLA"
                 opt = nlopt.opt(nlopt.LN_COBYLA, self.xNew.size)
                 opt.set_lower_bounds(s_res['lower'])

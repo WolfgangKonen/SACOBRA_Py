@@ -8,8 +8,11 @@ from phase2Vars import Phase2Vars
 
 class SoluContainer():
     """
-    Helper class containing the true solution (optional, may be None, only for diagnostics) ``solu`` in
+    This class contains the true solution (if it is provided, it is optional and may be also None) ``solu`` in
     rescaled space and ``originalSolu`` in original space together with methods to act on them.
+
+    ``solu`` may be a 1-dim vector (if there is only one solution) or a 2-dim matrix (if there are multiple equivalent
+    solutions, 1 solution vector per matrix row).
 
     Used by ``updateSaveCobra``.
     """
@@ -42,7 +45,8 @@ class SoluContainer():
         :param p2: needed for prediction
         :param fitnessSurrogate: the objective function surrogate model
         :param fitFuncPenalRBF:
-        :return: the predicted objective function value
+        :return: tuple (predSolu, predSoluPenal) = (predicted objective function value by model fitnessSurrogate,
+                                                    predicted value by fitFuncPenalRBF)
         """
         if self.solu is None:
             predSolu = np.nan
@@ -59,20 +63,22 @@ class SoluContainer():
             else:
                 raise ValueError(f"solu.ndim = {self.solu.ndim} is not allowed!")
 
-            predSolu = min(predSolu)  # Why min? - In case of multiple global optima: predSolu is the
-                                      # value of predSoluFunc at the best solution solu
-            predSoluPenal = min(predSoluPenal)
-
+            predSolu = min(predSolu)                # Why min? - In case of multiple global optima: predSolu is the
+            predSoluPenal = min(predSoluPenal)      # value of predSoluFunc at the best solution solu
+                                                    # (same for predSoluPenal)
         return predSolu, predSoluPenal
 
     def distance_to_solu(self, cobra: CobraInitializer) -> Tuple[np.ndarray, np.ndarray]:
         """
-        Compute the distance of all infill points to the true solution.
-        Return a vector of ``np.nan`` if the solution is None.
+        Compute the distance of all infill points to the true solution. Each row of matrix ``A = cobra.sac_res['A']``
+        contains an infill point.
+
+        Return a vector of ``A.shape[0]`` ``np.nan``'s if ``solu`` is None.
+
         Return the minimum over solutions, if multiple equivalent solutions exist (``solu.ndim==2``)
 
         :param cobra: needed for infill points ``A`` and rescale wrapper
-        :return: tuple: (distA, distOrig) = (vector of distances in rescaled space, ... of distances in original space)
+        :return: tuple (distA, distOrig) = (vector of distances in rescaled space, ... of distances in original space)
         """
         A = cobra.sac_res['A']
         if self.solu is None:

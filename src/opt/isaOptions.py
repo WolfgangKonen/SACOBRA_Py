@@ -56,7 +56,7 @@ class ISAoptions:
         self.onlineMinMax = onlineMinMax
 
 
-class ISAoptions0(ISAoptions):
+class ISAoptions0():
     def __init__(self,
                  DOSAC=0,
                  RS=False,

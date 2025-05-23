@@ -9,7 +9,7 @@ class GCOP:
 
     - ``G01 = GCOP("G01")``.
 
-    Only problems G02 and G03 have extra parameter ``dimension``.
+    Only problems G02 and G03 have the extra parameter ``dimension``.
     All other problems G01, G04, ..., G24 have fixed dimensions.
     """
     def __init__(self, name, dimension=None):
@@ -31,6 +31,8 @@ class GCOP:
         elif name == "G14": self._call_G14()
         elif name == "G15": self._call_G15()
         elif name == "G17": self._call_G17()
+        elif name == "G18": self._call_G18()
+        elif name == "G21": self._call_G21()
         else:
             strg = f"G-function {name} not (yet) implemented"
             raise NotImplementedError(strg)
@@ -39,15 +41,15 @@ class GCOP:
             self.fbest = None
         else:
             first_solu = self.solu[0, :] if self.solu.ndim == 2 else self.solu
-            self.fbest = self.fn(first_solu)[0]     # objective at solution point
+            self.fbest = self.fn(first_solu)[0]     # objective at (first) solution point
 
     def _call_G01(self):
         self.dimension = 13
         self.lower = np.repeat(0, self.dimension)
-        self.upper = np.concatenate((np.repeat(1, 9), np.repeat(100, 3), 1), axis=None)
+        self.upper = np.concatenate((np.repeat(1, 9), np.repeat(100, 3), [1]))
         self.nConstraints = 9
         self.is_equ = np.repeat(False, 9)
-        self.solu = np.concatenate((np.repeat(1, 9), np.repeat(3, 3), 1), axis=None)
+        self.solu = np.concatenate((np.repeat(1, 9), np.repeat(3, 3), [1]))
         self.x0 = np.repeat(0, self.dimension)
         self.fn = lambda x: np.array([np.sum(5*x[0:4])-(5*sum(x[0:4]*x[0:4]))-(sum(x[4:13])),
                                       (2*x[0]+2*x[1]+x[9]+x[10] - 10),
@@ -77,11 +79,12 @@ class GCOP:
         def denom(x):
             return np.sqrt(np.sum(np.array([(i+1)*x[i] for i in range(dim)])))
         self.fn = lambda x: np.array([-np.abs(np.sum(np.cos(x)**4)-(2*np.prod(np.cos(x)**2))/denom(x)),
-                                      0.75-np.prod(x),
-                                      (np.sum(x)-7.5*dim)])
+                                      0.75 - np.prod(x),
+                                      np.sum(x) - 7.5*dim])
 
     def _call_G03(self, dim):
-        assert dim is not None, "[call_G03] dimension has to be integer, not None"
+        assert dim is not None, "[_call_G03] dimension has to be integer, not None"
+        assert dim is int, "[_call_G03] dimension has to be integer"
         self.dimension = dim
         self.lower = np.repeat(0, dim)
         self.upper = np.repeat(1, dim)
@@ -158,22 +161,22 @@ class GCOP:
         self.lower = np.repeat(-10, self.dimension)
         self.upper = np.repeat(+10, self.dimension)
         self.nConstraints = 8
-        self.is_equ = np.repeat(False, self.dimension)
+        self.is_equ = np.repeat(False, self.nConstraints)
         self.solu = np.array([2.171997834812, 2.363679362798, 8.773925117415,
                               5.095984215855, 0.990655966387, 1.430578427576,
                               1.321647038816, 9.828728107011, 8.280094195305, 8.375923511901])
         self.x0 = None
-        self.fn = lambda x: np.array([(x[0]**2)+(x[1]**2)+(x[0]*x[1])-(14*x[0])-(16*x[1])+((x[2]-10)**2)+
-                                      (4*((x[3]-5)**2))+ ((x[4]-3)**2) +(2*((x[5]-1)**2)) +(5*(x[6]**2))+
+        self.fn = lambda x: np.array([(x[0]**2)+(x[1]**2)+(x[0]*x[1])-(14*x[0])-(16*x[1])+((x[2]-10)**2) +
+                                      (4*((x[3]-5)**2))+ ((x[4]-3)**2) +(2*((x[5]-1)**2)) +(5*(x[6]**2)) +
                                       (7*((x[7]-11)**2))+(2*((x[8]-10)**2))+ ((x[9]-7)**2) + 45,
-                                      ((4.0*x[0])+(5.0*x[1])-(3.0*x[6])+(9.0*x[7]) - 105.0),        # g1
-                                      (10*x[0]-8*x[1]-17*x[6]+2*x[7]),                              # g2
-                                      (-8 * x[0] + 2 * x[1] + 5 * x[8] - 2 * x[9] - 12),            # g3
-                                      (3 * ((x[0] - 2) ** 2) + 4 * (x[1] - 3) ** 2 + 2 * x[2] ** 2 - 7 * x[3] - 120),
-                                      (5 * x[0] ** 2 + 8 * x[1] + (x[2] - 6) ** 2 - 2 * x[3] - 40),
-                                      (x[0] ** 2 + 2 * (x[1] - 2) ** 2 - (2 * x[0] * x[1]) + 14 * x[4] - 6 * x[5]),
-                                      (0.5 * (x[0] - 8) ** 2 + 2 * (x[1] - 4) ** 2 + 3 * (x[4] ** 2) - x[5] - 30),
-                                      (-3 * x[0] + 6 * x[1] + 12 * (x[8] - 8) ** 2 - 7 * x[9])
+                                      (4.0*x[0])+(5.0*x[1])-(3.0*x[6])+(9.0*x[7]) - 105.0,        # g1
+                                      10*x[0]-8*x[1]-17*x[6]+2*x[7],                              # g2
+                                      -8 * x[0] + 2 * x[1] + 5 * x[8] - 2 * x[9] - 12,            # g3
+                                      3 * ((x[0] - 2) ** 2) + 4 * (x[1] - 3) ** 2 + 2 * x[2] ** 2 - 7 * x[3] - 120,
+                                      5 * x[0] ** 2 + 8 * x[1] + (x[2] - 6) ** 2 - 2 * x[3] - 40,
+                                      x[0] ** 2 + 2 * (x[1] - 2) ** 2 - (2 * x[0] * x[1]) + 14 * x[4] - 6 * x[5],
+                                      0.5 * (x[0] - 8) ** 2 + 2 * (x[1] - 4) ** 2 + 3 * (x[4] ** 2) - x[5] - 30,
+                                      -3 * x[0] + 6 * x[1] + 12 * (x[8] - 8) ** 2 - 7 * x[9]
                                      ])
 
     def _call_G11(self):
@@ -259,9 +262,9 @@ class GCOP:
         self.upper = np.array([400, 1000, 420, 420, 1000, 0.5236])
         self.nConstraints = 4
         self.is_equ = np.repeat(True, 4)
-        f0 = lambda x0: 30*x0 if x0>=0 and x0<300 else 31*x0
-        f1 = lambda x1: 28*x1 if x1>=0 and x1<100 else f2(x1)
-        f2 = lambda x1: 29*x1 if x1>=100 and x1<200 else 30*x1
+        f0 = lambda x0: 30*x0 if 0 <= x0 < 300 else 31 * x0
+        f2 = lambda x1: 29*x1 if 100 <= x1 < 200 else 30 * x1
+        f1 = lambda x1: 28*x1 if 0 <= x1 < 100 else f2(x1)
         self.fn = lambda x: np.array([f0(x[0]) + f1(x[1]),
                                       -x[0] + 300 - (x[2] * x[3]) / 131.078 * np.cos(1.48477 - x[5]) +
                                                   (0.90798 * x[2] ** 2) / 131.078 * np.cos(1.47588),
@@ -274,6 +277,51 @@ class GCOP:
                                     ])
         self.solu = np.array([201.784467214523659, 99.9999999999999005, 383.071034852773266,
                               420, -10.9076584514292652, 0.0731482312084287128])
+        self.x0 = None
+
+    def _call_G18(self):
+        self.dimension = 9
+        self.lower = np.concatenate((np.repeat(-10,8), [0]))
+        self.upper = np.concatenate((np.repeat(+10,8), [20]))
+        self.nConstraints = 13
+        self.is_equ = np.repeat(False, 13)
+        self.fn = lambda x: np.array([-0.5*(x[0]*x[3]-x[1]*x[2] + x[2]*x[8]-x[4]*x[8] + x[4]*x[7]- x[5]*x[6]),
+                                      x[2] ** 2 + x[3] ** 2 - 1,
+                                      x[8] ** 2 - 1,
+                                      x[4] ** 2 + x[5] ** 2 - 1,
+                                      x[0] ** 2 + (x[1] - x[8]) ** 2 - 1,
+                                      (x[0] - x[4]) ** 2 + (x[1] - x[5]) ** 2 - 1,
+                                      (x[0] - x[6]) ** 2 + (x[1] - x[7]) ** 2 - 1,
+                                      (x[2] - x[4]) ** 2 + (x[3] - x[5]) ** 2 - 1,
+                                      (x[2] - x[6]) ** 2 + (x[3] - x[7]) ** 2 - 1,
+                                      x[6] ** 2 + (x[7] - x[8]) ** 2 - 1,
+                                      x[1] * x[2] - x[0] * x[3],
+                                      -x[2] * x[8],
+                                      x[4] * x[8],
+                                      x[5] * x[6] - x[4] * x[7]
+                                      ])
+        self.solu = np.array([-0.9890005492667746,0.1479118418638228,
+                              -0.6242897641574451,-0.7811841737429015,
+                              -0.9876159387318453,0.1504778305249072,
+                              -0.6225959783340022,-0.782543417629948, 0.0])
+        self.x0 = None
+
+    def _call_G21(self):
+        self.dimension = 7
+        self.lower = np.array([0, 0, 0, 100, 6.3, 5.9, 4.5])
+        self.upper = np.array([1000, 40, 40, 300, 6.7, 6.4, 6.25])
+        self.nConstraints = 6
+        self.is_equ = np.array([False, True, True, True, True, True])
+        self.fn = lambda x: np.array([+x[0],     # obj
+                                      -x[0]+35*(x[1]**(0.6))+35*(x[2]**0.6),                                       # g1
+                                      -300*x[2] + 7500*x[4]- 7500*x[5] - 25*x[3]*x[4] + 25*x[3]*x[5] + x[2]*x[3],  # h1
+                                      +100*x[1] + 155.365*x[3] + 2500*x[6] - x[1]*x[3] - 25*x[3]*x[6] - 15536.5,   # h2
+                                      -x[4] + np.log(-x[3] + 900),                                                 # h3
+                                      -x[5] + np.log(x[3] + 300),                                                  # h4
+                                      -x[6] + np.log(-2 * x[3] + 700)                                              # h5
+                                      ])
+        self.solu = np.array([193.724510070034967, 5.56944131553368433e-27, 17.3191887294084914,
+                              100.047897801386839, 6.68445185362377892, 5.99168428444264833, 6.21451648886070451])
         self.x0 = None
 
 

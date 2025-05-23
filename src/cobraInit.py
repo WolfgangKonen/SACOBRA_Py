@@ -25,10 +25,10 @@ class CobraInitializer:
         - parameter settings: s_opts via :class:`SACoptions`
         - create initial design: A, Fres, Gres via :class:`InitDesigner`
     """
-    def __init__(self, x0, fn, fName, lower: np.ndarray, upper: np.ndarray,
-                 is_equ: np.ndarray[bool],
-                 solu: Union[np.ndarray, None] = None, s_opts=SACoptions(50),
-                 ):
+    def __init__(self, x0: object, fn: object, fName: object, lower: np.ndarray, upper: np.ndarray,
+                 is_equ: np.ndarray,
+                 solu: Union[np.ndarray, None] = None, s_opts: object = SACoptions(50),
+                 ) -> object:
         """
 
         :param x0: start point, if given, then its dim has to be the same as ``lower``. If it  is/has NaN or None
@@ -39,7 +39,7 @@ class CobraInitializer:
         :param upper: upper bound (same dim as lower)
         :param is_equ: boolean vector with dim ``nConstraints``: which constraints are equality constraints?
         :param solu:  (optional, for diagnostics) true solution vector or solution matrix (one solution per row):
-                      one or several feasible x that deliver minimal objective value
+                      one or several feasible x that deliver the minimal objective value
         :param s_opts: the options, see :class:`SACoptions`
         """
         #
@@ -333,6 +333,11 @@ class CobraInitializer:
         return DRC
 
     def adCon(self):
+        """
+            Adjust several elements according to constraint range.
+
+            The following elements of cobra.sac_res may be changed: 'fn', 'Gres', 'Grange', 'GrangeEqu'
+        """
         s_opts = self.sac_opts
         fnold = self.sac_res['fn']
         Gres = self.sac_res['Gres']
@@ -340,14 +345,14 @@ class CobraInitializer:
         equ_ind = np.flatnonzero(self.sac_res['is_equ'])
 
         GRL = np.apply_along_axis(self.maxMinLen, axis=0, arr=Gres)
-        # axis=0 means that arr is sliced along axis 0, i.e. detLen is applied to the columns of Gres
+        # axis=0 means that arr is sliced along axis 0, i.e. maxMinLen is applied to the columns of Gres
         if min(GRL) == 0:   # pathological case where at least one constraint is constant:
             GR = -np.inf    # inhibit constraint normalization
         else:
             GR = max(GRL) / min(GRL)
 
         if GR > s_opts.ISA.TGR:
-            verboseprint(s_opts.verbose, True, "Normalizing Constraint Functions ...")
+            verboseprint(s_opts.verbose, True, "GR={GR} is large --> normalizing constraint functions ...")
             GRfact = np.hstack((1, GRL * (1 / np.mean(GRL))))
 
             # finding the normalizing coefficient of the equality constraints

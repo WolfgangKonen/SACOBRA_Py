@@ -13,7 +13,7 @@ class EQUoptions:
                  dec=1.5,           # decay factor for mu
                  refine=True,
                  refineMaxit=1000, # 100,
-                 refineAlgo="COBYLA",   # COBYLA  L-BGFS-B
+                 refineAlgo="L-BGFS-B",   # COBYLA  L-BGFS-B
                  refinePrint=False,
                  muGrow=0,
                  mu4inequality=False

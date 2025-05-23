@@ -55,7 +55,8 @@ class TestEqu1(unittest.TestCase):
         print("[test_equ_mu_init passed]")
 
     def test_currentEps(self):
-        """  Test the generation of vector currentEps = muVec
+        """  Test the values generated for vector currentEps = muVec.
+             Compare with the exact values generated on the R side.
         """
         nobs = 10
         x0 = np.array([2.5, 2.4])
@@ -66,8 +67,9 @@ class TestEqu1(unittest.TestCase):
         epsTVec = ["expFunc", "SAexpFunc", "funcDim", "funcSDim", "Zhang", "CONS"]
         # the allowed options for cobra.sac_opts.EQU.epsType
 
-        # matrix muMat_from_R is copied from muMat of method demo_currentEps in demo-equMuInit.R,
-        # one row for each value of epsTVec:
+        # Matrix muMat_from_R is copied from muMat of method demo_currentEps in demo-equMuInit.R.
+        # It has one row for each value of epsTVec (and 5 columns, since we will compare below the first five iterations
+        # ipd:idp+5 of phase II):
         muMat_from_R = np.array([
             [3.929555,  2.6197033, 1.7464689, 1.1643126, 0.7762084],
             [3.929555,  1.5769679, 0.7756560, 0.5085520, 0.4195173],
@@ -76,6 +78,9 @@ class TestEqu1(unittest.TestCase):
             [3.929555,  0.0000001, 0.0000001, 0.0000001, 0.0000001],
             [0.0000001, 0.0000001, 0.0000001, 0.0000001, 0.0000001]
         ])
+        # [Note that all rows but the last start with the same value 3.929555, because we start always with
+        # EQU.initType='TAV', only EQU.epsType=epsT changes. The last row (epsT="CONS") has a different initial value,
+        # because in this case the initial value is overwritten with EQU.equEpsFinal.]
 
         # a simple problem with two equality constraints:
         def fn(x):
@@ -83,8 +88,7 @@ class TestEqu1(unittest.TestCase):
 
         muMat = None
         for i, epsT in enumerate(epsTVec):
-            cobra = CobraInitializer(x0, fn, "fName", lower, upper,
-                                     is_equ=np.array([True, True]),
+            cobra = CobraInitializer(x0, fn, "fName", lower, upper, np.array([True, True]),
                                      s_opts=SACoptions(verbose=verb, feval=15,
                                      ID=IDoptions(initDesign="RAND_R", initDesPoints=idp),
                                      EQU=EQUoptions(epsType=epsT)))
@@ -120,8 +124,7 @@ class TestEqu1(unittest.TestCase):
             def fn(x):
                 return np.array([3 * np.sum(x ** 2), np.sum(x * hnfac) - 2])
 
-            cobra = CobraInitializer(x0, fn, "fName", lower, upper,
-                                     is_equ=np.array([True]),
+            cobra = CobraInitializer(x0, fn, "fName", lower, upper, np.array([True]),
                                      s_opts=SACoptions(verbose=verb, feval=30, finalEpsXiZero=True,
                                                        ID=IDoptions(initDesign="RAND_R", initDesPoints=idp),
                                                        RBF=RBFoptions(degree=1),

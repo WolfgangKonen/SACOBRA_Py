@@ -4,10 +4,12 @@ from cobraInit import CobraInitializer
 from gCOP import GCOP
 from cobraPhaseII import CobraPhaseII
 from opt.equOptions import EQUoptions
+from opt.isaOptions import ISAoptions
 from opt.sacOptions import SACoptions
 from opt.idOptions import IDoptions
 from opt.rbfOptions import RBFoptions
 from opt.seqOptions import SEQoptions
+from show_error_plot import show_error_plot
 
 verb = 1
 
@@ -16,12 +18,20 @@ class ExamCOP:
     """
         Example COPs from the G function benchmark. Test for statistical equivalence to the R side (ex_COP.R)
 
-        - G11 is a COP with 1 equality constraint. d=2.
-        - G06 is a COP with two circular inequality constraints that form a very narrow feasible region. d=2.
-        - G05 is a COP with 2 inequality and 3 equality constraints and d=4.
-        - G04 is a COP with 6 inequality constraints and d=5.
-        - G03 is a COP with 1 equality constraint (sphere) and steerable dimension d.
         - G01 is a COP with 9 linear inequality constraints and d=13
+        - G03 is a COP with 1 equality constraint (sphere) and steerable dimension d.
+        - G04 is a COP with 6 inequality constraints and d=5.
+        - G05 is a COP with 2 inequality and 3 equality constraints. d=4.
+        - G06 is a COP with two circular inequality constraints that form a very narrow feasible region. d=2.
+        - G07 is a COP with 8 inequality constraints. d=10.
+        - G11 is a COP with 1 equality constraint. d=2.
+        - G13 is a COP with 3 equality constraints. d=5.
+        - G14 is a COP with 3 equality constraints. d=10.
+        - G15 is a COP with 5 equality constraints. d=3.
+        - G17 is a COP with 4 equality constraints. d=6.
+        - G21 is a COP with 5 equality constraints. d=7.
+
+        In summary, there are 8 COPs (G03, G05, G11, G13, G14, G15, G17, G21) containing equality constraints.
     """
 
     def solve_G01(self, cobraSeed):
@@ -41,8 +51,7 @@ class ExamCOP:
                                                    ID=IDoptions(initDesign="RAND_REP", initDesPoints=idp),
                                                    RBF=RBFoptions(degree=2),
                                                    SEQ=SEQoptions(conTol=0)))     # conTol=1e-7
-        c2 = CobraPhaseII(cobra)
-        c2.start()
+        c2 = CobraPhaseII(cobra).start()
 
         fin_err = np.array(cobra.get_fbest() - G01.fbest)
         print(f"final err: {fin_err}")
@@ -71,8 +80,7 @@ class ExamCOP:
                                                    EQU=equ,
                                                    SEQ=SEQoptions(conTol=0)))     # conTol=1e-7
         print(f"idp = {cobra.sac_opts.ID.initDesPoints}")
-        c2 = CobraPhaseII(cobra)
-        c2.start()
+        c2 = CobraPhaseII(cobra).start()
 
         fin_err = np.array(cobra.get_fbest() - G03.fbest)
         print(f"final err: {fin_err}")
@@ -97,8 +105,7 @@ class ExamCOP:
                                                    RBF=RBFoptions(degree=2),
                                                    EQU=EQUoptions(dec=1.6, equEpsFinal=1e-7, refinePrint=False),
                                                    SEQ=SEQoptions(conTol=0)))     # conTol=1e-7
-        c2 = CobraPhaseII(cobra)
-        c2.start()
+        c2 = CobraPhaseII(cobra).start()
 
         fin_err = np.array(cobra.get_fbest() - G04.fbest)
         print(f"final err: {fin_err}")
@@ -122,10 +129,10 @@ class ExamCOP:
                                                    finalEpsXiZero=True,
                                                    ID=IDoptions(initDesign="RAND_REP", initDesPoints=idp),
                                                    RBF=RBFoptions(degree=2),
-                                                   EQU=EQUoptions(dec=1.6, equEpsFinal=1e-7, refinePrint=False),
+                                                   EQU=EQUoptions(dec=1.6, equEpsFinal=1e-7, refinePrint=False,
+                                                                  refineAlgo="COBYLA"),  # "L-BFGS-B COBYLA"
                                                    SEQ=SEQoptions(conTol=0)))     # conTol=1e-7
-        c2 = CobraPhaseII(cobra)
-        c2.start()
+        c2 = CobraPhaseII(cobra).start()
 
         fin_err = np.array(cobra.get_fbest() - G05.fbest)
         print(f"final err: {fin_err}")
@@ -133,7 +140,7 @@ class ExamCOP:
         c2.p2.fe_thresh = 5e-6
         return c2
 
-    def solve_G06(cobraSeed):
+    def solve_G06(self, cobraSeed):
         """ Test whether COP G06 has statistical equivalent results to the R side with squares=T, if we set on the
             Python side RBF.degree=2 (which is similar, but not the same).
 
@@ -168,7 +175,6 @@ class ExamCOP:
             (see ex_COP.R, function solve_G07, multi_gfnc)
         """
         G07 = GCOP("G07")
-        # idp = 10+1
         idp = 11*12//2
 
         cobra = CobraInitializer(G07.x0, G07.fn, G07.name, G07.lower, G07.upper, G07.is_equ,
@@ -177,10 +183,9 @@ class ExamCOP:
                                                    finalEpsXiZero=True,
                                                    ID=IDoptions(initDesign="LHS", initDesPoints=idp),
                                                    RBF=RBFoptions(degree=2),
-                                                   SEQ=SEQoptions(conTol=1e-7)))     # trueFuncForSurrogates=True
+                                                   SEQ=SEQoptions(conTol=1e-7)))
 
-        c2 = CobraPhaseII(cobra)
-        c2.start()
+        c2 = CobraPhaseII(cobra).start()
 
         fin_err = np.array(cobra.get_fbest() - G07.fbest)
         c2.p2.fin_err = fin_err
@@ -203,10 +208,10 @@ class ExamCOP:
                                                    finalEpsXiZero=False,
                                                    ID=IDoptions(initDesign="LHS", initDesPoints=6),
                                                    RBF=RBFoptions(degree=2),
+                                                   EQU=EQUoptions(refinePrint=False, refineAlgo="COBYLA"),  # "L-BFGS-B COBYLA"
                                                    SEQ=SEQoptions(conTol=1e-7)))     # trueFuncForSurrogates=True
 
-        c2 = CobraPhaseII(cobra)
-        c2.start()
+        c2 = CobraPhaseII(cobra).start()
 
         fin_err = np.array(cobra.get_fbest() - G11.fbest)
         c2.p2.fin_err = fin_err
@@ -232,8 +237,7 @@ class ExamCOP:
                                                    RBF=RBFoptions(degree=2),
                                                    SEQ=SEQoptions(conTol=1e-7)))     # trueFuncForSurrogates=True
 
-        c2 = CobraPhaseII(cobra)
-        c2.start()
+        c2 = CobraPhaseII(cobra).start()
 
         fin_err = np.array(cobra.get_fbest() - G12.fbest)
         c2.p2.fin_err = fin_err
@@ -260,10 +264,9 @@ class ExamCOP:
                                                    ID=IDoptions(initDesign="LHS", initDesPoints=idp),
                                                    RBF=RBFoptions(degree=2, rho=2.5, rhoDec=2.0),  # , rhoGrow=100
                                                    EQU=equ,
-                                                   SEQ=SEQoptions(conTol=1e-7)))     # trueFuncForSurrogates=True
+                                                   SEQ=SEQoptions(conTol=1e-7)))
 
-        c2 = CobraPhaseII(cobra)
-        c2.start()
+        c2 = CobraPhaseII(cobra).start()
 
         fin_err = np.array(cobra.get_fbest() - G13.fbest)
         c2.p2.fin_err = fin_err
@@ -282,7 +285,7 @@ class ExamCOP:
         idp = 11 * 12 // 2
 
         equ = EQUoptions(muGrow=100, dec=1.6, equEpsFinal=1e-7,
-                         refinePrint=False, refineAlgo="COBYLA")  # "L-BFGS-B COBYLA"
+                         refinePrint=False, refineAlgo="L-BFGS-B")  # "L-BFGS-B COBYLA"
         cobra = CobraInitializer(G14.x0, G14.fn, G14.name, G14.lower, G14.upper, G14.is_equ,
                                  solu=G14.solu,
                                  s_opts=SACoptions(verbose=verb, feval=500, cobraSeed=cobraSeed,
@@ -292,8 +295,7 @@ class ExamCOP:
                                                    EQU=equ,
                                                    SEQ=SEQoptions(conTol=1e-7)))     # 1e-7
 
-        c2 = CobraPhaseII(cobra)
-        c2.start()
+        c2 = CobraPhaseII(cobra).start()
 
         fin_err = np.array(cobra.get_fbest() - G14.fbest)
         c2.p2.fin_err = fin_err
@@ -312,7 +314,7 @@ class ExamCOP:
         idp = 11 * 12 // 2
 
         equ = EQUoptions(muGrow=100, dec=1.6, equEpsFinal=1e-7,
-                         refinePrint=False, refineAlgo="COBYLA")  # "L-BFGS-B COBYLA"
+                         refinePrint=False, refineAlgo="L-BFGS-B")  # "L-BFGS-B COBYLA"
         cobra = CobraInitializer(G15.x0, G15.fn, G15.name, G15.lower, G15.upper, G15.is_equ,
                                  solu=G15.solu,
                                  s_opts=SACoptions(verbose=verb, feval=300, cobraSeed=cobraSeed,
@@ -322,8 +324,7 @@ class ExamCOP:
                                                    EQU=equ,
                                                    SEQ=SEQoptions(conTol=1e-7)))     # 1e-7
 
-        c2 = CobraPhaseII(cobra)
-        c2.start()
+        c2 = CobraPhaseII(cobra).start()
 
         fin_err = np.array(cobra.get_fbest() - G15.fbest)
         c2.p2.fin_err = fin_err
@@ -352,8 +353,7 @@ class ExamCOP:
                                                    EQU=equ,
                                                    SEQ=SEQoptions(conTol=1e-7)))     # trueFuncForSurrogates=True
 
-        c2 = CobraPhaseII(cobra)
-        c2.start()
+        c2 = CobraPhaseII(cobra).start()
 
         fin_err = np.array(cobra.get_fbest() - G17.fbest)
         c2.p2.fin_err = fin_err
@@ -361,19 +361,47 @@ class ExamCOP:
         c2.p2.fe_thresh = 1e-13
         return c2
 
-    def multi_gfnc(self, gfnc, gname, runs, cobraSeed):
-        """ Test whether COP ``gfnc`` with name ``gname`` has statistical equivalent results to the R side with
-            squares=T, if we set on the Python side RBF.degree=2 (which is similar, but not the same).
+    def solve_G21(self, cobraSeed):
+        """ Test whether COP G21 has statistical equivalent results to the R side with squares=T, if we set on the
+            Python side RBF.degree=2 (which is similar, but not the same).
+
+            We test that the median of 15 final errors is < 1e-13, which is statistically equivalent to the R side
+            (see ex_COP.R, function solve_G17, multi_gfnc)
+        """
+        G21 = GCOP("G21")
+        idp = 8 * 9//2
+
+        equ = EQUoptions(muGrow=100, dec=1.6, equEpsFinal=1e-4,
+                         refinePrint=False, refineAlgo="L-BFGS-B")  # "L-BFGS-B COBYLA"
+        cobra = CobraInitializer(G21.x0, G21.fn, G21.name, G21.lower, G21.upper, G21.is_equ,
+                                 solu=G21.solu,
+                                 s_opts=SACoptions(verbose=verb, feval=500, cobraSeed=cobraSeed,
+                                                   finalEpsXiZero=False,
+                                                   ID=IDoptions(initDesign="LHS", initDesPoints=idp),
+                                                   RBF=RBFoptions(degree=2),
+                                                   # ISA=ISAoptions(TGR=np.inf),
+                                                   EQU=equ,
+                                                   SEQ=SEQoptions(conTol=1e-4)))
+        c2 = CobraPhaseII(cobra).start()
+
+        fin_err = np.array(cobra.get_fbest() - G21.fbest)
+        c2.p2.fin_err = fin_err
+        print(f"final err: {fin_err}")
+        c2.p2.fe_thresh = 1e-1
+        # show_error_plot(cobra, G21, ylim=[1e-4,1e0])
+        return c2
+
+    def multi_gfnc(self, gfnc, gname: str, runs: int, cobraSeed: int):
+        """ Perform multiple runs of COP ``gfnc`` with name ``gname``. The seed for run ``r in range(runs)`` is
+            ``cobraSeed + r``.
         """
         start = time.perf_counter()
         fin_err_list = np.array([])
         c2 = None
         for run in range(runs):
             c2 = gfnc(cobraSeed + run)
-            # cobra = c2.get_cobra()
             fin_err = c2.p2.fin_err
             fin_err_list = np.concatenate((fin_err_list, fin_err), axis=None)
-            # print(f"final err: {fin_err}")
 
         print(f"[{gname}] sorted {fin_err_list.size} final errors:")
         print(np.array(sorted(fin_err_list), dtype=float))  # to get rid of 'np.float64(...)'
@@ -393,6 +421,7 @@ class ExamCOP:
 
 if __name__ == '__main__':
     cop = ExamCOP()
+    # exec("cop.solve_G06(42)")
     # cop.solve_G01(42)
     # cop.solve_G03(48, 7)
     # cop.solve_G04(53)
@@ -404,9 +433,11 @@ if __name__ == '__main__':
     # cop.solve_G13(62)
     # cop.solve_G14(62)
     # cop.solve_G17(62)
+    # cop.solve_G21(63)
     # cc2 = cop.multi_gfnc(cop.solve_G01, "G01", 10, 48)
     # cc2 = cop.multi_gfnc(cop.solve_G04, "G04", 15, 42)
-    # cc2 = cop.multi_gfnc(cop.solve_G07, "G07", 10, 48)
-    cc2 = cop.multi_gfnc(cop.solve_G17, "G17", 10, 54)
+    # cc2 = cop.multi_gfnc(cop.solve_G15, "G15", 10, 48)
+    # cc2 = cop.multi_gfnc(cop.solve_G17, "G17", 10, 54)
     # cc2 = cop.multi_gfnc(cop.solve_G14, "G14", 6, 54)
     # cc2 = cop.multi_gfnc(cop.solve_G01, "G01", 6, 54)
+    cc2 = cop.multi_gfnc(cop.solve_G21, "G21", 10, 54)
