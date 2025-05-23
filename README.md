@@ -1,5 +1,5 @@
 # SACOBRA_Py
-SACOBRA Python port.
+[SACOBRA_Py](https://github.com/WolfgangKonen/SACOBRA_Py) is the SACOBRA Python port.
 
 SACOBRA is a package for constrained optimization with relatively few function evaluations.
 
@@ -9,10 +9,10 @@ SACOBRA was originally developed in R. This repository **SACOBRA_Py** contains t
 
 ## How to install
 
-You just need to install the few packages listed in [requirements.txt](./requirements.txt) (if they are not already present in your Python environment). Then, clone the contents of this repository and proceed with the examples.
+You just need to install the few packages listed in [requirements.txt](./requirements.txt) (if they are not already installed in your Python environment). Then, clone the contents of this repository and proceed with the examples.
 
 ## How to use
-Below is an example from [demo_SACOBRA_ineq.py](./demo/demo_SACOBRA_ineq.py): 
+Below is an example from [sacobra_ineq.py](./demo/sacobra_ineq.py): 
 
 ```Python
 G06 = GCOP("G06")
@@ -32,7 +32,54 @@ print(f"final error: {fin_err}")
 
 First we construct the constraint optimization problem (COP) ``G06`` from the G-problem benchmark suite.  SACOBRA contains several such benchmark problems in [gCOP.py](./src/gCOP.py). Next we construct with ``CobraInitializer`` the object ``cobra`` with all optimization settings. The optimization is then started with ``CobraPhaseII`` where 40 iterations on surrogate models are carried out. (There is also a ``CobraPhaseI``, but it is optional and can be left out.) We show with ``show_error_plot`` the error on a logarithmic scale, i.e. the distance between the objective found by the solver in each iteration and the true objective ``G06.fbest``.
 
-<img src="error_plot.png" alt="Error Plot G06" title="Error curve obtained by SACOBRA" width=600 />
+<img src="error_plot_G06.png" alt="Error Plot G06" title="Error curve obtained by SACOBRA" width=600 />
+
+
+Another example with equality constraints:
+
+```Python
+G13 = GCOP("G13")
+
+cobra = CobraInitializer(G13.x0, G13.fn, G13.name, G13.lower, G13.upper, G13.is_equ, solu=G13.solu,
+                         s_opts=SACoptions(verbose=verb, feval=300, cobraSeed=cobraSeed,
+                                           ID=IDoptions(initDesign="LHS", initDesPoints= 6 * 7 // 2),
+                                           RBF=RBFoptions(degree=2, rho=2.5, rhoDec=2.0), 
+                                           EQU=EQUoptions(muGrow=100, dec=1.6, equEpsFinal=1e-7,
+                                                          refineAlgo="COBYLA")  # "L-BFGS-B COBYLA",
+                                           SEQ=SEQoptions(conTol=1e-7)))     
+c2 = CobraPhaseII(cobra).start()
+
+fin_err = np.array(cobra.get_fbest() - G13.fbest)
+print(f"final err: {fin_err}")
+```
+
+Problem G13 has 3 equality constraints and dimension 5. It requires with ``feval=300`` a few more function evaluations. The solver works in the beginning with approximating RBFs (``rho=2.5``) which become later interpolating RBF since ``rho`` is decaying with factor ``rhoDec=2.0``. Further, it puts a margin ``mu`` around each equality to create artificially a feasible equality band. Parameter ``mu`` is decaying with factor ``dec=1.6`` and periodically re-growing every 100 iterations (``muGrow=100``). The error to the true solution drops below 1e-8 at iteration 225:
+
+<img src="error_plot_G13.png" alt="Error Plot G13" title="Error curve obtained by SACOBRA" width=600 />
+
+## Documentation
+
+< ... >
+
+## Version History
+### V0.8
+Beta Version, it contains
+
+- LHS and random initial design
+- support for arbitrary inequality and equality constraints
+- cubic RBF surrogate models
+- both interpolating and approximating RBFs
+- the majority of G-problems from the G-problem benchmark suite
+
+and it was extensively tested on these G-problems.
+
+It is missing
+
+- a thorough documentation
+- other initial designs
+- other RBF surrogate models
+- (surrogate) model selection
+- repair of infeasible solutions
 
 ## Publications
 You can read more about SACOBRA in the following scientific publications:
