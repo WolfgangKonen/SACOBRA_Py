@@ -35,7 +35,7 @@ First we construct the constraint optimization problem (COP) ``G06`` from the G-
 <img src="error_plot_G06.png" alt="Error Plot G06" title="Error curve obtained by SACOBRA" width=600 />
 
 
-Another example with equality constraints:
+Another example [sacobra_equ.py](./demo/sacobra_equ.py) with equality constraints:
 
 ```Python
 G13 = GCOP("G13")
@@ -59,10 +59,16 @@ Problem G13 has 3 equality constraints and dimension 5. It requires with ``feval
 
 ## Documentation
 
+| title | descr|
+|-------|------|
+| "bla" |blabla|
+
+
+
 < ... >
 
-## Version History
-### V0.8
+### Version History
+#### V0.8
 Beta Version, it contains
 
 - LHS and random initial design
