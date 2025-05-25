@@ -34,7 +34,7 @@ print(f"final error: {fin_err}")
 
 First we construct the constraint optimization problem (COP) ``G06`` from the G-problem benchmark suite.  SACOBRA contains several such benchmark problems in [gCOP.py](./src/gCOP.py). Next we construct with ``CobraInitializer`` the object ``cobra`` with all optimization settings. The optimization is then started with ``CobraPhaseII`` where 40 iterations on surrogate models are carried out. (There is also a ``CobraPhaseI``, but it is optional and can be left out.) We show with ``show_error_plot`` the error on a logarithmic scale, i.e. the distance between the objective found by the solver in each iteration and the true objective ``G06.fbest``:
 
-<img src="error_plot_G06.png" alt="Error Plot G06" title="Error curve obtained by SACOBRA" width=600 />
+<img src="demo/error_plot_G06.png" alt="Error Plot G06" title="Error curve obtained by SACOBRA" width=600 />
 
 
 Another example [sacobra_equ.py](./demo/sacobra_equ.py) with equality constraints:
@@ -57,7 +57,7 @@ print(f"final err: {fin_err}")
 
 Problem G13 has 3 equality constraints and dimension 5. It requires with ``feval=300`` a few more function evaluations. The solver works in the beginning with approximating RBFs (``rho=2.5``) which become later interpolating RBF since ``rho`` is decaying with factor ``rhoDec=2.0``. In addition, a margin ``mu`` is placed around each equality in order to artificially create a feasible band. Parameter ``mu`` decays with the factor ``dec=1.6`` and increases periodically  every 100 iterations (``muGrow=100``). SACOBRA solves also this problem nicely, the error to the true solution drops below 1e-8 at iteration 225:
 
-<img src="error_plot_G13.png" alt="Error Plot G13" title="Error curve obtained by SACOBRA" width=600 />
+<img src="demo/error_plot_G13.png" alt="Error Plot G13" title="Error curve obtained by SACOBRA" width=600 />
 
 ## Documentation
 
