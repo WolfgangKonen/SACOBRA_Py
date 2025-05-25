@@ -11,6 +11,8 @@ SACOBRA was originally developed in R. This repository **SACOBRA_Py** contains t
 
 You just need to install the few packages listed in [requirements.txt](./requirements.txt) (if they are not already installed in your Python environment). Then, clone the contents of this repository and proceed with the examples.
 
+[Note that packages Sphinx and furo are only needed if you want to build the SACOBRA_Py documentation pages.]
+
 ## How to use
 Below is an example from [sacobra_ineq.py](./demo/sacobra_ineq.py): 
 
