@@ -25,14 +25,16 @@ class CobraInitializer:
         - parameter settings: s_opts via :class:`SACoptions`
         - create initial design: A, Fres, Gres via :class:`InitDesigner`
     """
-    def __init__(self, x0: object, fn: object, fName: object, lower: np.ndarray, upper: np.ndarray,
+    def __init__(self, x0, fn: object, fName: str, lower: np.ndarray, upper: np.ndarray,
                  is_equ: np.ndarray,
-                 solu: Union[np.ndarray, None] = None, s_opts: object = SACoptions(50),
+                 solu = None,
+                 s_opts: SACoptions = SACoptions(50),
                  ) -> object:
         """
 
         :param x0: start point, if given, then its dim has to be the same as ``lower``. If it  is/has NaN or None
-                    on input, it is replaced by a random point from ``[lower, upper]``.
+                   on input, it is replaced by a random point from ``[lower, upper]``.
+        :type x0: np.ndarray or None
         :param fn:  function returning ``(1+nConstraints)``-dim vector: [objective to minimize, constraints]
         :param fName: function name
         :param lower: lower bound, its dimension defines input space dimension
@@ -40,6 +42,7 @@ class CobraInitializer:
         :param is_equ: boolean vector with dim ``nConstraints``: which constraints are equality constraints?
         :param solu:  (optional, for diagnostics) true solution vector or solution matrix (one solution per row):
                       one or several feasible x that deliver the minimal objective value
+        :type solu: np.ndarray or None
         :param s_opts: the options, see :class:`SACoptions`
         """
         #
@@ -301,12 +304,14 @@ class CobraInitializer:
     def get_xbest_cobra(self):
         """
         :return: best solution in COBRA space (maybe rescaled)
+        :rtype: np.ndarray
         """
         return self.sac_res['xbest']
 
     def get_xbest(self):
         """
         :return: best solution in original space
+        :rtype: np.ndarray
         """
         if self.sac_opts.ID.rescale:
             return self.rw.inverse(self.sac_res['xbest'])

@@ -18,7 +18,7 @@ cobra = CobraInitializer(G06.x0, G06.fn, G06.name, G06.lower, G06.upper, G06.is_
 
 c2 = CobraPhaseII(cobra).start()
 
-show_error_plot(cobra, G06, file="../error_plot.png")
+show_error_plot(cobra, G06, file="../error_plot_G06.png")
 
 fin_err = np.array(cobra.get_fbest() - G06.fbest)
 print(f"final error: {fin_err}")

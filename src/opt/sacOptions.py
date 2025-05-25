@@ -9,7 +9,7 @@ from opt.trOptions import TRoptions
 
 class SACoptions:
     """
-        The collection of all parameters (options) for SACOBRA, hierarchical
+        The collection of all parameters (options) for SACOBRA, hierarchically
         organized in sub-option-classes
     """
     def __init__(self,
@@ -26,9 +26,10 @@ class SACoptions:
                  DOSAC=1,
                  ISA=ISAoptions(),
                  # conditioningAnalysis=defaultCA(),
-                 penaF=[3.0, 1.7, 3e5], sigmaD=[3.0, 2.0, 100], constraintHandling="DEFAULT",
+                 penaF=[3.0, 1.7, 3e5], sigmaD=[3.0, 2.0, 100],
+                 # constraintHandling="DEFAULT",
                  # DEBUG_RBF=defaultDebugRBF(), DEBUG_TR=False,
-                 DEBUG_TRU=False, DEBUG_RS=False, DEBUG_XI=False,
+                 # DEBUG_TRU=False, DEBUG_RS=False, DEBUG_XI=False,
                  saveIntermediate=False,
                  saveSurrogates=False,
                  epsilonInit=None, epsilonMax=None,
