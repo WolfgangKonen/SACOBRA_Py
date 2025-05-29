@@ -65,9 +65,9 @@ Problem G13 has 3 equality constraints and dimension 5. It requires with ``feval
 |-------|------|
 | "bla" |blabla|
 
+[HTML](./docs/V0.8/html/index.html)      
+[PDF](./docs/V0.8/pdf/sacobra_py.pdf) 
 
-
-< ... >
 
 ### Version History
 #### V0.8
@@ -78,12 +78,12 @@ Beta Version, it contains
 - cubic RBF surrogate models
 - both interpolating and approximating RBFs
 - the majority of G-problems from the G-problem benchmark suite
+- a basic documentation
 
 and it was extensively tested on these G-problems.
 
 It is missing
 
-- a thorough documentation
 - other initial designs
 - other RBF surrogate models
 - (surrogate) model selection
