@@ -46,7 +46,7 @@ def distRequirement(x,fitnessSurrogate,ro):
     # }
 
 
-def updateInfoAndCounters(cobra: CobraInitializer, p2: Phase2Vars, currentEps=0):
+def updateInfoAndCounters(cobra: CobraInitializer, p2: Phase2Vars, currentMu=0):
     """
         Update cobra information (A, Fres, Gres and others) and update counters (Cfeas, Cinfeas).
     """
@@ -69,7 +69,7 @@ def updateInfoAndCounters(cobra: CobraInitializer, p2: Phase2Vars, currentEps=0)
     # cobra$TA = rbind(cobra$TA,xNew)
     cobra.sac_res['Fres'] = concat(cobra.sac_res['Fres'], p2.ev1.xNewEval[0])
     cobra.sac_res['Gres'] = np.vstack((cobra.sac_res['Gres'], p2.ev1.xNewEval[1:]))
-    cobra.sac_res['muVec'] = concat(cobra.sac_res['muVec'], p2.currentEps)
+    cobra.sac_res['muVec'] = concat(cobra.sac_res['muVec'], p2.currentMu)
     cobra.sac_res['numViol'] = concat(cobra.sac_res['numViol'], p2.ev1.newNumViol)
     cobra.sac_res['trueNumViol'] = concat(cobra.sac_res['trueNumViol'], p2.ev1.trueNumViol)
     cobra.sac_res['maxViol'] = concat(cobra.sac_res['maxViol'], p2.ev1.newMaxViol)
@@ -86,14 +86,14 @@ def updateInfoAndCounters(cobra: CobraInitializer, p2: Phase2Vars, currentEps=0)
     verbose = cobra.sac_opts.verbose
     verboseprint(verbose, important = DEBUGequ,
                  message = f"{cobra.phase}.[{num}]: {cobra.sac_res['A'][xNewIndex, 0]} | {cobra.sac_res['Fres'][-1]} |"
-                           f"{p2.ev1.newMaxViol} | {currentEps}")
+                           f"{p2.ev1.newMaxViol} | {currentMu}")
 
     dim = cobra.sac_res['A'].shape[1]
     realXbest = cobra.rw.inverse(cobra.sac_res['xbest'].reshape(dim,))
     if cobra.sac_opts.EQU.active:
         verboseprint(verbose, important = cobra.sac_opts.important,
                      message = f"Best Result.[{num}]: {realXbest[0]} {realXbest[1]} | {cobra.sac_res['fbest']} | "
-                               f"{cobra.sac_res['trueMaxViol'][cobra.sac_res['ibest']]} |  {currentEps}")
+                               f"{cobra.sac_res['trueMaxViol'][cobra.sac_res['ibest']]} |  {currentMu}")
 
     else:
         # TODO: add the part with 'nrow(get("ARCHIVE",envir=intern.archive.env))' to the following message:
@@ -111,10 +111,10 @@ def updateInfoAndCounters(cobra: CobraInitializer, p2: Phase2Vars, currentEps=0)
 
 def adjustMargins(cobra: CobraInitializer, p2: Phase2Vars):
     """
-    Adjust margin p2.EPS (and p2.currentEps); conditionally reset counters p2.Cfeas, p2.Cinfeas.
+    Adjust margin p2.EPS (and p2.currentMu); conditionally reset counters p2.Cfeas, p2.Cinfeas.
 
     :param cobra:   SACOBRA settings and results
-    :param p2:      these members may be changed : EPS, currentEps, Cfeas, Cinfeas
+    :param p2:      these members may be changed : EPS, currentMu, Cfeas, Cinfeas
     """
     Tfeas = cobra.sac_opts.Tfeas
     Tinfeas = cobra.sac_opts.Tinfeas
@@ -122,20 +122,19 @@ def adjustMargins(cobra: CobraInitializer, p2: Phase2Vars):
     if p2.Cfeas >= Tfeas:
         p2.EPS = p2.EPS / 2
         verboseprint(verbose, important = False, message=f"reducing epsilon to {p2.EPS}")
-        verboseprint(verbose, important = False, message=f"reducing equality margin to {p2.currentEps}")
+        verboseprint(verbose, important = False, message=f"reducing equality margin to {p2.currentMu}")
 
         p2.Cfeas = 0
 
     if p2.Cinfeas >= Tinfeas:
-        epsMax = cobra.sac_opts.epsilonMax
-        p2.EPS = min(2 * p2.EPS, epsMax)
+        p2.EPS = min(2 * p2.EPS, cobra.sac_opts.SEQ.epsilonMax)
         verboseprint(verbose, important=False, message=f"increasing epsilon to {p2.EPS}")
-        verboseprint(verbose, important=False, message=f"increasing equality margin to {p2.currentEps}")
+        verboseprint(verbose, important=False, message=f"increasing equality margin to {p2.currentMu}")
 
         p2.Cinfeas = 0
 
     if cobra.sac_opts.EQU.active:
-        p2.currentEps = modifyMu(p2.Cfeas, p2.Cinfeas, Tfeas, p2.currentEps, cobra, p2)
+        p2.currentMu = modifyMu(p2.Cfeas, p2.Cinfeas, Tfeas, p2.currentMu, cobra, p2)
 
     if cobra.sac_opts.RBF.rhoGrow > 0:
         if p2.num % cobra.sac_opts.RBF.rhoGrow == 0:

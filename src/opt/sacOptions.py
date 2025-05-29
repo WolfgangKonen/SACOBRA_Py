@@ -9,55 +9,72 @@ from opt.trOptions import TRoptions
 
 class SACoptions:
     """
-        The collection of all parameters (options) for SACOBRA, hierarchically
-        organized in sub-option-classes
+        The collection of all parameters (options) for **SACOBRA_Py**. Except for some general
+        parameters defined in this class, they are hierarchically organized in nested option classes.
+
+        :param feval: number of function evaluations
+        :param XI:  Distance-Requirement-Cycle (DRC) that controls exploration: Each infill point has a forbidden-sphere of radius ``XI[c]`` around it. ``c`` loops cyclically through ``XI``'s inidices. If ``XI==None``, then CobraInitializer will set it, depending on objective range, to short DRC ``[0.001, 0.0]`` or long DRC ``[0.3, 0.05, 0.001, 0.0005, 0.0]``.
+        :param skipPhaseI: whether to skip **SACOBRA_Py** phase I or not
+        :param DOSAC: controls the default options for ``ISAoptions ISA``. 0: take plain COBRA settings, 1: full SACOBRA settings, 2: reduced SACOBRA settings
+        :param saveIntermediate: whether to save intermediate results or not (TODO)
+        :param saveSurrogates: whether to save surrogate models or not (TODO)
+        :param verbose: verbosity level: 0: print nothing. 1: print only important messages. 2: print everything
+        :param verboseIter: an integer value, after how many iterations to print summarized results.
+        :param important: controls the importance level for some ``verboseprint``'s in ``updateInfoAndCounters``
+        :param cobraSeed: the seed for RNGs. **SACOBRA_Py** guarantees the same results for the same seed
+        :param ID: nested options for initial design
+        :type ID: IDoptions
+        :param RBF: nested options for radial basis functions
+        :type RBF: RBFoptions
+        :param SEQ: nested options for sequential optimizer
+        :type SEQ: SEQoptions
+        :param ISA: nested Internal SACOBRA options
+        :type ISA: ISAoptions
+        :param EQU: nested options for equality constraints
+        :type EQU: EQUoptions
+        :param MS: nested options for model selection
+        :type MS: MSoptions
+        :param TR: nested options for trust region
+        :type TR: TRoptions
     """
     def __init__(self,
                  feval=100,
                  XI=None,
                  skipPhaseI=True,
+                 DOSAC=1,
+                 saveIntermediate=False,
+                 saveSurrogates=False,
+                 verbose=1, verboseIter=10, important=True,
+                 cobraSeed=42,
                  ID=IDoptions(),
                  RBF=RBFoptions(),
                  SEQ=SEQoptions(),
+                 ISA=ISAoptions(),
+                 EQU=EQUoptions(),
                  # repairInfeas=False, ri=defaultRI(),
                  MS=MSoptions(),
-                 EQU=EQUoptions(),
                  TR=TRoptions(),
-                 DOSAC=1,
-                 ISA=ISAoptions(),
                  # conditioningAnalysis=defaultCA(),
-                 penaF=[3.0, 1.7, 3e5], sigmaD=[3.0, 2.0, 100],
                  # constraintHandling="DEFAULT",
                  # DEBUG_RBF=defaultDebugRBF(), DEBUG_TR=False,
                  # DEBUG_TRU=False, DEBUG_RS=False, DEBUG_XI=False,
-                 saveIntermediate=False,
-                 saveSurrogates=False,
-                 epsilonInit=None, epsilonMax=None,
-                 finalEpsXiZero=True,  # if True, then set EPS=XI=0 in final iteration (full exploit, might require
-                                        # SEQ.conTol=1e-7 instead of 0.0)
-                 verbose=1, verboseIter=10, important=True,
-                 cobraSeed=42
                  ):
-
+        """
+        """
         self.feval = feval
-        self.skipPhaseI = skipPhaseI
-        self.ID = ID
-        self.epsilonInit = epsilonInit
-        self.epsilonMax = epsilonMax
-        self.finalEpsXiZero = finalEpsXiZero
-        self.penaF = penaF
-        self.sigmaD = sigmaD
-        self.DOSAC = DOSAC
-        self.ISA = ISA
         self.XI = XI
+        self.skipPhaseI = skipPhaseI
+        self.DOSAC = DOSAC
+        self.saveIntermediate = saveIntermediate
+        self.saveSurrogates = saveSurrogates
         self.verbose = verbose
         self.verboseIter = verboseIter
         self.important = important
         self.cobraSeed = cobraSeed
+        self.ID = ID
+        self.ISA = ISA
         self.RBF = RBF
         self.SEQ = SEQ
         self.MS = MS
         self.EQU = EQU
         self.TR = TR
-        self.saveIntermediate = saveIntermediate
-        self.saveSurrogates = saveSurrogates

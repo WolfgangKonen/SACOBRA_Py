@@ -24,13 +24,6 @@ class CobraInitializer:
         - problem formulation: x0, fn, lower, upper, is_equ, solu
         - parameter settings: s_opts via :class:`SACoptions`
         - create initial design: A, Fres, Gres via :class:`InitDesigner`
-    """
-    def __init__(self, x0, fn: object, fName: str, lower: np.ndarray, upper: np.ndarray,
-                 is_equ: np.ndarray,
-                 solu = None,
-                 s_opts: SACoptions = SACoptions(50),
-                 ) -> object:
-        """
 
         :param x0: start point, if given, then its dim has to be the same as ``lower``. If it  is/has NaN or None
                    on input, it is replaced by a random point from ``[lower, upper]``.
@@ -43,7 +36,15 @@ class CobraInitializer:
         :param solu:  (optional, for diagnostics) true solution vector or solution matrix (one solution per row):
                       one or several feasible x that deliver the minimal objective value
         :type solu: np.ndarray or None
-        :param s_opts: the options, see :class:`SACoptions`
+        :param s_opts: the options
+        :type s_opts: SACoptions
+    """
+    def __init__(self, x0, fn: object, fName: str, lower: np.ndarray, upper: np.ndarray,
+                 is_equ: np.ndarray,
+                 solu = None,
+                 s_opts: SACoptions = SACoptions(50),
+                 ) -> object:
+        """
         """
         #
         # STEP 0: first settings and checks
@@ -115,8 +116,8 @@ class CobraInitializer:
             verboseprint(verbose=s_opts.verbose, important=True, message="An unconstrained problem is being addressed")
 
         ell = min(upper - lower)  # length of smallest side of search space
-        if s_opts.epsilonInit is None: s_opts.epsilonInit = 0.005 * ell
-        if s_opts.epsilonMax is None:  s_opts.epsilonMax = 2 * 0.005 * ell
+        if s_opts.SEQ.epsilonInit is None: s_opts.SEQ.epsilonInit = 0.005 * ell
+        if s_opts.SEQ.epsilonMax is None:  s_opts.SEQ.epsilonMax = 2 * 0.005 * ell
         if s_opts.ID.initDesOptP is None: s_opts.ID.initDesOptP = s_opts.ID.initDesPoints
         s_opts.phase1DesignPoints = None
 
@@ -208,13 +209,13 @@ class CobraInitializer:
                 "TMV": np.median(trueMaxViol),
                 "EMV": np.median(np.max(tempG[:, equ_ind], axis=1))
             }
-            currentEps = switcher.get(s_opts.EQU.initType, "Invalid initType")
-            assert currentEps != "Invalid initType", f"[cobraInit] Wrong s_opts.EQU.initType = {s_opts.EQU.initType}"
-            currentEps = max(currentEps, s_opts.EQU.equEpsFinal)
-            if s_opts.EQU.epsType == "CONS":            # /WK/2025/05/01: bug fix: "CONS" overrides initType
-                currentEps = s_opts.EQU.equEpsFinal
-            self.sac_res['muVec'] = np.repeat(currentEps, s_opts.ID.initDesPoints)
-            tempG[:, equ_ind] = tempG[:, equ_ind] - currentEps  # /WK/2025/03/23: bug fix
+            currentMu = switcher.get(s_opts.EQU.initType, "Invalid initType")
+            assert currentMu != "Invalid initType", f"[cobraInit] Wrong s_opts.EQU.initType = {s_opts.EQU.initType}"
+            currentMu = max(currentMu, s_opts.EQU.muFinal)
+            if s_opts.EQU.muType == "CONS":            # /WK/2025/05/01: bug fix: "CONS" overrides initType
+                currentMu = s_opts.EQU.muFinal
+            self.sac_res['muVec'] = np.repeat(currentMu, s_opts.ID.initDesPoints)
+            tempG[:, equ_ind] = tempG[:, equ_ind] - currentMu  # /WK/2025/03/23: bug fix
             conTol = s_opts.SEQ.conTol
             maxViol = np.maximum(conTol, np.max(tempG, axis=1))     # /WK/2025/03/23: bug fix conTol
             numViol = np.sum(tempG > conTol, axis=1)                # /WK/2025/03/23: bug fix conTol
@@ -275,7 +276,7 @@ class CobraInitializer:
         elif s_opts.DOSAC == 2: s_opts.ISA = ISAoptions2()
         if s_opts.DOSAC > 0:
             verboseprint(s_opts.verbose, important=False, message="Parameter and function adjustment phase")
-            s_opts.pEffect = s_opts.ISA.pEffectInit
+            s_opts.pEffect = s_opts.ISA.pEffectInit    # TODO: s_opts.pEffect seems to be never used, we have p2.pEffect
 
             if s_opts.ISA.aDRC:
                 if s_opts.XI.size != DRCL.size:
@@ -286,7 +287,7 @@ class CobraInitializer:
                           "so XI will be set by automatic DRC adjustment!")
 
                 verboseprint(s_opts.verbose, important=False, message="adjusting DRC")
-                DRC = self.adDRC(max(self.sac_res['Fres']), min(self.sac_res['Fres']))
+                DRC = self.adDRC()     # max(self.sac_res['Fres']), min(self.sac_res['Fres'])
                 s_opts.XI = DRC
 
             # --- adFit is now called in *each* iteration of cobraPhaseII (adaptive plog) ---
@@ -326,9 +327,9 @@ class CobraInitializer:
         """
         return self.sac_res['originalfn'](self.get_xbest())[0]
 
-    def adDRC(self, maxF, minF):
-        """ Adjust DRC (distance requirement cycle) """
-        FRange = (maxF - minF)
+    def adDRC(self):        # , maxF, minF
+        """ Adjust DRC (distance requirement cycle), based on range of ``Fres`` """
+        FRange = (max(self.sac_res['Fres']) - min(self.sac_res['Fres']))
         if FRange > 1e+03:
             DRC = DRCS
             print(f"FR={FRange} is large, XI is set to Short DRC")
@@ -341,7 +342,7 @@ class CobraInitializer:
         """
             Adjust several elements according to constraint range.
 
-            The following elements of cobra.sac_res may be changed: 'fn', 'Gres', 'Grange', 'GrangeEqu'
+            The following elements of ``self.sac_res`` may be changed: 'fn', 'Gres', 'Grange', 'GrangeEqu'
         """
         s_opts = self.sac_opts
         fnold = self.sac_res['fn']
@@ -365,11 +366,11 @@ class CobraInitializer:
                 GRF = GRfact[1:]
                 EQUfact = GRF[equ_ind]
                 # define a coefficient for the final equality margin
-                equEpsFinal = s_opts.EQU.equEpsFinal
-                finMarginCoef = min([min(equEpsFinal / EQUfact), equEpsFinal]) / equEpsFinal
+                muFinal = s_opts.EQU.muFinal
+                finMarginCoef = min([min(muFinal / EQUfact), muFinal]) / muFinal
                 # --- /WK/2025/05/04: disabled the following, because it is also disabled (overwritten by the initial
-                # --- setting for equEpsFinal) on the R side: ---
-                # s_opts.EQU.equEpsFinal = finMarginCoef * equEpsFinal
+                # --- setting for muFinal) on the R side: ---
+                # s_opts.EQU.muFinal = finMarginCoef * muFinal
                 self.sac_res['GRfact'] = GRF
                 self.sac_res['finMarginCoef'] = finMarginCoef
 

@@ -6,13 +6,24 @@ from cobraInit import CobraInitializer
 
 class Phase2Vars:
     """
-    Variables needed by :class:`CobraPhaseII` (in addition to :class:`CobraInitializer` ``cobra``)
+    This class is just a container for variables needed by :class:`.CobraPhaseII` (in addition to :class:`.CobraInitializer` ``cobra``).
+    These variables include:
+
+    - **EPS**           number, the current safety margin EPS in constraint surrogates
+    - **currentMu**     number, the current equality margin :math:`\mu`, see equHandling.py
+    - **num**           the number of real function evaluations carried out
+    - **globalOptCounter** counter of the global optimization steps in phase II, excluding repair and trust region
+    - **Cfeas**          how many feasible infills in a row (see adjustMargins, updateInfoAndCounters)
+    - **Cinfeas**        how many infeasible infills in a row (see adjustMargins, updateInfoAndCounters)
+    - **fitnessSurrogate** the objective surrogate model
+    - **constraintSurrogates** the constraint surrogate models
+
+    Example: ``p2 = Phase2Vars; print(p2.num);``
     """
     def __init__(self, cobra: CobraInitializer):
-        eps_init = cobra.sac_opts.epsilonInit
-        self.EPS = eps_init         # number, the current safety margin EPS in constraint surrogates
-        self.currentEps = 0.0       # number, the current equality margin \mu, see equHandling.py
-        self.num = cobra.sac_res['A'].shape[0]      # the number of real function evaluations
+        self.EPS = cobra.sac_opts.SEQ.epsilonInit      # number, the current safety margin EPS in constraint surrogates
+        self.currentMu = 0.0       #
+        self.num = cobra.sac_res['A'].shape[0]      # the number of real function evaluations carried out
         self.globalOptCounter = 0   # counter for only for the global optimization steps in phase II,
                                     # excluding repair and trust region
         self.Cfeas = 0          # how many feasible infills in a row (see adjustMargins, updateInfoAndCounters)

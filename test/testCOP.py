@@ -42,10 +42,9 @@ class TestCOP(unittest.TestCase):
 
         cobra = CobraInitializer(G06.x0, G06.fn, G06.name, G06.lower, G06.upper, G06.is_equ,
                                  s_opts=SACoptions(verbose=verb, feval=40, cobraSeed=42,
-                                                   finalEpsXiZero=True,
                                                    ID=IDoptions(initDesign="RAND_REP", initDesPoints=5),
                                                    RBF=RBFoptions(degree=1),
-                                                   SEQ=SEQoptions(conTol=1e-7)))       # trueFuncForSurrogates=True
+                                                   SEQ=SEQoptions(finalEpsXiZero=True, conTol=1e-7)))
         # cobra.sac_opts.ISA.RS = False  # temp
         cobra.sac_opts.ISA.RS_rep = True
 
@@ -122,10 +121,9 @@ class TestCOP(unittest.TestCase):
         for run in range(runs):
             cobra = CobraInitializer(G06.x0, G06.fn, G06.name, G06.lower, G06.upper, G06.is_equ,
                                      s_opts=SACoptions(verbose=verb, feval=40, cobraSeed=39+run,
-                                                       finalEpsXiZero=True,
                                                        ID=IDoptions(initDesign="RAND_REP", initDesPoints=6),
                                                        RBF=RBFoptions(degree=2),
-                                                       SEQ=SEQoptions(conTol=1e-7)))     # trueFuncForSurrogates=True
+                                                       SEQ=SEQoptions(finalEpsXiZero=True, conTol=1e-7)))
 
             c2 = CobraPhaseII(cobra)
             c2.start()

@@ -1,4 +1,5 @@
-Creating recipes
+----------------
+Playground RST
 ----------------
 
 To retrieve a list of random ingredients,
@@ -6,8 +7,9 @@ you can use the ``lumache.get_random_ingredients()`` function:
 
 .. autofunction:: lumache.get_random_ingredients
 
-.. autoclass:: cobraInit.CobraInitializer
-   :members: __init__, adCon, get_xbest, get_fbest
+##.. autoclass:: cobraInit.CobraInitializer
+##   :members: __init__, adCon, get_xbest, get_fbest
+##   :no-index:
 
 
 .. autofunction:: cobraInit.CobraInitializer.__init__

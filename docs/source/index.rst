@@ -17,6 +17,9 @@ documentation for details.
 
    overview
    cop
-   usage	
+   init
+   optim
+   example
+   playground	
 
 

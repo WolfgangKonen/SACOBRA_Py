@@ -6,23 +6,25 @@ from opt.idOptions import IDoptions         # needed for docstring
 
 
 class InitDesigner:
+    """
+    Create matrix ``self.A`` with shape ``(P, d)`` of sample points in (potentially rescaled) input space
+    ``[lower, upper]`` :math:`\subset \mathbb{R}^d`, where ``P = initDesPoints`` and ``d =`` input space dimension.
+
+    Apply ``fn`` to these points and split the result in objective
+    function values ``self.Fres`` (with shape ``(P,)``) and constraint function values ``self.Gres`` (with shape
+    ``(P,nC)`` where ``nC`` = number of constraints).
+
+    :param x0:  the last point ``self.A[-1,:]`` is ``x0``
+    :param fn:  see parameter ``fn`` in :class:`cobraInit.CobraInitializer`
+    :param lower: vector of shape ``(d,)``
+    :param upper: vector of shape ``(d,)``
+    :param s_opts: object of class :class:`SACoptions`. Here we use from element  :class:`IDoptions` ``s_opts.ID``
+                   the elements ``initDesign`` and ``initDesPoints``.
+    :type s_opts: SACoptions
+    """
+
     def __init__(self, x0: np.ndarray, fn, rng,
                  lower: np.ndarray, upper: np.ndarray, s_opts: SACoptions):
-        """
-        Create matrix ``self.A`` with shape ``(P, d)`` of sample points in input space ``[lower, upper]``
-        :math:`\subset \mathbb{R}^d`, where ``P = initDesPoints`` and ``d =`` input space dimension.
-
-        Apply ``fn`` to these points and divide the result in objective
-        function values ``self.Fres`` (shape ``(P,)``) and constraint function values ``self.Gres`` (shape
-        ``(P,nC)`` with ``nC`` = number of constraints).
-
-        :param x0:  the last point ``self.A[-1,:]`` is ``x0``
-        :param fn:
-        :param lower:
-        :param upper:
-        :param s_opts: object of class :class:`SACoptions`. Here we use from element ID of class :class:`IDoptions`
-                       the elements ``initDesign`` and ``initDesPoints``.
-        """
         self.val = s_opts.cobraSeed
         d = lower.size
         npts = s_opts.ID.initDesPoints
@@ -33,11 +35,11 @@ class InitDesigner:
         elif s_opts.ID.initDesign == "RAND_R":
             # Same as "RANDOM", but with reproducible random numbers (reproducible also on the R side).
             # The seed is s_opts.cobraSeed.
-            self.A = self.my_rng(npts - 1, d, s_opts.cobraSeed)  # uniform random in [0,1)
+            self.A = self._my_rng(npts - 1, d, s_opts.cobraSeed)  # uniform random in [0,1)
         elif s_opts.ID.initDesign == "RAND_REP":
             # Same as "RAND_R", but with better self.my_rng2 (avoid cycles!).
             # The seed is s_opts.cobraSeed (set via initial value for self.val).
-            self.A = self.my_rng2(npts - 1, d)  # uniform random in [0,1)
+            self.A = self._my_rng2(npts - 1, d)  # uniform random in [0,1)
         elif s_opts.ID.initDesign == "LHS":
             # Latin Hypercube Sampling.
             # The seed is s_opts.cobraSeed.
@@ -56,10 +58,16 @@ class InitDesigner:
         self.Fres = fnEval[:, 0]
         self.Gres = fnEval[:, 1:]
 
-    def __call__(self, *args, **kwargs) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def __call__(self) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """
+        Return the three results ``A``, ``Fres`` and ``Gres`` of the initial design
+
+        :return: (self.A, self.Fres, self.Gres)
+        :rtype: (np.ndarray, np.ndarray, np.ndarray)
+        """
         return self.A, self.Fres, self.Gres
 
-    def my_rng(self, n, d, seed):
+    def _my_rng(self, n, d, seed):
         MOD = 10 ** 5 + 7
         val = seed
         x = np.zeros((n, d), dtype=np.float32)
@@ -69,7 +77,7 @@ class InitDesigner:
                 x[n_, d_] = val / MOD   # map val to range [0,1[
         return x
 
-    def my_rng2(self, n, d):
+    def _my_rng2(self, n, d):
         MOD = 10 ** 5 + 7
         OFS = 10 ** 5 - 7
         x = np.zeros((n, d), dtype=np.float32)

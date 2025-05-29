@@ -8,7 +8,7 @@ def updateCobraEqu(cobra: CobraInitializer, p2: Phase2Vars, xNew):
     Calculate ``cobra.sac_res['xbest', 'fbest', 'ibest']`` given the currently evaluated points.
 
     First, we calculate the set S of points being feasible in the inequalities and feasible
-    with margin currentEps in the equalities. If S is non-empty, take the point from S with
+    with margin currentMu in the equalities. If S is non-empty, take the point from S with
     the best objective as ``cobra.sac_res['xbest']``. If S is empty (there are no feasible points): If the new point
     has lower maxViol than the maxViol of ``cobra.sac_res['xbest']``, take it as the new ``cobra.sac_res['xbest']``.
 
@@ -23,7 +23,7 @@ def updateCobraEqu(cobra: CobraInitializer, p2: Phase2Vars, xNew):
     equ_ind = np.flatnonzero(s_res['is_equ'])
     conTol = s_opts.SEQ.conTol
 
-    equMargin = p2.currentEps   # new 2025/04/02
+    equMargin = p2.currentMu   # new 2025/04/02
     temp = s_res['Gres'].copy()
     # We check whether
     #
@@ -73,41 +73,41 @@ def updateCobraEqu(cobra: CobraInitializer, p2: Phase2Vars, xNew):
     return cobra
 
 
-def modifyMu(Cfeas, Cinfeas, Tfeas, currentEps, cobra: CobraInitializer, p2: Phase2Vars):
+def modifyMu(Cfeas, Cinfeas, Tfeas, currentMu, cobra: CobraInitializer, p2: Phase2Vars):
     """
-    Modify equality margin :math:`\mu` = ``currentEps``.
+    Modify equality margin :math:`\mu` = ``currentMu``.
 
     :param Cfeas: counter feasible iterates
     :param Cinfeas: counter infeasible iterates
     :param Tfeas: threshold counts
-    :param currentEps: current value for :math:`\mu`
+    :param currentMu: current value for :math:`\mu`
     :param cobra: an object of class :class:`CobraInitializer`
     :param p2: an object of class :class:`Phase2Vars`
-    :return: ``currentEps``, the modified value for :math:`\mu`
+    :return: ``currentMu``, the modified value for :math:`\mu`
     """
     s_opts = cobra.sac_opts
     s_res = cobra.sac_res
     # s_res['muVec'] holds the vector named cobra$currentEps in R
     if s_opts.EQU.muGrow > 0:
         if p2.num % s_opts.EQU.muGrow == 0:
-            currentEps = s_res['muVec'][0]  # every muGrow (e.g. 100) iterations, re-enlarge the \mu-band
+            currentMu = s_res['muVec'][0]  # every muGrow (e.g. 100) iterations, re-enlarge the \mu-band
 
     switcher = {
         'expFunc':    # exponentially decaying func
-            max(currentEps / s_opts.EQU.dec, s_opts.EQU.equEpsFinal),
+            max(currentMu / s_opts.EQU.muDec, s_opts.EQU.muFinal),
         'SAexpFunc':  # self-adjusting expFunc
-            max(np.mean([s_res['muVec'][-1]/s_opts.EQU.dec,
+            max(np.mean([s_res['muVec'][-1]/s_opts.EQU.muDec,
                          s_res['trueMaxViol'][s_res['ibest']] * s_res['finMarginCoef'] ]),
-                s_opts.EQU.equEpsFinal),
-        'funcDim': (s_res['muVec'][0] * (1 / s_opts.EQU.dec) ** ((p2.num - 3 * s_res['A'].shape[1]) /
-                                                                 ((Tfeas ** 2) / 2 - 1))
-                    ) + s_opts.EQU.equEpsFinal,
-        'funcSDim': (s_res['muVec'][0] * (1 / s_opts.EQU.dec) ** ((p2.num - 3 * s_res['A'].shape[1]) / Tfeas)
-                     ) + s_opts.EQU.equEpsFinal,
-        'Zhang': max(max(s_res['muVec'] * (1 - p2.ev1.feas.size / p2.num)), s_opts.EQU.equEpsFinal),
-        'CONS': s_opts.EQU.equEpsFinal
+                s_opts.EQU.muFinal),
+        'funcDim': (s_res['muVec'][0] * (1 / s_opts.EQU.muDec) ** ((p2.num - 3 * s_res['A'].shape[1]) /
+                                                                   ((Tfeas ** 2) / 2 - 1))
+                    ) + s_opts.EQU.muFinal,
+        'funcSDim': (s_res['muVec'][0] * (1 / s_opts.EQU.muDec) ** ((p2.num - 3 * s_res['A'].shape[1]) / Tfeas)
+                     ) + s_opts.EQU.muFinal,
+        'Zhang': max(max(s_res['muVec'] * (1 - p2.ev1.feas.size / p2.num)), s_opts.EQU.muFinal),
+        'CONS': s_opts.EQU.muFinal
     }
-    currentEps = switcher.get(s_opts.EQU.epsType, "Invalid epsType")
-    assert currentEps != "Invalid epsType", f"[modifyMu] invalid s_opts.EQU.epsType = {s_opts.EQU.epsType}"
+    currentMu = switcher.get(s_opts.EQU.muType, "Invalid muType")
+    assert currentMu != "Invalid muType", f"[modifyMu] invalid s_opts.EQU.muType = {s_opts.EQU.muType}"
 
-    return currentEps
+    return currentMu

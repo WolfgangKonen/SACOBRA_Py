@@ -2,9 +2,17 @@
 
 class IDoptions:
     """
-    Init design options.
+    Options for the initial design (:math:`d` = input dimension of problem).
 
-    See ``__init__(self, ...)`` for details.
+    :param initDesign:    options: "RANDOM", "RAND_R", "RAND_REP", "LHS", ... (see initDesigner)
+    :param initDesPoints: number of initial design points. If None, cobraInit will set it to :math:`d+1`
+                          if RBF.degree=1 or to :math:`(d+1)(d+2)/2` if RBF.degree=2
+    :param initDesOptP:   if None, cobraInit will set it to initDesPoints
+    :param initBias:
+    :param rescale:       if True, rescale input space from [lower, upper] to :math:`[` newLower, newUpper :math:`]^d`
+    :param newLower:      common new lower bound for each of the :math:`d` input dimensions
+    :param newUpper:      common new upper bound for each of the :math:`d` input dimensions
+
     """
     def __init__(self,
                  initDesign="RANDOM",
@@ -16,16 +24,7 @@ class IDoptions:
                  newUpper=1
                  ):
         """
-        Set the initial design options (d = input dimension of problem).
-
-        :param initDesign:    options: "RANDOM", "RAND_R", "RAND_REP", "LHS", ... (see initDesigner)
-        :param initDesPoints: number of initial design points. If None, cobraInit will set it to d+1 if RBF.degree=1
-                              or to (d+1)(d+2)/2 if RBF.degree=2
-        :param initDesOptP:   if None, cobraInit will set it to initDesPoints
-        :param initBias:
-        :param rescale:       if True, rescale input space from [lower, upper] to :math:`[newLower, newUpper]^d`
-        :param newLower:      common new lower bound for each of the d input dimensions
-        :param newUpper:      common new upper bound for each of the d input dimensions
+        Set the initial design options (:math:`d` = input dimension of problem).
         """
         self.initDesign = initDesign
         self.initDesPoints = initDesPoints

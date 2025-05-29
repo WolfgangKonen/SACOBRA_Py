@@ -195,11 +195,11 @@ def calcConstrPred(x, cobra: CobraInitializer, p2: Phase2Vars) -> np.ndarray:
         #
         #     ( g_i(x), h_j(x) - mu, - h_j(x) - mu ) + eps**2
         #
-        # with mu = currentEps, eps=p2.EPS. This vector should be in all components <= 0
+        # with mu = currentMu, eps=p2.EPS. This vector should be in all components <= 0
         # in order to fulfill the constraints
         #
-        currentEps = s_res['muVec'][-1]
-        currentMu = p2.mu4  # normally 0. Experimental: same value as currentEps, applied to *inequalities*
+        currentMu = s_res['muVec'][-1]
+        currentMu = p2.mu4  # normally 0. Experimental: same value as currentMu, applied to *inequalities*
         if s_opts.SEQ.trueFuncForSurrogates:
             constraint_pred1 = s_res['fn'](x)[1:]
         else:
@@ -209,9 +209,9 @@ def calcConstrPred(x, cobra: CobraInitializer, p2: Phase2Vars) -> np.ndarray:
         ine_ind = np.flatnonzero(s_res['is_equ'] == False)
         equ_ind = np.flatnonzero(s_res['is_equ'])
         constraint_pred1[ine_ind] = constraint_pred1[ine_ind] - currentMu    # g(x) - mu, new 2025/04/02
-        constraint_pred1[equ_ind] = constraint_pred1[equ_ind] - currentEps   # this creates h(x)-mu
-        constraint_pred2 = -constraint_pred1[equ_ind] - 2 * currentEps       # this creates -h(x)-mu
-        # why 2*currentEps? - because we modify the already created h(x)-mu to -(h(x)-mu)-2*mu = -h(x)-mu
+        constraint_pred1[equ_ind] = constraint_pred1[equ_ind] - currentMu   # this creates h(x)-mu
+        constraint_pred2 = -constraint_pred1[equ_ind] - 2 * currentMu       # this creates -h(x)-mu
+        # why 2*currentMu? - because we modify the already created h(x)-mu to -(h(x)-mu)-2*mu = -h(x)-mu
 
         constraint_prediction = np.concatenate((constraint_pred1, constraint_pred2), axis=None) + p2.EPS ** 2
 

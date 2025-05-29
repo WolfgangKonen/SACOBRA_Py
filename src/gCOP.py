@@ -1,16 +1,33 @@
 import numpy as np
+from cobraInit import CobraInitializer
 
 
 class GCOP:
     """
     Constraint Optimization Problem Benchmark (G Function Suite)
 
-    Example: Instantiate problem G01 with
+    [LiangRunar] J. Liang, T. P. Runarsson, E. Mezura-Montes, M. Clerc, P. Suganthan, C. C. Coello, and K. Deb, “Problem definitions and evaluation criteria for the CEC 2006 special session on constrained real-parameter optimization,” Journal of Applied Mechanics, vol. 41, p. 8, 2006. `http://www.lania.mx/~emezura/util/files/tr_cec06.pdf <http://www.lania.mx/~emezura/util/files/tr_cec06.pdf>`_
+
+    Example: Instantiate problem G01 or G02 with
 
     - ``G01 = GCOP("G01")``.
+    - ``G02 = GCOP("G02", dimension=5)``.
 
     Only problems G02 and G03 have the extra parameter ``dimension``.
     All other problems G01, G04, ..., G24 have fixed dimensions.
+
+    Objects of class GCOP have the following useful attributes:
+
+    - **name**      name of the problem, given by the user as 1st argument
+    - **dimension** input space dimension of the problem. For the scalable problems ``G02`` and ``G03``, the dimension should be given by the user, otherwise it will be set automatically
+    - **lower**     lower bound vector, length = input space dimension
+    - **upper**     upper bound vector, length = input space dimension
+    - **fn**        the COP functions which can be passed to **SACOBRA_Py** (see parameter ``fn`` in :class:`CobraInitializer`).
+    - **nConstraints** number of constraints
+    - **x0**        the suggested optimization starting point, may be ``None`` if not available
+    - **solu**      the best known solution(s), (only for diagnostics purposes). Can be ``None`` (not known) or a vector in case of a single solution or a matrix in case of multiple equivalent solutions (each row of the matrix is a solution)
+    - **fbest**     the objective at the best known solution(s), (only for diagnostics purposes)
+    - **info**      information about the problem, may be ``None`` if not available
     """
     def __init__(self, name, dimension=None):
         all_names = [f"G{i+1:02d}" for i in range(24)]
@@ -114,7 +131,7 @@ class GCOP:
         # self$x0=c(runif(1,min=78,max=102), #x1    # random point in R
         #           runif(1,min=33,max=45),  #x2
         #           runif(3,min=27,max=45))
-        self.x0 = np.array([80, 40, 35, 35, 35])        # fixed choice for reproducible results
+        self.x0 = np.array([80, 40, 35, 35, 35])    # fixed choice for reproducible results
         self.fn = lambda x: np.array([(5.3578547*(x[2]**2))+(0.8356891*x[0]*x[4])+(37.293239*x[0])-40792.141,
                                       -(85.334407+0.0056858*x[1]*x[4]+0.0006262*x[0]*x[3]-0.0022053*x[2]*x[4]),
                                       85.334407+0.0056858*x[1]*x[4]+0.0006262*x[0]*x[3]-0.0022053*x[2]*x[4]-92,
@@ -135,8 +152,8 @@ class GCOP:
                               -0.39623355240329272])
         # self.x0 = np.concatenate((np.random.rand(2) * 1200,             # x1, x2  # original: random start point
         #                          0.55 * (np.random.rand(2)*2 - 1)))     # x3, x4
-        self.x0 = np.concatenate((np.array([0.4, 0.6]) * 1200,             # x1, x2  # fixed choice for reproducible
-                                 0.55 * (np.array([0.4, 0.6])*2 - 1)))     # x3, x4  # results
+        self.x0 = np.concatenate((np.array([0.4, 0.6]) * 1200,            # x1, x2  # fixed choice for reproducible
+                                 0.55 * (np.array([0.4, 0.6])*2 - 1)))    # x3, x4  # results
         self.fn = lambda x: np.array([3*x[0]+1e-6*(x[0]**3)+2*x[1]+(2*1e-6/3)*(x[1]**3),
                                       x[2] - x[3] - 0.55,
                                       x[3] - x[2] - 0.55,

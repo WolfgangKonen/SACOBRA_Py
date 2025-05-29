@@ -71,7 +71,7 @@ class EvaluatorReal:
 
         self.state = "initialized"
 
-    def update(self, xNew: np.ndarray, cobra: CobraInitializer, p2: Phase2Vars, currentEps,
+    def update(self, xNew: np.ndarray, cobra: CobraInitializer, p2: Phase2Vars, currentMu,
                fitnessSurrogate=None, f_value=None):
         """
         Evaluate ``xNew`` on the real functions + do refine step (if ``cobra.sac_opts.EQU.active`` and
@@ -80,7 +80,7 @@ class EvaluatorReal:
         :param xNew:    the result vector from sequential optimization on surrogates (the new best x)
         :param cobra:
         :param p2:
-        :param currentEps:  artificial margin 'mu' for equality constraints
+        :param currentMu:  artificial margin 'mu' for equality constraints
         :param fitnessSurrogate:
         :param f_value:
         :return: nothing, but many elements of self are updated: xNew, xNewEval, x0, x1, ...
@@ -100,7 +100,7 @@ class EvaluatorReal:
         if cobra.sac_opts.EQU.active:
             if cobra.sac_opts.EQU.refine and self.state == "optimized":
                 # do refine step only after surrogate optimizer (not after repair or TR)
-                self.equ_refine(cobra, p2, currentEps)
+                self.equ_refine(cobra, p2, currentMu)
 
         if cobra.sac_opts.SEQ.trueFuncForSurrogates:
             newPredY = cobra.sac_res['fn'](self.xNew)[0]
@@ -128,7 +128,7 @@ class EvaluatorReal:
 
         if self.CONSTRAINED:
             if cobra.sac_opts.EQU.active:
-                self.equ_num_max_viol(cobra, currentEps, newPredC)
+                self.equ_num_max_viol(cobra, currentMu, newPredC)
             else:
                 self.ine_num_max_viol(cobra, newPredC)
 
@@ -140,24 +140,24 @@ class EvaluatorReal:
             self.feas = concat(self.feas, True)
             self.feasPred = concat(self.feasPred, True)
 
-    def equ_refine(self, cobra: CobraInitializer, p2: Phase2Vars, currentEps):
+    def equ_refine(self, cobra: CobraInitializer, p2: Phase2Vars, currentMu):
         """
         Do refine step for equality constraints on the new point stored in self.xNew.
 
         :param cobra:
         :param p2:
-        :param currentEps:
+        :param currentMu:
         :return: nothing, but these elements of self are changed: (a) vectors xNew, x_0, x_1; (b) dict refi;
                  (c) numbers nv_conB, nv_conA, nv_trueB, nv_trueA; (d) string state
         """
         s_opts = cobra.sac_opts
         s_res = cobra.sac_res
-        # if (cobra$trueMaxViol[cobra$ibest] > cobra$equHandle$equEpsFinal) {
+        # if (cobra$trueMaxViol[cobra$ibest] > cobra$equHandle$muFinal) {
         if True:  # testwise, enforce refine in every step
             # cat("[evalReal] starting refine ...\n")
             #
             # refine step, special for equality constraints:
-            # Due to currentEps, xNew will not fulfill the equality constraints exactly.
+            # Due to currentMu, xNew will not fulfill the equality constraints exactly.
             # Search with s_opts.EQU.refineAlgo (i.e. COBYLA, BFGS or similar) a point near to xNew which
             # fulfills the equality constraints: Minimize the square sum of s_i(x)**2 where s_i is the surrogate
             # model for the ith constraint. The solution self.refi['x'] from refine replaces xNew.
@@ -172,8 +172,8 @@ class EvaluatorReal:
             #
 
             def myf(x, grad):
-                conR = p2.constraintSurrogates(x)[0]        # why [0]? - constraintSurrogates
-                # returns a (1,nC)-matrix, but we want a (nc,)-vector here (nC = nConstraints)
+                conR = p2.constraintSurrogates(x)[0]        # why [0]? - constraintSurrogates returns a (1,nC)-matrix,
+                                                            # but we want a (nC,)-vector here (nC = nConstraints)
                 return np.sum(concat(np.maximum(0, conR[self.ine_ind]) ** 2, conR[self.equ_ind] ** 2))
                 # return np.sum(conR[self.equ_ind] ** 2)     # deprecated
 
@@ -297,7 +297,7 @@ class EvaluatorReal:
                 # #### printout, only for debugging
                 # /WK/ the name "cg" is just a reminiscence  of initially used optim with method="CG" (conjugate grad)
                 print(f"cg-values (before,after,true) = ({cgbefore:.1g}, {cgafter:.1g}, {cgtrue:.1g})  "
-                      f"[aMaxV, trueMaxV, mu] = [{aMaxV:.2e}, {trueMaxV:.2e}, {p2.currentEps:.2e}]")
+                      f"[aMaxV, trueMaxV, mu] = [{aMaxV:.2e}, {trueMaxV:.2e}, {p2.currentMu:.2e}]")
                 if aMaxV == 0:
                     dummy = 0
             #
@@ -313,10 +313,10 @@ class EvaluatorReal:
             conA = conA.reshape(conA.size)
             trueB = s_res['fn'](self.x_0)[1:]
             trueA = s_res['fn'](self.x_1)[1:]
-            conB[self.equ_ind] = abs(conB[self.equ_ind]) - currentEps
-            conA[self.equ_ind] = abs(conA[self.equ_ind]) - currentEps
-            trueB[self.equ_ind] = abs(trueB[self.equ_ind]) - currentEps
-            trueA[self.equ_ind] = abs(trueA[self.equ_ind]) - currentEps
+            conB[self.equ_ind] = abs(conB[self.equ_ind]) - currentMu
+            conA[self.equ_ind] = abs(conA[self.equ_ind]) - currentMu
+            trueB[self.equ_ind] = abs(trueB[self.equ_ind]) - currentMu
+            trueA[self.equ_ind] = abs(trueA[self.equ_ind]) - currentMu
             conTol = s_opts.SEQ.conTol
             pos_conB = np.flatnonzero(conB > conTol)
             pos_conA = np.flatnonzero(conA > conTol)
@@ -340,12 +340,12 @@ class EvaluatorReal:
         # which can be retrieved by the caller as p2.ev1.xyz
         # equ_refine(self,...) corresponds to equRefineStep in evalReal.R
 
-    def equ_num_max_viol(self, cobra: CobraInitializer, currentEps, newPredC):
+    def equ_num_max_viol(self, cobra: CobraInitializer, currentMu, newPredC):
         """
         Calculate self.newNumViol, .newMaxViol, ... for the equality case (sac_opts.EQU.active=True)
 
         :param cobra:   object of class CobraInitializer
-        :param currentEps: current artificial equality margin :math:`\mu`
+        :param currentMu: current artificial equality margin :math:`\mu`
         :param newPredC: prediction for xNew on constraint surrogates
         :return: nothing, but these elements of self are changed: (a) numbers newNumViol, newMaxViol, newNumPred,
                      trueNumViol, trueMaxViol; (b) vectors feas, feasPred
@@ -355,14 +355,14 @@ class EvaluatorReal:
         conTol = s_opts.SEQ.conTol
         # WK: the new version: we check whether
         #
-        #          g_i(x) <= 0,  h_j(x) - currentEps <= 0,    -h_j(x) - currentEps <= 0
+        #          g_i(x) <= 0,  h_j(x) - currentMu <= 0,    -h_j(x) - currentMu <= 0
         #
         # for the real surrogates and set self.newNumViol to the number of violated constraints.
         # NOTE that temp is also used for self.newMaxViol below.
         temp = s_res['fn'](self.xNew)[1:].copy()
         temp = concat(temp, -temp[self.equ_ind])
         equ2Index = concat(self.equ_ind, s_res['nConstraints'] + np.arange(self.equ_ind.size))
-        temp[equ2Index] = temp[equ2Index] - currentEps
+        temp[equ2Index] = temp[equ2Index] - currentMu
         self.newNumViol = np.flatnonzero(temp > conTol).size
         # number of constraint violations for new point  (we changed former thresh 0 changed to conTol)
 
@@ -375,20 +375,20 @@ class EvaluatorReal:
 
         self.feas = concat(self.feas, self.newNumViol < 1)
 
-        # WK: brought here currentEps and equ2Index into play as well
+        # WK: brought here currentMu and equ2Index into play as well
         ptemp = concat(newPredC, -newPredC[self.equ_ind])
-        ptemp[equ2Index] = ptemp[equ2Index] - currentEps
+        ptemp[equ2Index] = ptemp[equ2Index] - currentMu
         self.newNumPred = np.flatnonzero(ptemp > conTol).size  # the same on constraint surrogates
         self.feasPred = concat(self.feasPred, self.newNumPred < 1)
 
-        # WK: changed self.newMaxViol back to hold the artificial constraint max violation (currentEps-
+        # WK: changed self.newMaxViol back to hold the artificial constraint max violation (currentMu-
         #     margin for equality constraints). This is one condition for entering repair (cobraPhaseII)
         M = max(0, max(temp))  # maximum violation
         self.newMaxViol = M
 
         # SB: it is also interesting to observe and save the information about the real maximum violation
         # instead of the maximum distance to the artificial constraints.
-        # WK: the difference is that we do not subtract currentEps here
+        # WK: the difference is that we do not subtract currentMu here
         temp = s_res['fn'](self.xNew)[1:].copy()
         temp[self.equ_ind] = np.abs(temp[self.equ_ind])
         self.trueNumViol = np.flatnonzero(temp > conTol).size

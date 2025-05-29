@@ -14,8 +14,8 @@ class CobraPhaseII:
     """
         SACOBRA phase II executor.
 
-        Information is communicated via object :class:`CobraInitializer` ``cobra`` (with elements sac_opts and sac_res)
-        and via object :class:`Phase2Vars` ``p2`` (internal variables needed in phase II).
+        Information is communicated via object :class:`.CobraInitializer` ``cobra`` (with elements sac_opts and sac_res)
+        and via object :class:`.Phase2Vars` ``p2`` (internal variables needed in phase II).
     """
     def __init__(self, cobra: CobraInitializer):
         # initial settings of all phase-II-related variables:
@@ -27,21 +27,34 @@ class CobraPhaseII:
         self.cobra = cobra
 
     def get_cobra(self):
+        """
+        :return: COBRA variables
+        :rtype: CobraInitializer
+        """
         return self.cobra
 
     def get_p2(self):
+        """
+        :return: phase II variables
+        :rtype: Phase2Vars
+        """
         return self.p2
 
     def start(self):
+        """
+        Start the main optimization loop of phase II
+
+        :return: ``self``
+        """
         s_opts = self.cobra.sac_opts
         s_res = self.cobra.sac_res
         assert self.p2.ev1.state == "initialized"
-        self.p2.currentEps = s_res['muVec'][0]
+        self.p2.currentMu = s_res['muVec'][0]
         first_pass = True
         final_gama = None
         while self.p2.num < s_opts.feval:
             self.p2.gama = s_opts.XI[(self.p2.globalOptCounter % s_opts.XI.size)]
-            if final_gama is not None:      # final_gama is set at the end of while loop if s_opts.finalEpsXiZero is
+            if final_gama is not None:      # final_gama is set at the end of while loop if s_opts.SEQ.finalEpsXiZero is
                 self.p2.gama = final_gama   # TRUE and if it is just before the last iter
 
             # TODO: MS (model-selection) part
@@ -81,7 +94,7 @@ class CobraPhaseII:
             # evaluate xNew on the real functions + do refine step (if cobra.sac_opts.EQU.active).
             # Result is the updated EvaluatorReal object self.p2.ev1:
             xNew = self.p2.opt_res['x']
-            self.p2.ev1.update(xNew, self.cobra, self.p2, self.p2.currentEps)
+            self.p2.ev1.update(xNew, self.cobra, self.p2, self.p2.currentMu)
 
             # [conditional] calcPEffect (SACOBRA) for onlinePLOG
             calcPEffect(self.p2, self.p2.ev1.xNew, self.p2.ev1.xNewEval)
@@ -100,7 +113,7 @@ class CobraPhaseII:
 
             # TODO: [conditional] trustRegion
 
-            if s_opts.finalEpsXiZero:
+            if s_opts.SEQ.finalEpsXiZero:
                 if self.p2.num == s_opts.feval-1:  # last iter: exploit maximally with EPS=gama=0.0 (might require
                     self.p2.EPS = 0.0              # s_opts.SEQ.conTol=1e-7)
                     final_gama = 0.0

@@ -207,17 +207,17 @@ def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, EPS,
     last = cobra.df.shape[0] - 1
     new_row_df2 = pd.DataFrame(
         {'iter': cobra.df.iter[last],
-         'predY': predY[-1],           # surrogate fitness at current point xNew
-         'predVal': predVal[-1],       # surrogate fitness + penalty at xNew
-         'predSolu': predSolu,             # surrogate fitness at solu (only diagnostics).
-         'predSoluPenal': predSoluPenal,   # surrogate fitness + penalty at solu (only diagnostics).
-         'sigmaD': s_opts.sigmaD[1],    # the 1st of the three elements is the currently active sigmaD
-         'penaF': s_opts.penaF[1],      # the 1st of the three elements is the currently active penaF
+         'predY': predY[-1],  # surrogate fitness at current point xNew
+         'predVal': predVal[-1],  # surrogate fitness + penalty at xNew
+         'predSolu': predSolu,  # surrogate fitness at solu (only diagnostics).
+         'predSoluPenal': predSoluPenal,  # surrogate fitness + penalty at solu (only diagnostics).
+         'sigmaD': s_opts.SEQ.sigmaD[1],  # the 1st of the three elements is the currently active sigmaD
+         'penaF': s_opts.SEQ.penaF[1],  # the 1st of the three elements is the currently active penaF
          'XI': p2.gama,
          'rho': s_opts.RBF.rho,
          'fBest': cobra.df.Best[last],
          'EPS': EPS,
-         'muVec': p2.currentEps,        # this is df2$currentEps in R
+         'muVec': p2.currentMu,  # this is df2$currentMu in R
          'PLOG': p2.PLOG[-1],
          'pshift': p2.pshift[-1],
          'pEffect': p2.pEffect,
@@ -228,7 +228,7 @@ def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, EPS,
          'nv_tB': p2.ev1.nv_trueB,  # diagnostics for refine mechanism
          'nv_tA': p2.ev1.nv_trueA,
          'state': p2.ev1.state
-        }, index=[0])
+         }, index=[0])
     cobra.df2 = pd.concat([cobra.df2, new_row_df2], axis=0)
 
     # TODO (later, when TR is ready):
