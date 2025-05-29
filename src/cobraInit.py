@@ -272,8 +272,10 @@ class CobraInitializer:
         #
         # STEP 8: SACOBRA initialization (set s_opts.ISA, perform adDRC and adCon)
         #
-        if s_opts.DOSAC == 0: s_opts.ISA = ISAoptions0()
-        elif s_opts.DOSAC == 2: s_opts.ISA = ISAoptions2()
+        if s_opts.DOSAC == 0:
+            s_opts.ISA = ISAoptions0()
+        elif s_opts.DOSAC == 2:
+            s_opts.ISA = ISAoptions2()
         if s_opts.DOSAC > 0:
             verboseprint(s_opts.verbose, important=False, message="Parameter and function adjustment phase")
             s_opts.pEffect = s_opts.ISA.pEffectInit    # TODO: s_opts.pEffect seems to be never used, we have p2.pEffect

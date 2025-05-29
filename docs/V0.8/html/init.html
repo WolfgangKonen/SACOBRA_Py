@@ -1,0 +1,568 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Optimization" href="optim.html" /><link rel="prev" title="Constraint Optimization Problems" href="cop.html" />
+
+    <!-- Generated with Sphinx 8.2.3 and Furo 2024.08.06 -->
+        <title>Initialization - SACOBRA_Py 0.8 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=354aac6f" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=302659d7" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f8f8f8;
+  --color-code-foreground: black;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
+<label class="overlay sidebar-overlay" for="__navigation">
+  <div class="visually-hidden">Hide navigation sidebar</div>
+</label>
+<label class="overlay toc-overlay" for="__toc">
+  <div class="visually-hidden">Hide table of contents sidebar</div>
+</label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <div class="visually-hidden">Toggle site navigation sidebar</div>
+        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="index.html"><div class="brand">SACOBRA_Py 0.8 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle">
+          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <div class="visually-hidden">Toggle table of contents sidebar</div>
+        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+  
+  
+  <span class="sidebar-brand-text">SACOBRA_Py 0.8 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cop.html">Constraint Optimization Problems</a></li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Initialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="optim.html">Optimization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="playground.html">Playground RST</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="_sources/init.rst.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle">
+              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <div class="visually-hidden">Toggle table of contents sidebar</div>
+            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="initialization">
+<h1>Initialization<a class="headerlink" href="#initialization" title="Link to this heading">¶</a></h1>
+<p>this doc describes initialization</p>
+<section id="cobrainitializer">
+<h2>CobraInitializer<a class="headerlink" href="#cobrainitializer" title="Link to this heading">¶</a></h2>
+<p>The initialization in <strong>SACOBRA_Py</strong> consists of the following steps:</p>
+<ul class="simple">
+<li><p>pass in the specification of the COP and all the options in <a class="reference internal" href="#opt.sacOptions.SACoptions" title="opt.sacOptions.SACoptions"><code class="xref py py-class docutils literal notranslate"><span class="pre">SACoptions</span></code></a> <code class="docutils literal notranslate"><span class="pre">s_opt</span></code></p></li>
+<li><p>(optional, if <code class="docutils literal notranslate"><span class="pre">s_opts.ID.rescale==True</span></code>) rescale the problem in input space</p></li>
+<li><p>create the initial design, see <a class="reference internal" href="#initDesigner.InitDesigner" title="initDesigner.InitDesigner"><code class="xref py py-class docutils literal notranslate"><span class="pre">InitDesigner</span></code></a></p></li>
+<li><p>adjust several elements according to constraint range, see <a class="reference internal" href="#cobraInit.CobraInitializer.adCon" title="cobraInit.CobraInitializer.adCon"><code class="xref py py-meth docutils literal notranslate"><span class="pre">CobraInitializer.adCon()</span></code></a></p></li>
+<li><p>calculate for each initial design point <code class="docutils literal notranslate"><span class="pre">numViol</span></code>, the number of violated constraints, and <code class="docutils literal notranslate"><span class="pre">maxViol</span></code>, the maximum constraint violation. If equality constraints are involved, calculate <span class="math notranslate nohighlight">\(\mu_{init}\)</span> for an artificial feasibility band around each equality constraint and base <code class="docutils literal notranslate"><span class="pre">numViol</span></code> and <code class="docutils literal notranslate"><span class="pre">maxViol</span></code> on this artificial feasibility.</p></li>
+<li><p>calculate the so-far best (artificial) feasible point. If no point fulfills (artificial) feasibility, take from the set of points with minimum <code class="docutils literal notranslate"><span class="pre">numViol</span></code> the one with the best objective.</p></li>
+<li><p>set up result dictionary <code class="docutils literal notranslate"><span class="pre">self.sac_res</span></code></p></li>
+<li><p>adjust DRC according to objective range, see <a class="reference internal" href="#cobraInit.CobraInitializer.adDRC" title="cobraInit.CobraInitializer.adDRC"><code class="xref py py-meth docutils literal notranslate"><span class="pre">CobraInitializer.adDRC()</span></code></a></p></li>
+</ul>
+<dl class="py class">
+<dt class="sig sig-object py" id="cobraInit.CobraInitializer">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">cobraInit.</span></span><span class="sig-name descname"><span class="pre">CobraInitializer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fn:</span> <span class="pre">object</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fName:</span> <span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lower:</span> <span class="pre">~numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upper:</span> <span class="pre">~numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_equ:</span> <span class="pre">~numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solu=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s_opts:</span> <span class="pre">~opt.sacOptions.SACoptions</span> <span class="pre">=</span> <span class="pre">&lt;opt.sacOptions.SACoptions</span> <span class="pre">object&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cobraInit.CobraInitializer" title="Link to this definition">¶</a></dt>
+<dd><p>Initialize SACOBRA optimization:</p>
+<ul class="simple">
+<li><p>problem formulation: x0, fn, lower, upper, is_equ, solu</p></li>
+<li><p>parameter settings: s_opts via <code class="xref py py-class docutils literal notranslate"><span class="pre">SACoptions</span></code></p></li>
+<li><p>create initial design: A, Fres, Gres via <code class="xref py py-class docutils literal notranslate"><span class="pre">InitDesigner</span></code></p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x0</strong> (<em>np.ndarray</em><em> or </em><em>None</em>) – start point, if given, then its dim has to be the same as <code class="docutils literal notranslate"><span class="pre">lower</span></code>. If it  is/has NaN or None
+on input, it is replaced by a random point from <code class="docutils literal notranslate"><span class="pre">[lower,</span> <span class="pre">upper]</span></code>.</p></li>
+<li><p><strong>fn</strong> – function returning <code class="docutils literal notranslate"><span class="pre">(1+nConstraints)</span></code>-dim vector: [objective to minimize, constraints]</p></li>
+<li><p><strong>fName</strong> – function name</p></li>
+<li><p><strong>lower</strong> – lower bound, its dimension defines input space dimension</p></li>
+<li><p><strong>upper</strong> – upper bound (same dim as lower)</p></li>
+<li><p><strong>is_equ</strong> – boolean vector with dim <code class="docutils literal notranslate"><span class="pre">nConstraints</span></code>: which constraints are equality constraints?</p></li>
+<li><p><strong>solu</strong> (<em>np.ndarray</em><em> or </em><em>None</em>) – (optional, for diagnostics) true solution vector or solution matrix (one solution per row):
+one or several feasible x that deliver the minimal objective value</p></li>
+<li><p><strong>s_opts</strong> (<a class="reference internal" href="#opt.sacOptions.SACoptions" title="opt.sacOptions.SACoptions"><em>SACoptions</em></a>) – the options</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="cobraInit.CobraInitializer.adCon">
+<span class="sig-name descname"><span class="pre">adCon</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cobraInit.CobraInitializer.adCon" title="Link to this definition">¶</a></dt>
+<dd><p>Adjust several elements according to constraint range.</p>
+<p>The following elements of <code class="docutils literal notranslate"><span class="pre">self.sac_res</span></code> may be changed: ‘fn’, ‘Gres’, ‘Grange’, ‘GrangeEqu’</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cobraInit.CobraInitializer.adDRC">
+<span class="sig-name descname"><span class="pre">adDRC</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cobraInit.CobraInitializer.adDRC" title="Link to this definition">¶</a></dt>
+<dd><p>Adjust DRC (distance requirement cycle), based on range of <code class="docutils literal notranslate"><span class="pre">Fres</span></code></p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="initDesigner.InitDesigner">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">initDesigner.</span></span><span class="sig-name descname"><span class="pre">InitDesigner</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x0</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lower</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upper</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s_opts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#opt.sacOptions.SACoptions" title="opt.sacOptions.SACoptions"><span class="pre">SACoptions</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#initDesigner.InitDesigner" title="Link to this definition">¶</a></dt>
+<dd><p>Create matrix <code class="docutils literal notranslate"><span class="pre">self.A</span></code> with shape <code class="docutils literal notranslate"><span class="pre">(P,</span> <span class="pre">d)</span></code> of sample points in (potentially rescaled) input space
+<code class="docutils literal notranslate"><span class="pre">[lower,</span> <span class="pre">upper]</span></code> <span class="math notranslate nohighlight">\(\subset \mathbb{R}^d\)</span>, where <code class="docutils literal notranslate"><span class="pre">P</span> <span class="pre">=</span> <span class="pre">initDesPoints</span></code> and <code class="docutils literal notranslate"><span class="pre">d</span> <span class="pre">=</span></code> input space dimension.</p>
+<p>Apply <code class="docutils literal notranslate"><span class="pre">fn</span></code> to these points and split the result in objective
+function values <code class="docutils literal notranslate"><span class="pre">self.Fres</span></code> (with shape <code class="docutils literal notranslate"><span class="pre">(P,)</span></code>) and constraint function values <code class="docutils literal notranslate"><span class="pre">self.Gres</span></code> (with shape
+<code class="docutils literal notranslate"><span class="pre">(P,nC)</span></code> where <code class="docutils literal notranslate"><span class="pre">nC</span></code> = number of constraints).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x0</strong> – the last point <code class="docutils literal notranslate"><span class="pre">self.A[-1,:]</span></code> is <code class="docutils literal notranslate"><span class="pre">x0</span></code></p></li>
+<li><p><strong>fn</strong> – see parameter <code class="docutils literal notranslate"><span class="pre">fn</span></code> in <a class="reference internal" href="#cobraInit.CobraInitializer" title="cobraInit.CobraInitializer"><code class="xref py py-class docutils literal notranslate"><span class="pre">cobraInit.CobraInitializer</span></code></a></p></li>
+<li><p><strong>lower</strong> – vector of shape <code class="docutils literal notranslate"><span class="pre">(d,)</span></code></p></li>
+<li><p><strong>upper</strong> – vector of shape <code class="docutils literal notranslate"><span class="pre">(d,)</span></code></p></li>
+<li><p><strong>s_opts</strong> (<a class="reference internal" href="#opt.sacOptions.SACoptions" title="opt.sacOptions.SACoptions"><em>SACoptions</em></a>) – object of class <code class="xref py py-class docutils literal notranslate"><span class="pre">SACoptions</span></code>. Here we use from element  <code class="xref py py-class docutils literal notranslate"><span class="pre">IDoptions</span></code> <code class="docutils literal notranslate"><span class="pre">s_opts.ID</span></code>
+the elements <code class="docutils literal notranslate"><span class="pre">initDesign</span></code> and <code class="docutils literal notranslate"><span class="pre">initDesPoints</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="initDesigner.InitDesigner.__call__">
+<span class="sig-name descname"><span class="pre">__call__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#initDesigner.InitDesigner.__call__" title="Link to this definition">¶</a></dt>
+<dd><p>Return the three results <code class="docutils literal notranslate"><span class="pre">A</span></code>, <code class="docutils literal notranslate"><span class="pre">Fres</span></code> and <code class="docutils literal notranslate"><span class="pre">Gres</span></code> of the initial design</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>(self.A, self.Fres, self.Gres)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>(np.ndarray, np.ndarray, np.ndarray)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<p>TODO: Describe <strong>Types of Initial Design</strong> (LHS, Random, …)</p>
+</section>
+<section id="options">
+<h2>Options<a class="headerlink" href="#options" title="Link to this heading">¶</a></h2>
+<p>All paramters (options) for SACOBRA_Py have sensible defaults defined. The user has only to specify those parameters where a
+setting different from the defaults is desired.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="opt.sacOptions.SACoptions">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">opt.sacOptions.</span></span><span class="sig-name descname"><span class="pre">SACoptions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">feval=100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">XI=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skipPhaseI=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">DOSAC=1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">saveIntermediate=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">saveSurrogates=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose=1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verboseIter=10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">important=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cobraSeed=42</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ID=&lt;opt.idOptions.IDoptions</span> <span class="pre">object&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">RBF=&lt;opt.rbfOptions.RBFoptions</span> <span class="pre">object&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">SEQ=&lt;opt.seqOptions.SEQoptions</span> <span class="pre">object&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ISA=&lt;opt.isaOptions.ISAoptions</span> <span class="pre">object&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">EQU=&lt;opt.equOptions.EQUoptions</span> <span class="pre">object&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">MS=&lt;opt.msOptions.MSoptions</span> <span class="pre">object&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">TR=&lt;opt.trOptions.TRoptions</span> <span class="pre">object&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#opt.sacOptions.SACoptions" title="Link to this definition">¶</a></dt>
+<dd><p>The collection of all parameters (options) for <strong>SACOBRA_Py</strong>. Except for some general
+parameters defined in this class, they are hierarchically organized in nested option classes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>feval</strong> – number of function evaluations</p></li>
+<li><p><strong>XI</strong> – Distance-Requirement-Cycle (DRC) that controls exploration: Each infill point has a forbidden-sphere of radius <code class="docutils literal notranslate"><span class="pre">XI[c]</span></code> around it. <code class="docutils literal notranslate"><span class="pre">c</span></code> loops cyclically through <code class="docutils literal notranslate"><span class="pre">XI</span></code>’s inidices. If <code class="docutils literal notranslate"><span class="pre">XI==None</span></code>, then CobraInitializer will set it, depending on objective range, to short DRC <code class="docutils literal notranslate"><span class="pre">[0.001,</span> <span class="pre">0.0]</span></code> or long DRC <code class="docutils literal notranslate"><span class="pre">[0.3,</span> <span class="pre">0.05,</span> <span class="pre">0.001,</span> <span class="pre">0.0005,</span> <span class="pre">0.0]</span></code>.</p></li>
+<li><p><strong>skipPhaseI</strong> – whether to skip <strong>SACOBRA_Py</strong> phase I or not</p></li>
+<li><p><strong>DOSAC</strong> – controls the default options for <code class="docutils literal notranslate"><span class="pre">ISAoptions</span> <span class="pre">ISA</span></code>. 0: take plain COBRA settings, 1: full SACOBRA settings, 2: reduced SACOBRA settings</p></li>
+<li><p><strong>saveIntermediate</strong> – whether to save intermediate results or not (TODO)</p></li>
+<li><p><strong>saveSurrogates</strong> – whether to save surrogate models or not (TODO)</p></li>
+<li><p><strong>verbose</strong> – verbosity level: 0: print nothing. 1: print only important messages. 2: print everything</p></li>
+<li><p><strong>verboseIter</strong> – an integer value, after how many iterations to print summarized results.</p></li>
+<li><p><strong>important</strong> – controls the importance level for some <code class="docutils literal notranslate"><span class="pre">verboseprint</span></code>’s in <code class="docutils literal notranslate"><span class="pre">updateInfoAndCounters</span></code></p></li>
+<li><p><strong>cobraSeed</strong> – the seed for RNGs. <strong>SACOBRA_Py</strong> guarantees the same results for the same seed</p></li>
+<li><p><strong>ID</strong> (<a class="reference internal" href="#opt.idOptions.IDoptions" title="opt.idOptions.IDoptions"><em>IDoptions</em></a>) – nested options for initial design</p></li>
+<li><p><strong>RBF</strong> (<a class="reference internal" href="#opt.rbfOptions.RBFoptions" title="opt.rbfOptions.RBFoptions"><em>RBFoptions</em></a>) – nested options for radial basis functions</p></li>
+<li><p><strong>SEQ</strong> (<a class="reference internal" href="#opt.seqOptions.SEQoptions" title="opt.seqOptions.SEQoptions"><em>SEQoptions</em></a>) – nested options for sequential optimizer</p></li>
+<li><p><strong>ISA</strong> (<em>ISAoptions</em>) – nested Internal SACOBRA options</p></li>
+<li><p><strong>EQU</strong> (<a class="reference internal" href="#opt.equOptions.EQUoptions" title="opt.equOptions.EQUoptions"><em>EQUoptions</em></a>) – nested options for equality constraints</p></li>
+<li><p><strong>MS</strong> (<em>MSoptions</em>) – nested options for model selection</p></li>
+<li><p><strong>TR</strong> (<em>TRoptions</em>) – nested options for trust region</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<p><strong>Distance Requirement Cycle</strong></p>
+<p>The Distance Requirement Cycle (DRC) is the vector <code class="docutils literal notranslate"><span class="pre">XI</span></code> that controls exploration: Each already evaluated infill point is surrounded by a forbidden-sphere of radius <code class="docutils literal notranslate"><span class="pre">XI[c]</span></code> with <code class="docutils literal notranslate"><span class="pre">c</span> <span class="pre">=</span> <span class="pre">i</span> <span class="pre">mod</span> <span class="pre">XI.size</span></code> (<code class="docutils literal notranslate"><span class="pre">c</span></code> loops cyclically through <code class="docutils literal notranslate"><span class="pre">XI</span></code>’s inidices`, that’s where the name <em>cycle</em> comes from). A new infill point is searched under the additional constraint that it has to be a distance <code class="docutils literal notranslate"><span class="pre">XI[c]</span></code> away from all other already evaluted infill points. The larger <code class="docutils literal notranslate"><span class="pre">XI[c]</span></code>, the more exploration.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">XI==None</span></code>, then <a class="reference internal" href="#cobraInit.CobraInitializer" title="cobraInit.CobraInitializer"><code class="xref py py-class docutils literal notranslate"><span class="pre">CobraInitializer</span></code></a> will set it, depending on objective range, to short DRC <code class="docutils literal notranslate"><span class="pre">[0.001,</span> <span class="pre">0.0]</span></code> or long DRC <code class="docutils literal notranslate"><span class="pre">[0.3,</span> <span class="pre">0.05,</span> <span class="pre">0.001,</span> <span class="pre">0.0005,</span> <span class="pre">0.0]</span></code>. Both vectors contain <code class="docutils literal notranslate"><span class="pre">XI[c]</span> <span class="pre">=</span> <span class="pre">0</span></code> which enforces exploitation. (If all entries were <code class="docutils literal notranslate"><span class="pre">XI[c]</span> <span class="pre">&gt;</span> <span class="pre">0</span></code> then a good region would never be exploited further, since the search could never continue in the close vicinity of an already good infill point.)</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="opt.idOptions.IDoptions">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">opt.idOptions.</span></span><span class="sig-name descname"><span class="pre">IDoptions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">initDesign</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'RANDOM'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initDesPoints</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initDesOptP</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initBias</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.005</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rescale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">newLower</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">newUpper</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#opt.idOptions.IDoptions" title="Link to this definition">¶</a></dt>
+<dd><p>Options for the initial design (<span class="math notranslate nohighlight">\(d\)</span> = input dimension of problem).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>initDesign</strong> – options: “RANDOM”, “RAND_R”, “RAND_REP”, “LHS”, … (see initDesigner)</p></li>
+<li><p><strong>initDesPoints</strong> – number of initial design points. If None, cobraInit will set it to <span class="math notranslate nohighlight">\(d+1\)</span>
+if RBF.degree=1 or to <span class="math notranslate nohighlight">\((d+1)(d+2)/2\)</span> if RBF.degree=2</p></li>
+<li><p><strong>initDesOptP</strong> – if None, cobraInit will set it to initDesPoints</p></li>
+<li><p><strong>initBias</strong></p></li>
+<li><p><strong>rescale</strong> – if True, rescale input space from [lower, upper] to <span class="math notranslate nohighlight">\([\)</span> newLower, newUpper <span class="math notranslate nohighlight">\(]^d\)</span></p></li>
+<li><p><strong>newLower</strong> – common new lower bound for each of the <span class="math notranslate nohighlight">\(d\)</span> input dimensions</p></li>
+<li><p><strong>newUpper</strong> – common new upper bound for each of the <span class="math notranslate nohighlight">\(d\)</span> input dimensions</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="opt.rbfOptions.RBFoptions">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">opt.rbfOptions.</span></span><span class="sig-name descname"><span class="pre">RBFoptions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'cubic'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">degree</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rho</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rhoDec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rhoGrow</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">widthFactor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gaussRule</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'One'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#opt.rbfOptions.RBFoptions" title="Link to this definition">¶</a></dt>
+<dd><p>Options for the RBF surrogate models</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> – RBF kernel type (currently only <code class="docutils literal notranslate"><span class="pre">&quot;cubic&quot;</span></code>, but others will follow soon)</p></li>
+<li><p><strong>degree</strong> – degree of polynomial tail for RBF kernel. If None, then <code class="docutils literal notranslate"><span class="pre">RBFInterpolator</span></code> will set it depending on kernel type. See SciPy’s RBFInterpolator documentation for details.</p></li>
+<li><p><strong>rho</strong> – <code class="docutils literal notranslate"><span class="pre">0</span></code>: interpolating RBFs, <code class="docutils literal notranslate"><span class="pre">&gt;</span> <span class="pre">0</span></code>: approximating (spline-like) RBFs. The larger <code class="docutils literal notranslate"><span class="pre">rho</span></code> the smoother</p></li>
+<li><p><strong>rhoDec</strong> – exponential decay factor for <code class="docutils literal notranslate"><span class="pre">rho</span></code></p></li>
+<li><p><strong>rhoGrow</strong> – every <code class="docutils literal notranslate"><span class="pre">rhoGrow</span></code> (e.g. 100) iterations, re-enlarge <code class="docutils literal notranslate"><span class="pre">rho</span></code>. If 0, then re-enlarge never</p></li>
+<li><p><strong>width</strong> – only relevant for scalable (e.g. Gaussian) kernels. Determines the width <span class="math notranslate nohighlight">\(\sigma\)</span></p></li>
+<li><p><strong>widthFactor</strong> – only for scalable kernels. Additional constant factor applied to each width <span class="math notranslate nohighlight">\(\sigma\)</span></p></li>
+<li><p><strong>gaussRule</strong> – only relevant for Gaussian kernels, see <code class="docutils literal notranslate"><span class="pre">trainGaussRBF</span></code></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="opt.seqOptions.SEQoptions">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">opt.seqOptions.</span></span><span class="sig-name descname"><span class="pre">SEQoptions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">optimizer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'COBYLA'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-06</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conTol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">penaF</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[3.0,</span> <span class="pre">1.7,</span> <span class="pre">300000.0]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigmaD</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[3.0,</span> <span class="pre">2.0,</span> <span class="pre">100]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilonInit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilonMax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">finalEpsXiZero</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trueFuncForSurrogates</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#opt.seqOptions.SEQoptions" title="Link to this definition">¶</a></dt>
+<dd><p>Options for the sequential optimization</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>optimizer</strong> – string defining the optimization method for SACOBRA_Py phase I and II. One out of [“COBYLA”,”ISRESN”]</p></li>
+<li><p><strong>feval</strong> – maximum number of function evaluations on the surrogate model</p></li>
+<li><p><strong>tol</strong> – convergence tolerance for sequential optimizer</p></li>
+<li><p><strong>conTol</strong> – constraint violation tolerance</p></li>
+<li><p><strong>penaF</strong> – (TODO)</p></li>
+<li><p><strong>sigmaD</strong> – (TODO)</p></li>
+<li><p><strong>epsilonInit</strong> – initial constant added to each constraint to maintain a certain margin to boundary</p></li>
+<li><p><strong>epsilonMax</strong> – maximum for constant added to each constraint</p></li>
+<li><p><strong>finalEpsXiZero</strong> – if True, set in final iteration <code class="docutils literal notranslate"><span class="pre">EPS</span></code> and <code class="docutils literal notranslate"><span class="pre">XI</span></code> to zero for best exploitation</p></li>
+<li><p><strong>trueFuncForSurrogates</strong> – if True, use the true (constraint &amp; fitness) functions instead of surrogates (only for debug analysis)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="opt.equOptions.EQUoptions">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">opt.equOptions.</span></span><span class="sig-name descname"><span class="pre">EQUoptions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">active</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initType</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'TAV'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">muType</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'expFunc'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">muDec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">muFinal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-07</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu4inequality</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">muGrow</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">refine</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">refineMaxit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">refineAlgo</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'L-BGFS-B'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">refinePrint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#opt.equOptions.EQUoptions" title="Link to this definition">¶</a></dt>
+<dd><p>Equality handling options</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>active</strong> – if set to TRUE, the equality-handling (EH) technique is activated. The EH
+technique transforms each equality constraint <span class="math notranslate nohighlight">\(h(\mathbf{x})=0\)</span> into two inequality
+constraints <span class="math notranslate nohighlight">\(h(\mathbf{x})-\mu &lt;0\)</span> and <span class="math notranslate nohighlight">\(-h(\mathbf{x})-\mu&lt;0\)</span> with an adaptive
+(normally decaying) margin <span class="math notranslate nohighlight">\(\mu\)</span>.</p></li>
+<li><p><strong>initType</strong> – the equality margin <span class="math notranslate nohighlight">\(\mu\)</span> is initialized with one of these choices:
+<code class="docutils literal notranslate"><span class="pre">[&quot;TAV&quot;|&quot;TMV&quot;|&quot;EMV&quot;|&quot;useGrange&quot;]</span></code></p></li>
+<li><p><strong>muType</strong> – type of function used to shrink margin <span class="math notranslate nohighlight">\(\mu\)</span> during the optimization process.
+One out of <code class="docutils literal notranslate"><span class="pre">[&quot;SAexpFunc&quot;|&quot;expFunc&quot;|&quot;funcDim&quot;|&quot;funcSDim&quot;|&quot;Zhang&quot;|&quot;CONS&quot;]</span></code>, see <code class="docutils literal notranslate"><span class="pre">modifyMu</span></code></p></li>
+<li><p><strong>muDec</strong> – decay factor for margin <span class="math notranslate nohighlight">\(\mu\)</span>, see <code class="docutils literal notranslate"><span class="pre">modifyMu</span></code></p></li>
+<li><p><strong>muFinal</strong> – lower bound for margin <span class="math notranslate nohighlight">\(\mu\)</span>. <code class="docutils literal notranslate"><span class="pre">muFinal</span></code> should be set to a small but non-zero value (larger than machine accuracy).</p></li>
+<li><p><strong>muGrow</strong> – every <code class="docutils literal notranslate"><span class="pre">muGrow</span></code> (e.g. 100) iterations, re-enlarge the <span class="math notranslate nohighlight">\(\mu\)</span>-band. If 0, then re-enlarge never</p></li>
+<li><p><strong>mu4inequality</strong> – use the artificial feasibility band also for inequalities (experimental)</p></li>
+<li><p><strong>refine</strong> – enables the refine mechanism for equality handling</p></li>
+<li><p><strong>refineMaxit</strong> – maximum number of iterations used in the refine step. Note that the refine
+step runs on the surrogate models and does not impose any extra real function evaluation</p></li>
+<li><p><strong>refineAlgo</strong> – optimizer for refine step [“COBYLA”|”L-BFGS-B”]</p></li>
+<li><p><strong>refinePrint</strong> – whether to print “cg-values (before,after,true)” after each refine step</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<p>TODO: Describe <strong>Refine Algo</strong></p>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="optim.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">Optimization</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="cop.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Constraint Optimization Problems</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2025, Wolfgang Konen
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Initialization</a><ul>
+<li><a class="reference internal" href="#cobrainitializer">CobraInitializer</a><ul>
+<li><a class="reference internal" href="#cobraInit.CobraInitializer"><code class="docutils literal notranslate"><span class="pre">CobraInitializer</span></code></a><ul>
+<li><a class="reference internal" href="#cobraInit.CobraInitializer.adCon"><code class="docutils literal notranslate"><span class="pre">CobraInitializer.adCon()</span></code></a></li>
+<li><a class="reference internal" href="#cobraInit.CobraInitializer.adDRC"><code class="docutils literal notranslate"><span class="pre">CobraInitializer.adDRC()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#initDesigner.InitDesigner"><code class="docutils literal notranslate"><span class="pre">InitDesigner</span></code></a><ul>
+<li><a class="reference internal" href="#initDesigner.InitDesigner.__call__"><code class="docutils literal notranslate"><span class="pre">InitDesigner.__call__()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#options">Options</a><ul>
+<li><a class="reference internal" href="#opt.sacOptions.SACoptions"><code class="docutils literal notranslate"><span class="pre">SACoptions</span></code></a></li>
+<li><a class="reference internal" href="#opt.idOptions.IDoptions"><code class="docutils literal notranslate"><span class="pre">IDoptions</span></code></a></li>
+<li><a class="reference internal" href="#opt.rbfOptions.RBFoptions"><code class="docutils literal notranslate"><span class="pre">RBFoptions</span></code></a></li>
+<li><a class="reference internal" href="#opt.seqOptions.SEQoptions"><code class="docutils literal notranslate"><span class="pre">SEQoptions</span></code></a></li>
+<li><a class="reference internal" href="#opt.equOptions.EQUoptions"><code class="docutils literal notranslate"><span class="pre">EQUoptions</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="_static/documentation_options.js?v=a0e24af7"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/scripts/furo.js?v=5fa4622c"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    </body>
+</html>

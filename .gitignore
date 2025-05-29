@@ -1,5 +1,6 @@
 # 
 SACOBRA_Py_Project/.idea
+archive/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -72,9 +73,7 @@ instance/
 .scrapy
 
 # Sphinx documentation
-#docs/_build/
-docs/build/doctree
-docs/build/latex
+docs/_build/
 
 # PyBuilder
 .pybuilder/

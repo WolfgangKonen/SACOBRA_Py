@@ -28,10 +28,10 @@ class SACoptions:
         :type RBF: RBFoptions
         :param SEQ: nested options for sequential optimizer
         :type SEQ: SEQoptions
-        :param ISA: nested Internal SACOBRA options
-        :type ISA: ISAoptions
         :param EQU: nested options for equality constraints
         :type EQU: EQUoptions
+        :param ISA: nested Internal SACOBRA options
+        :type ISA: ISAoptions
         :param MS: nested options for model selection
         :type MS: MSoptions
         :param TR: nested options for trust region
@@ -49,8 +49,8 @@ class SACoptions:
                  ID=IDoptions(),
                  RBF=RBFoptions(),
                  SEQ=SEQoptions(),
-                 ISA=ISAoptions(),
                  EQU=EQUoptions(),
+                 ISA=ISAoptions(),
                  # repairInfeas=False, ri=defaultRI(),
                  MS=MSoptions(),
                  TR=TRoptions(),
@@ -72,9 +72,9 @@ class SACoptions:
         self.important = important
         self.cobraSeed = cobraSeed
         self.ID = ID
-        self.ISA = ISA
         self.RBF = RBF
         self.SEQ = SEQ
-        self.MS = MS
         self.EQU = EQU
+        self.ISA = ISA
+        self.MS = MS
         self.TR = TR

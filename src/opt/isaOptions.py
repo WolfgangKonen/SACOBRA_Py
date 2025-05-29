@@ -5,8 +5,10 @@ class ISAoptions:
     """
         Internal self-adjusting options for SACOBRA.
 
-        Defaults for DOSAC=1. Other options are DOSAC=0 (ISAoptions0, COBRA-R settings = turn off SACOBRA),
-        and DOSAC = 2 (ISAoptions2, SACOBRA settings with fewer parameters and more online adjustments).
+        Defaults for DOSAC=1. Other options are
+
+        - DOSAC=0 (:class:`.ISAoptions0`, COBRA-R settings = turn off SACOBRA), and
+        - DOSAC=2 (:class:`.ISAoptions2`, SACOBRA settings with fewer parameters and more online adjustments).
     """
     def __init__(self,
                  DOSAC=1,
@@ -20,8 +22,8 @@ class ISAoptions:
                  RS_verb=False,  # if True, be verbose in RandomStarter.random_start
                  aDRC=True,
                  aFF=True,
-                 TFRange=1e+05,
                  aCF=True,
+                 TFRange=1e+05,
                  TGR=1e+03,
                  conPLOG=False,
                  conFitPLOG=False,
@@ -56,7 +58,10 @@ class ISAoptions:
         self.onlineMinMax = onlineMinMax
 
 
-class ISAoptions0():
+class ISAoptions0(ISAoptions):
+    """
+        Internal self-adjusting options for SACOBRA for DOSAC=0.
+    """
     def __init__(self,
                  DOSAC=0,
                  RS=False,
@@ -69,8 +74,8 @@ class ISAoptions0():
                  RS_verb=False,  # if True, be verbose in RandomStarter.random_start
                  aDRC=False,
                  aFF=False,
-                 TFRange=np.inf,
                  aCF=False,
+                 TFRange=np.inf,
                  TGR=np.inf,
                  conPLOG=False,
                  conFitPLOG=False,
@@ -81,31 +86,36 @@ class ISAoptions0():
                  minMaxNormal=False,
                  onlineMinMax=False
                  ):
-        self.DOSAC = DOSAC
-        self.RS = RS
-        self.RStype = RStype
-        self.RSauto = RSauto
-        self.RSmax = RSmax
-        self.RSmin = RSmin
-        self.RS_Cs = RS_Cs
-        self.RS_rep = RS_rep
-        self.RS_verb = RS_verb
-        self.aDRC = aDRC
-        self.aFF = aFF
-        self.TFRange = TFRange
-        self.aCF = aCF
-        self.TGR = TGR
-        self.conPLOG = conPLOG
-        self.conFitPLOG = conFitPLOG
-        self.adaptivePLOG = adaptivePLOG
-        self.onlinePLOG = onlinePLOG
-        self.onlineFreqPLOG = onlineFreqPLOG
-        self.pEffectInit = pEffectInit
-        self.minMaxNormal = minMaxNormal
-        self.onlineMinMax = onlineMinMax
+        super().__init__(
+            DOSAC=DOSAC,
+            RS=RS,
+            RStype=RStype,
+            RSauto=RSauto,
+            RSmax=RSmax,
+            RSmin=RSmin,
+            RS_Cs=RS_Cs,
+            RS_rep=RS_rep,
+            RS_verb=RS_verb,
+            aDRC=aDRC,
+            aFF=aFF,
+            aCF=aCF,
+            TFRange=TFRange,
+            TGR=TGR,
+            conPLOG=conPLOG,
+            conFitPLOG=conFitPLOG,
+            adaptivePLOG=adaptivePLOG,
+            onlinePLOG=onlinePLOG,
+            onlineFreqPLOG=onlineFreqPLOG,
+            pEffectInit=pEffectInit,
+            minMaxNormal=minMaxNormal,
+            onlineMinMax=onlineMinMax
+        )
 
 
-class ISAoptions2:
+class ISAoptions2(ISAoptions):
+    """
+        Internal self-adjusting options for SACOBRA for DOSAC=2.
+    """
     def __init__(self,
                  DOSAC=2,
                  RS=True,
@@ -124,31 +134,33 @@ class ISAoptions2:
                  conPLOG=False,
                  conFitPLOG=False,
                  adaptivePLOG=False,
-                 onlinePLOG=True,
+                 onlinePLOG=True,   # TODO:  there is a bug with True
                  onlineFreqPLOG=10,
                  pEffectInit=3,
                  minMaxNormal=False,
                  onlineMinMax=False
                  ):
-        self.DOSAC = DOSAC
-        self.RS = RS
-        self.RStype = RStype
-        self.RSauto = RSauto
-        self.RSmax = RSmax
-        self.RSmin = RSmin
-        self.RS_Cs = RS_Cs
-        self.RS_rep = RS_rep
-        self.RS_verb = RS_verb
-        self.aDRC = aDRC
-        self.aFF = aFF
-        self.TFRange = TFRange
-        self.aCF = aCF
-        self.TGR = TGR
-        self.conPLOG = conPLOG
-        self.conFitPLOG = conFitPLOG
-        self.adaptivePLOG = adaptivePLOG
-        self.onlinePLOG = onlinePLOG
-        self.onlineFreqPLOG = onlineFreqPLOG
-        self.pEffectInit = pEffectInit
-        self.minMaxNormal = minMaxNormal
-        self.onlineMinMax = onlineMinMax
+        super().__init__(
+            DOSAC=DOSAC,
+            RS=RS,
+            RStype=RStype,
+            RSauto=RSauto,
+            RSmax=RSmax,
+            RSmin=RSmin,
+            RS_Cs=RS_Cs,
+            RS_rep=RS_rep,
+            RS_verb=RS_verb,
+            aDRC=aDRC,
+            aFF=aFF,
+            aCF=aCF,
+            TFRange=TFRange,
+            TGR=TGR,
+            conPLOG=conPLOG,
+            conFitPLOG=conFitPLOG,
+            adaptivePLOG=adaptivePLOG,
+            onlinePLOG=onlinePLOG,
+            onlineFreqPLOG=onlineFreqPLOG,
+            pEffectInit=pEffectInit,
+            minMaxNormal=minMaxNormal,
+            onlineMinMax=onlineMinMax
+        )

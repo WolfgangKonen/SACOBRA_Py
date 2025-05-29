@@ -53,12 +53,3 @@ If ``XI==None``, then :class:`.CobraInitializer` will set it, depending on objec
 .. autoclass:: opt.equOptions.EQUoptions
 
 TODO: Describe **Refine Algo**
-
-.. autoclass:: opt.isaOptions.ISAoptions
-
-.. autoclass:: opt.isaOptions.ISAoptions0
-
-.. autoclass:: opt.isaOptions.ISAoptions2
-
-
-

@@ -20,7 +20,6 @@ documentation for details.
    init
    optim
    example
-   appendix
    playground	
 
 
