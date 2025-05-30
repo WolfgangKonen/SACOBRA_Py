@@ -41,7 +41,7 @@ class SACoptions:
                  feval=100,
                  XI=None,
                  skipPhaseI=True,
-                 DOSAC=1,
+                 # DOSAC=1,
                  saveIntermediate=False,
                  saveSurrogates=False,
                  verbose=1, verboseIter=10, important=True,
@@ -64,7 +64,7 @@ class SACoptions:
         self.feval = feval
         self.XI = XI
         self.skipPhaseI = skipPhaseI
-        self.DOSAC = DOSAC
+        # self.DOSAC = DOSAC
         self.saveIntermediate = saveIntermediate
         self.saveSurrogates = saveSurrogates
         self.verbose = verbose

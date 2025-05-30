@@ -29,6 +29,7 @@ class AdFitter:
         if s_opts.ISA.aFF:
             # print("adjusting fitness function")
             if s_opts.ISA.onlinePLOG:
+                assert p2.pEffect is not None
                 if p2.pEffect > 1:
                     self.PLOG = True
                     Fres = plog(Fres, pShift=self.pshift)

@@ -76,6 +76,7 @@ This example can be found in `sacobra_equ.py <../../../demo/sacobra_equ.py>`_:
                         	                   RBF=RBFoptions(degree=2, rho=2.5, rhoDec=2.0),
                                 	           EQU=EQUoptions(muGrow=100, muDec=1.6, muFinal=1e-7, 
 								  refineAlgo="COBYLA"),
+						   ISA=ISAoptions2(TGR=1000.0),
                                         	   SEQ=SEQoptions(conTol=1e-7)))
 	c2 = CobraPhaseII(cobra).start()
 
@@ -88,7 +89,8 @@ This example can be found in `sacobra_equ.py <../../../demo/sacobra_equ.py>`_:
 We first load G13 from the G-problem benchmark suite. G13 is a problem with 3 equality constraints. The rest is very much the same as in the example before, except that the following new options in :class:`.SACoptions` are set: 
 
        - RBFs start with smoothing factor :math:`\rho=2.5` which means *approximating RBFs*. Parameter :math:`\rho=2.5` is exponentially decaying towards 0 with  factor ``rhoDec=2.0``. :math:`\rho=0` or very small means *interpolating RBFs*.
-       - Equality handling with margin :math:`\mu` (see :class:`.EQUoptions`), that is decaying exponentially with factor 1.6 towards :math:`\mu_{final} = 10^{-7}`, but re-growing every ``muGrow=100`` iterations again to the large initial :math:`\mu_{init}.` As refine algo (see :class:`.EQUoptions`) we use "COBYLA" from package ``nlopt``. 
+       - Equality handling with margin :math:`\mu` (see :class:`.EQUoptions`), where :math:`\mu` is decaying exponentially with factor 1.6 from :math:`\mu_{init}` towards :math:`\mu_{final} = 10^{-7}`, but re-growing every ``muGrow=100`` iterations again to the large initial :math:`\mu_{init}.` As refine algo (see :class:`.EQUoptions`) we use "COBYLA" from package ``nlopt``. 
+       - As an example we show how ``ISA`` is initialized with derived class :class:`.ISAoptions2` where all the defaults from :class:`.ISAoptions2` are taken, except that threshold ``TGR=1000`` is set. (:class:`.ISAoptions` would work as well, but :class:`.ISAoptions0` would *NOT* work).
 
 The resulting error curve in PNG file ``error_plot_G13.png`` looks like this (click on image to enlarge): 
 

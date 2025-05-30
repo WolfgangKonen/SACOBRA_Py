@@ -44,7 +44,7 @@ class Phase2Vars:
         self.gama = None        # number, will be set in cobraPhaseII.py
         self.ro = None          # number, will be set in cobraPhaseII.py
         self.mu4 = 0            # number, will be conditionally set in cobraPhaseII.py
-        self.pEffect = None     # number, will be set in trainSurrogates.py
+        self.pEffect = cobra.sac_opts.ISA.pEffectInit     # number, will be recalculated in trainSurrogates.py
         self.PLOG = np.array([], dtype=np.bool)
         self.pshift = np.array([], dtype=np.float64)
         self.fin_err = None     # number, will be set in ex_COP.py

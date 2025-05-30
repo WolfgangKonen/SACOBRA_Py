@@ -44,6 +44,22 @@ class CobraPhaseII:
         """
         Start the main optimization loop of phase II
 
+        Perform in a loop, until the budget ``feval`` is exhausted:
+
+           - select cyclically an element ``p2.ro`` from DRC ``XI``
+           - train RBF surrogate models on the current set of infill points
+           - select start point ``xStart``: either current-best ``xbest`` or random start (see :class:`.RandomStarter`)
+           - perform sequential optimization, starting from ``xStart``. Result is ``xNew = p2.opt_res['x']``
+           - evaluate xNew on the real functions + do refine step (if ``EQU.active``). Result is the updated EvaluatorReal object ``p2.ev1``
+           - calculate p-effect for onlinePLOG
+           - update cobra information (A, Fres, Gres and others)
+           - update and save cobra: data frames ``df``, ``df2``, elements ``sac_res['xbest', 'fbest', 'ibest']``
+           - adjust margins ``p2.EPS``, :math:`\\mu` (see :class:`.EQUoptions`), adjust  :math:`\\rho` (see :class:`.RBFoptions`) and ``Cfeas``, ``Cinfeas``
+
+        The result is a modified object ``cobra`` (detailed diagnostic info in ``cobra.df``, ``cobra.df2``) and the
+        optimization results can be retrieved from ``cobra`` with methods :meth:`.get_fbest`, :meth:`.get_xbest`
+        and  :meth:`.get_xbest_cobra`.
+
         :return: ``self``
         """
         s_opts = self.cobra.sac_opts

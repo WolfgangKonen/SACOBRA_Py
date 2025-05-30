@@ -270,15 +270,15 @@ class CobraInitializer:
         # cobra$radi = np.repeat(cobra$TRlist$radiInit, initDesPoints)
 
         #
-        # STEP 8: SACOBRA initialization (set s_opts.ISA, perform adDRC and adCon)
+        # STEP 8: SACOBRA initialization (depending on s_opts.ISA, perform adDRC and adCon)
         #
-        if s_opts.DOSAC == 0:
-            s_opts.ISA = ISAoptions0()
-        elif s_opts.DOSAC == 2:
-            s_opts.ISA = ISAoptions2()
-        if s_opts.DOSAC > 0:
+        # --- obsolete, we set s_opts.ISA directly to the right class (ISAoptions, ISAoptions0 or ISAoptions2) ---
+        # if s_opts.DOSAC == 0: s_opts.ISA = ISAoptions0()
+        # elif s_opts.DOSAC == 2: s_opts.ISA = ISAoptions2()
+        # ---
+        if s_opts.ISA.DOSAC > 0:
             verboseprint(s_opts.verbose, important=False, message="Parameter and function adjustment phase")
-            s_opts.pEffect = s_opts.ISA.pEffectInit    # TODO: s_opts.pEffect seems to be never used, we have p2.pEffect
+            # s_opts.pEffect = s_opts.ISA.pEffectInit    # obsolete, we have p2.pEffect
 
             if s_opts.ISA.aDRC:
                 if s_opts.XI.size != DRCL.size:

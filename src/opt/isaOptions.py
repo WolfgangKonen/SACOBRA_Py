@@ -3,23 +3,46 @@ import numpy as np
 
 class ISAoptions:
     """
-        Internal self-adjusting options for SACOBRA.
+        Internal self-adjusting (ISA) options for SACOBRA.
 
-        Defaults for DOSAC=1. Other options are
+        Defaults for DOSAC=1 (SACOBRA settings with fewer online adjustments). Other choices are
 
         - DOSAC=0 (:class:`.ISAoptions0`, COBRA-R settings = turn off SACOBRA), and
         - DOSAC=2 (:class:`.ISAoptions2`, SACOBRA settings with fewer parameters and more online adjustments).
+
+        :param DOSAC:
+        :param RS: flag to enable/disable random start algorithm
+        :param RStype: type of function to calculate probability to start the internal optimizer with a random start point. One out of ["CONSTANT", "SIGMOID"]
+        :param RSauto:
+        :param RSmax: maximum probability of a random start
+        :param RSmin: minimum probability of a random start
+        :param RS_Cs: if RS_Cs iterations w/o progress, do a random start
+        :param RS_rep: if True, generate reproducible random numbers with my_rng2 (R and Python)
+        :param RS_verb: if True, be verbose in RandomStarter.random_start
+        :param aDRC: flag for automatic DRC adjustment
+        :param aFF: flag for automatic objective function transformation
+        :param aCF: flag for automatic constraint function transformation
+        :param TFRange: threshold, if the range of ``Fres`` is larger than ``TFRange``, then apply automatic objective function transformation
+        :param TGR: threshold: ``GRatio > TGR``, then apply automatic constraint function transformation. ``GRatio`` is the ratio "largest GR / smallest GR" where GR is the min-max range of a specific constraint. If ``TGR < 1``, then the transformation is always performed.
+        :param conPLOG:
+        :param conFitPLOG:
+        :param adaptivePLOG: (experimental) flag for objective function transformation with ``plog``, where the parameter ``pShift`` is adapted during iterations
+        :param onlinePLOG: flag for online decision marking whether to use plog or not according to p-effect
+        :param onlineFreqPLOG: after how many iterations the online plog check is done again
+        :param pEffectInit:
+        :param minMaxNormal:
+        :param onlineMinMax:
     """
     def __init__(self,
                  DOSAC=1,
                  RS=True,
                  RStype="CONSTANT",  # "CONSTANT",  "SIGMOID"
                  RSauto=False,
-                 RSmax=0.3,     # maximum probability of a random start
-                 RSmin=0.05,    # minimum probability of a random start
-                 RS_Cs=10,      # if RS_Cs iterations w/o progress, do a random start
-                 RS_rep=False,  # if True, generate reproducible random numbers with my_rng2 (R and Python)
-                 RS_verb=False,  # if True, be verbose in RandomStarter.random_start
+                 RSmax=0.3,     #
+                 RSmin=0.05,    #
+                 RS_Cs=10,      #
+                 RS_rep=False,  #
+                 RS_verb=False,  #
                  aDRC=True,
                  aFF=True,
                  aCF=True,
@@ -34,6 +57,9 @@ class ISAoptions:
                  minMaxNormal=False,
                  onlineMinMax=False
                  ):
+        """
+
+        """
         self.DOSAC = DOSAC
         self.RS = RS
         self.RStype = RStype
@@ -45,8 +71,8 @@ class ISAoptions:
         self.RS_verb = RS_verb
         self.aDRC = aDRC
         self.aFF = aFF
-        self.TFRange = TFRange
         self.aCF = aCF
+        self.TFRange = TFRange
         self.TGR = TGR
         self.conPLOG = conPLOG
         self.conFitPLOG = conFitPLOG
@@ -60,7 +86,9 @@ class ISAoptions:
 
 class ISAoptions0(ISAoptions):
     """
-        Internal self-adjusting options for SACOBRA for DOSAC=0.
+        Internal self-adjusting options for DOSAC=0 (COBRA-R settings = turn off SACOBRA).
+
+        Differs only in default settings, parameters and their meaning are the same as in :class:`.ISAoptions`.
     """
     def __init__(self,
                  DOSAC=0,
@@ -114,7 +142,9 @@ class ISAoptions0(ISAoptions):
 
 class ISAoptions2(ISAoptions):
     """
-        Internal self-adjusting options for SACOBRA for DOSAC=2.
+        Internal self-adjusting options for DOSAC=2 (SACOBRA with fewer parameters and more online adjustments).
+
+        Differs only in default settings, parameters and their meaning are the same as in :class:`.ISAoptions`.
     """
     def __init__(self,
                  DOSAC=2,
@@ -128,8 +158,8 @@ class ISAoptions2(ISAoptions):
                  RS_verb=False,  # if True, be verbose in RandomStarter.random_start
                  aDRC=True,
                  aFF=True,
-                 TFRange=-1,
                  aCF=True,
+                 TFRange=-1,
                  TGR=-1,
                  conPLOG=False,
                  conFitPLOG=False,

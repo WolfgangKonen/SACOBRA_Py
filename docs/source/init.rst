@@ -15,14 +15,14 @@ The initialization in **SACOBRA_Py** consists of the following steps:
 - (optional, if ``s_opts.ID.rescale==True``) rescale the problem in input space
 - create the initial design, see :class:`.InitDesigner`
 - adjust several elements according to constraint range, see :meth:`.CobraInitializer.adCon`
-- calculate for each initial design point ``numViol``, the number of violated constraints, and ``maxViol``, the maximum constraint violation. If equality constraints are involved, calculate :math:`\mu_{init}` for an artificial feasibility band around each equality constraint and base ``numViol`` and ``maxViol`` on this artificial feasibility. 
+- calculate for each initial design point ``numViol``, the number of violated constraints, and ``maxViol``, the maximum constraint violation. If equality constraints are involved, calculate :math:`\mu_{init}`, the radius for an artificial feasibility tube around each equality constraint (see :class:`.EQUoptions`) and base the calculation of ``numViol`` and ``maxViol`` on this artificial feasibility. 
 - calculate the so-far best (artificial) feasible point. If no point fulfills (artificial) feasibility, take from the set of points with minimum ``numViol`` the one with the best objective.
 - set up result dictionary ``self.sac_res``
 - adjust DRC according to objective range, see :meth:`.CobraInitializer.adDRC`
 
 
 .. autoclass:: cobraInit.CobraInitializer 
-   :members: adCon, adDRC
+   :members: adCon, adDRC, get_fbest, get_xbest, get_xbest_cobra
 
 .. autoclass:: initDesigner.InitDesigner
    :members: __call__
