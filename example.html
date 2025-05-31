@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Examples &mdash; SACOBRA_Py 0.8 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=67da5ebf"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=4825356b"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Appendix" href="appendix.html" />
+    <link rel="prev" title="Optimization" href="optim.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            SACOBRA_Py
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cop.html">Constraint Optimization Problems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="init.html">Initialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="optim.html">Optimization</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Examples</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#g06-with-inequality-constraints">G06 with Inequality Constraints</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#g13-with-equality-constraints">G13 with Equality Constraints</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="appendix.html">Appendix</a></li>
+<li class="toctree-l1"><a class="reference internal" href="playground.html">Playground RST</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">SACOBRA_Py</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Examples</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/example.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="examples">
+<h1>Examples<a class="headerlink" href="#examples" title="Permalink to this heading"></a></h1>
+<p>this doc shows how to use <strong>SACOBRA_Py</strong>.</p>
+<section id="g06-with-inequality-constraints">
+<h2>G06 with Inequality Constraints<a class="headerlink" href="#g06-with-inequality-constraints" title="Permalink to this heading"></a></h2>
+<p>This example can be found in <a class="reference external" href="../../../demo/sacobra_ineq.py">sacobra_ineq.py</a>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gCOP</span><span class="w"> </span><span class="kn">import</span> <span class="n">GCOP</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cobraInit</span><span class="w"> </span><span class="kn">import</span> <span class="n">CobraInitializer</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cobraPhaseII</span><span class="w"> </span><span class="kn">import</span> <span class="n">CobraPhaseII</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">opt.sacOptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">SACoptions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">opt.idOptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">IDoptions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">opt.rbfOptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">RBFoptions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">opt.seqOptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">SEQoptions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">show_error_plot</span><span class="w"> </span><span class="kn">import</span> <span class="n">show_error_plot</span>
+
+<span class="n">G06</span> <span class="o">=</span> <span class="n">GCOP</span><span class="p">(</span><span class="s2">&quot;G06&quot;</span><span class="p">)</span>
+
+<span class="n">cobra</span> <span class="o">=</span> <span class="n">CobraInitializer</span><span class="p">(</span><span class="n">G06</span><span class="o">.</span><span class="n">x0</span><span class="p">,</span> <span class="n">G06</span><span class="o">.</span><span class="n">fn</span><span class="p">,</span> <span class="n">G06</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">G06</span><span class="o">.</span><span class="n">lower</span><span class="p">,</span> <span class="n">G06</span><span class="o">.</span><span class="n">upper</span><span class="p">,</span> <span class="n">G06</span><span class="o">.</span><span class="n">is_equ</span><span class="p">,</span> <span class="n">solu</span><span class="o">=</span><span class="n">G06</span><span class="o">.</span><span class="n">solu</span><span class="p">,</span>
+                         <span class="n">s_opts</span><span class="o">=</span><span class="n">SACoptions</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">feval</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">cobraSeed</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span>
+                                           <span class="n">ID</span><span class="o">=</span><span class="n">IDoptions</span><span class="p">(</span><span class="n">initDesign</span><span class="o">=</span><span class="s2">&quot;LHS&quot;</span><span class="p">,</span> <span class="n">initDesPoints</span><span class="o">=</span><span class="mi">6</span><span class="p">),</span>
+                                           <span class="n">RBF</span><span class="o">=</span><span class="n">RBFoptions</span><span class="p">(</span><span class="n">degree</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span>
+                                           <span class="n">SEQ</span><span class="o">=</span><span class="n">SEQoptions</span><span class="p">(</span><span class="n">conTol</span><span class="o">=</span><span class="mf">1e-7</span><span class="p">)))</span>
+<span class="n">c2</span> <span class="o">=</span> <span class="n">CobraPhaseII</span><span class="p">(</span><span class="n">cobra</span><span class="p">)</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+<span class="n">show_error_plot</span><span class="p">(</span><span class="n">cobra</span><span class="p">,</span> <span class="n">G06</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="s2">&quot;../demo/error_plot_G06.png&quot;</span><span class="p">)</span>
+
+<span class="n">fin_err</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">cobra</span><span class="o">.</span><span class="n">get_fbest</span><span class="p">()</span> <span class="o">-</span> <span class="n">G06</span><span class="o">.</span><span class="n">fbest</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;final error: </span><span class="si">{</span><span class="n">fin_err</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>We first load G06 from the G-problem benchmark suite. G06 is a problem with 2 inequality constraints. The object <code class="xref py py-class docutils literal notranslate"><span class="pre">CobraInitializer</span></code> <code class="docutils literal notranslate"><span class="pre">cobra</span></code> is initialized with the G06 problem characteristica and its <code class="xref py py-class docutils literal notranslate"><span class="pre">SACoptions</span></code> are set:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>40 function evaluations, seed 42, latin hypercube sampling (LHS) initial design with 6 points, cubic RBF with polynomial tail of degree 2, sequential optimization with constraint violation tolerance of <span class="math notranslate nohighlight">\(10^{-7}\)</span>.</p></li>
+</ul>
+</div></blockquote>
+<p>Now the optimization is started with <code class="xref py py-class docutils literal notranslate"><span class="pre">CobraPhaseII</span></code>. The object <code class="docutils literal notranslate"><span class="pre">cobra</span></code> is modified and enriched by this optimization: The data frames <code class="docutils literal notranslate"><span class="pre">cobra.df</span></code> and <code class="docutils literal notranslate"><span class="pre">cobra.df2</span></code> are extended row-by-row with each iteration and they contain diagnostic information. The dictionary <code class="docutils literal notranslate"><span class="pre">cobra.sac_res</span></code> is extended as well: For example, the array <code class="docutils literal notranslate"><span class="pre">cobra.sac_res['fbestArray']</span></code> has the evolution of the best fitness (objective) value over iterations. This is used by <code class="docutils literal notranslate"><span class="pre">show_error_plot</span></code> to display the error curve, which is also saved in PNG file <code class="docutils literal notranslate"><span class="pre">error_plot_G06.png</span></code> (click on image to enlarge):</p>
+<a class="reference internal image-reference" href="_images/error_plot_G06.png"><img alt="_images/error_plot_G06.png" class="align-center" src="_images/error_plot_G06.png" style="width: 300px; height: 200px;" /></a>
+<p>Finally, the final error (difference between the objective value found by the optimizer in the last iteration and the true objective <code class="docutils literal notranslate"><span class="pre">G06.fbest</span></code>) is computed and printed.</p>
+</section>
+<section id="g13-with-equality-constraints">
+<h2>G13 with Equality Constraints<a class="headerlink" href="#g13-with-equality-constraints" title="Permalink to this heading"></a></h2>
+<p>This example can be found in <a class="reference external" href="../../../demo/sacobra_equ.py">sacobra_equ.py</a>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gCOP</span><span class="w"> </span><span class="kn">import</span> <span class="n">GCOP</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cobraInit</span><span class="w"> </span><span class="kn">import</span> <span class="n">CobraInitializer</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cobraPhaseII</span><span class="w"> </span><span class="kn">import</span> <span class="n">CobraPhaseII</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">opt.equOptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">EQUoptions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">opt.sacOptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">SACoptions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">opt.idOptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">IDoptions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">opt.rbfOptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">RBFoptions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">opt.seqOptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">SEQoptions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">show_error_plot</span><span class="w"> </span><span class="kn">import</span> <span class="n">show_error_plot</span>
+
+<span class="n">G13</span> <span class="o">=</span> <span class="n">GCOP</span><span class="p">(</span><span class="s2">&quot;G13&quot;</span><span class="p">)</span>
+
+<span class="n">cobra</span> <span class="o">=</span> <span class="n">CobraInitializer</span><span class="p">(</span><span class="n">G13</span><span class="o">.</span><span class="n">x0</span><span class="p">,</span> <span class="n">G13</span><span class="o">.</span><span class="n">fn</span><span class="p">,</span> <span class="n">G13</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">G13</span><span class="o">.</span><span class="n">lower</span><span class="p">,</span> <span class="n">G13</span><span class="o">.</span><span class="n">upper</span><span class="p">,</span> <span class="n">G13</span><span class="o">.</span><span class="n">is_equ</span><span class="p">,</span> <span class="n">solu</span><span class="o">=</span><span class="n">G13</span><span class="o">.</span><span class="n">solu</span><span class="p">,</span>
+                         <span class="n">s_opts</span><span class="o">=</span><span class="n">SACoptions</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">feval</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span> <span class="n">cobraSeed</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span>
+                                           <span class="n">ID</span><span class="o">=</span><span class="n">IDoptions</span><span class="p">(</span><span class="n">initDesign</span><span class="o">=</span><span class="s2">&quot;LHS&quot;</span><span class="p">,</span> <span class="n">initDesPoints</span><span class="o">=</span><span class="mi">6</span><span class="o">*</span><span class="mi">7</span><span class="o">//</span><span class="mi">2</span><span class="p">),</span>
+                                           <span class="n">RBF</span><span class="o">=</span><span class="n">RBFoptions</span><span class="p">(</span><span class="n">degree</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">rho</span><span class="o">=</span><span class="mf">2.5</span><span class="p">,</span> <span class="n">rhoDec</span><span class="o">=</span><span class="mf">2.0</span><span class="p">),</span>
+                                           <span class="n">EQU</span><span class="o">=</span><span class="n">EQUoptions</span><span class="p">(</span><span class="n">muGrow</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">muDec</span><span class="o">=</span><span class="mf">1.6</span><span class="p">,</span> <span class="n">muFinal</span><span class="o">=</span><span class="mf">1e-7</span><span class="p">,</span>
+                                                          <span class="n">refineAlgo</span><span class="o">=</span><span class="s2">&quot;COBYLA&quot;</span><span class="p">),</span>
+                                           <span class="n">ISA</span><span class="o">=</span><span class="n">ISAoptions2</span><span class="p">(</span><span class="n">TGR</span><span class="o">=</span><span class="mf">1000.0</span><span class="p">),</span>
+                                           <span class="n">SEQ</span><span class="o">=</span><span class="n">SEQoptions</span><span class="p">(</span><span class="n">conTol</span><span class="o">=</span><span class="mf">1e-7</span><span class="p">)))</span>
+<span class="n">c2</span> <span class="o">=</span> <span class="n">CobraPhaseII</span><span class="p">(</span><span class="n">cobra</span><span class="p">)</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+<span class="n">show_error_plot</span><span class="p">(</span><span class="n">cobra</span><span class="p">,</span> <span class="n">G13</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="s2">&quot;../demo/error_plot_G13.png&quot;</span><span class="p">)</span>
+
+<span class="n">fin_err</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">cobra</span><span class="o">.</span><span class="n">get_fbest</span><span class="p">()</span> <span class="o">-</span> <span class="n">G13</span><span class="o">.</span><span class="n">fbest</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;final error: </span><span class="si">{</span><span class="n">fin_err</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>We first load G13 from the G-problem benchmark suite. G13 is a problem with 3 equality constraints. The rest is very much the same as in the example before, except that the following new options in <code class="xref py py-class docutils literal notranslate"><span class="pre">SACoptions</span></code> are set:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>RBFs start with smoothing factor <span class="math notranslate nohighlight">\(\rho=2.5\)</span> which means <em>approximating RBFs</em>. Parameter <span class="math notranslate nohighlight">\(\rho=2.5\)</span> is exponentially decaying towards 0 with  factor <code class="docutils literal notranslate"><span class="pre">rhoDec=2.0</span></code>. If <span class="math notranslate nohighlight">\(\rho=0\)</span> or if it is very small, then we have <em>interpolating RBFs</em>.</p></li>
+<li><p>Equality handling with margin <span class="math notranslate nohighlight">\(\mu\)</span> (see <code class="xref py py-class docutils literal notranslate"><span class="pre">EQUoptions</span></code>), where <span class="math notranslate nohighlight">\(\mu\)</span> is decaying exponentially with factor 1.6 from <span class="math notranslate nohighlight">\(\mu_{init}\)</span> towards <span class="math notranslate nohighlight">\(\mu_{final} = 10^{-7}\)</span>, but re-growing every <code class="docutils literal notranslate"><span class="pre">muGrow=100</span></code> iterations again to the large initial <span class="math notranslate nohighlight">\(\mu_{init}.\)</span> As refine algo (see <code class="xref py py-class docutils literal notranslate"><span class="pre">EQUoptions</span></code>) we use “COBYLA” from package <code class="docutils literal notranslate"><span class="pre">nlopt</span></code>.</p></li>
+<li><p>As an example we show how <code class="docutils literal notranslate"><span class="pre">ISA</span></code> is initialized with derived class <code class="xref py py-class docutils literal notranslate"><span class="pre">ISAoptions2</span></code> where all the defaults from <code class="xref py py-class docutils literal notranslate"><span class="pre">ISAoptions2</span></code> are taken, except that threshold <code class="docutils literal notranslate"><span class="pre">TGR=1000</span></code> is set. (<code class="xref py py-class docutils literal notranslate"><span class="pre">ISAoptions</span></code> would work as well, but <code class="xref py py-class docutils literal notranslate"><span class="pre">ISAoptions0</span></code> would <em>NOT</em> work).</p></li>
+</ul>
+</div></blockquote>
+<p>The resulting error curve in PNG file <code class="docutils literal notranslate"><span class="pre">error_plot_G13.png</span></code> looks like this (click on image to enlarge):</p>
+<a class="reference internal image-reference" href="_images/error_plot_G13.png"><img alt="_images/error_plot_G13.png" class="align-center" src="_images/error_plot_G13.png" style="width: 300px; height: 200px;" /></a>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="optim.html" class="btn btn-neutral float-left" title="Optimization" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="appendix.html" class="btn btn-neutral float-right" title="Appendix" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Wolfgang Konen.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
