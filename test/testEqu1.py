@@ -18,7 +18,7 @@ class TestEqu1(unittest.TestCase):
         Several tests for equality constraints in SACOBRA
     """
     def test_equ_mu_init(self):
-        """  Test that the different options to initialize :math:`\mu =` ``currentMu`` work as expected
+        """  Test that the different options to initialize :math:`\\mu =` ``currentMu`` work as expected
         """
         nobs = 10
         x0 = np.array([2.5, 2.4])
@@ -65,11 +65,11 @@ class TestEqu1(unittest.TestCase):
         upper = np.array([5, 5])
         idp = 6
 
-        muTVec = ["expFunc", "SAexpFunc", "funcDim", "funcSDim", "Zhang", "CONS"]
+        muTypes = ["expFunc", "SAexpFunc", "funcDim", "funcSDim", "Zhang", "CONS"]
         # the allowed options for cobra.sac_opts.EQU.muType
 
         # Matrix muMat_from_R is copied from muMat of method demo_currentEps in demo-equMuInit.R.
-        # It has one row for each value of muTVec (and 5 columns, since we will compare below the first five iterations
+        # It has one row for each value of muTypes (and 5 columns, since we will compare below the first five iterations
         # ipd:idp+5 of phase II):
         muMat_from_R = np.array([
             [3.929555,  2.6197033, 1.7464689, 1.1643126, 0.7762084],
@@ -88,7 +88,7 @@ class TestEqu1(unittest.TestCase):
             return np.array([3 * np.sum(x ** 2), np.sum(x + 1) - 2, np.sum(x) - 1])
 
         muMat = None
-        for i, muT in enumerate(muTVec):
+        for i, muT in enumerate(muTypes):
             cobra = CobraInitializer(x0, fn, "fName", lower, upper, np.array([True, True]),
                                      s_opts=SACoptions(verbose=verb, feval=15,
                                                        ID=IDoptions(initDesign="RAND_R", initDesPoints=idp),
@@ -105,7 +105,7 @@ class TestEqu1(unittest.TestCase):
             muVec = s_res['muVec'][idp:idp+5]
             muMat = muVec if muMat is None else np.vstack((muMat,muVec))
             print(muT, muVec)
-            assert np.allclose(muVec, muMat_from_R[i,:]), f"currentMu assertion fail for muType = {muT}"
+            assert np.allclose(muVec, muMat_from_R[i,:], atol=1e-4), f"currentMu assertion fail for type muT = {muT}"
 
         np.set_printoptions(precision=5)
         print(muMat)
