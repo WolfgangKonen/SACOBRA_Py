@@ -2,7 +2,7 @@
 Examples
 ----------------
 
-this doc shows how to use **SACOBRA_Py**. [WK]
+this doc shows how to use **SACOBRA_Py**. WK.
 
 
 G06 with Inequality Constraints
