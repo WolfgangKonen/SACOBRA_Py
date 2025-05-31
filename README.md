@@ -65,8 +65,8 @@ Problem G13 has 3 equality constraints and dimension 5. It requires with ``feval
 |-------|------|
 | "bla" |blabla|
 
-[HTML](https://www.gm.fh-koeln.de/~konen/research/projects/SACOBRA_Py_docs/index.html)      
-[PDF](https://www.gm.fh-koeln.de/~konen/research/projects/SACOBRA_Py_docs/sacobra_py.pdf) 
+[HTML](https://wolfgangkonen-sacobra-py.readthedocs.io/en/latest/)      
+[PDF](https://wolfgangkonen-sacobra-py.readthedocs.io/_/downloads/en/latest/pdf/) 
 
 
 ### Version History
