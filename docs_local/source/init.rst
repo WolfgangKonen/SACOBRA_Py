@@ -2,7 +2,7 @@
 Initialization
 --------------
 
-this doc describes initialization
+This chapter describes the SACOBRA initialization and the options (or hyperparameters) of SACOBRA.
 
 
 
@@ -18,8 +18,8 @@ The initialization in **SACOBRA_Py** is done by creating an object of class :cla
 - adjust several elements according to constraint range, see :meth:`.CobraInitializer.adCon`
 - calculate for each initial design point ``numViol``, the number of violated constraints, and ``maxViol``, the maximum constraint violation. If equality constraints are involved, calculate :math:`\mu_{init}`, the radius for an artificial feasibility tube around each equality constraint (see :class:`.EQUoptions`) and base the calculation of ``numViol`` and ``maxViol`` on this artificial feasibility. 
 - calculate the so-far best (artificial) feasible point. If no point fulfills (artificial) feasibility, form the set of points with minimum ``numViol`` and take from this set the one point with the best objective.
-- set up result dictionary ``self.sac_res``
-- adjust DRC according to objective range, see :meth:`.adDRC`
+- set up result dictionary :ref:`self.sac_res <sacres-label>`
+- adjust :ref:`DRC <DRC-label>` according to objective range, see :meth:`.adDRC`
 
 
 .. autoclass:: cobraInit.CobraInitializer 
@@ -38,6 +38,9 @@ All paramters (options) for SACOBRA_Py have sensible defaults defined. The user 
 setting different from the defaults is desired.
 
 .. autoclass:: opt.sacOptions.SACoptions
+
+
+.. _DRC-label:
 
 **Distance Requirement Cycle**
 

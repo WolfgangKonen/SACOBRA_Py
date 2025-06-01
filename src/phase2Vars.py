@@ -10,15 +10,15 @@ class Phase2Vars:
     These variables include:
 
     - **EPS**           number, the current safety margin EPS in constraint surrogates
-    - **currentMu**     number, the current equality margin :math:`\mu`, see equHandling.py
+    - **currentMu**     number, the current equality margin :math:`\\mu`, see equHandling.py
     - **num**           the number of real function evaluations carried out
     - **globalOptCounter** counter of the global optimization steps in phase II, excluding repair and trust region
-    - **Cfeas**          how many feasible infills in a row (see adjustMargins, updateInfoAndCounters)
-    - **Cinfeas**        how many infeasible infills in a row (see adjustMargins, updateInfoAndCounters)
+    - **Cfeas**          how many feasible infills in a row (see :meth:`.adjustMargins`, updateInfoAndCounters)
+    - **Cinfeas**        how many infeasible infills in a row (see :meth:`.adjustMargins`, updateInfoAndCounters)
     - **fitnessSurrogate** the objective surrogate model
     - **constraintSurrogates** the constraint surrogate models
 
-    Example: ``p2 = Phase2Vars; print(p2.num);``
+    Example: ``p2 = Phase2Vars(); print(p2.num);``
     """
     def __init__(self, cobra: CobraInitializer):
         self.EPS = cobra.sac_opts.SEQ.epsilonInit      # number, the current safety margin EPS in constraint surrogates
@@ -49,3 +49,4 @@ class Phase2Vars:
         self.pshift = np.array([], dtype=np.float64)
         self.fin_err = None     # number, will be set in ex_COP.py
         self.fe_thresh = None   # number, will be set in ex_COP.py
+

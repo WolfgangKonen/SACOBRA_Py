@@ -10,8 +10,8 @@ class RBFoptions:
         :param rho:  Smoothing parameter :math:`\\rho`. If :math:`\\rho=0` then *interpolating RBFs*: The surrogate model surface passes exactly through the points. If :math:`\\rho>0`: then *approximating RBFs* (spline-like). The larger :math:`\\rho`, the smoother the surrogate model.
         :param rhoDec: exponential decay factor for :math:`\\rho`
         :param rhoGrow: every ``rhoGrow`` (e.g. 100) iterations, re-enlarge :math:`\\rho`. If 0, then re-enlarge never
-        :param width: only relevant for scalable (e.g. Gaussian) kernels. Determines the width :math:`\sigma`
-        :param widthFactor: only for scalable kernels. Additional constant factor applied to each width :math:`\sigma`
+        :param width: only relevant for scalable (e.g. Gaussian) kernels. Determines the width :math:`\\sigma`
+        :param widthFactor: only for scalable kernels. Additional constant factor applied to each width :math:`\\sigma`
         :param gaussRule: only relevant for Gaussian kernels, see ``trainGaussRBF``
     """
     def __init__(self,

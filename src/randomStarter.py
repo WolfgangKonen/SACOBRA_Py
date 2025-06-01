@@ -8,23 +8,43 @@ from phase2Vars import Phase2Vars
 
 class RandomStarter:
     """
-        Decide which start point xStart to take for the next sequential optimizer step
+        Decide which start point ``xStart`` to take for the next sequential optimizer step
 
         Either cobra.sac_res['xbest'] or a random point in search space
     """
     def __init__(self, s_opts: SACoptions):
         """
-            Initialize RandomStarter RNGs with seed ``s_opts.cobraSeed``
+            Initialize RandomStarter RNGs with seed ``s_opts.cobraSeed``.
+
+            Case ``ISA.RS_rep==False`` is the normal case: Use ``np.random.default_rng`` as RNG.
+
+            Case ``ISA.RS_rep==True`` is only for comparing with SACOBRA R: We use ``self.my_rng2`` as RNG
+            which produces with a given seed the same random numbers as ``my_rng2`` in R.
         """
         self.rng = np.random.default_rng(s_opts.cobraSeed)
         self.val = s_opts.cobraSeed         # for other RNG self.my_rng2
 
     def random_start(self, cobra: CobraInitializer, p2: Phase2Vars) -> np.ndarray:
+        """
+        This method decides whether ``xStart`` is ``cobra.sac_res['xbest']`` or a random start point. In the latter
+        case we set ``p2.rs_done == True``.
+
+        If ``ISA.RS==False`` the probability for random start is 0.
+
+        If ``ISA.RS==True`` the probability depends on the feasibility rate, ``ISA.RStype``, ``ISA.RSauto``,
+        ``ISA.RSmin``, ``ISA.RSmax``.
+
+        :param cobra: we need elements ``sac_opts``, ``sac_res['xbest', 'dimension', 'numViol']``
+        :param p2: we write on ``p2.rs_done``
+        :return: xStart
+        :rtype: np.ndarray
+        """
         if cobra.sac_opts.ISA.RS:
             xStart = self.decide_about_random_start(cobra, p2)
         else:
             xStart = cobra.sac_res['xbest']     # bug fix
             xStart = xStart.reshape(cobra.sac_res['dimension'])   # if xbest has shape (1,dim) --> reshape to (dim,)
+            p2.rs_done = False
 
         cobra.sac_res['xStart'] = xStart
         return xStart
@@ -32,7 +52,10 @@ class RandomStarter:
     def decide_about_random_start(self, cobra: CobraInitializer, p2: Phase2Vars) -> np.ndarray:
         s_opts = cobra.sac_opts
 
-        anewrand = self.my_rng2(1,1)[0,0] if s_opts.ISA.RS_rep else self.rng.random()
+        if s_opts.ISA.RS_rep:
+            anewrand = self.my_rng2(1,1)[0,0]
+        else:
+            anewrand = self.rng.random()
 
         numViol = cobra.sac_res['numViol']
         feasibleRate = np.flatnonzero(numViol == 0).size / numViol.size  # fraction of feasible points in the population
@@ -58,7 +81,6 @@ class RandomStarter:
 
         # TODO: decide whether to use/increment p2.noProgressCount (currently we don't)
         if anewrand < p_restart or p2.noProgressCount >= s_opts.ISA.RS_Cs:
-            # cat(sprintf("RS: iter=%03d, noProgressCount=%03d\n",nrow(cobra$A)+1,cobra$noProgressCount))
             d = cobra.sac_res['dimension']
             lower = cobra.sac_res['lower']
             upper = cobra.sac_res['upper']
@@ -73,7 +95,7 @@ class RandomStarter:
                          f"[random_start] random xStart = {xStart} at iteration {p2.num}"
                          f" (anewrand = {anewrand:.4f}, p_restart = {p_restart:.4f})")
             p2.rs_done = True
-            # cobra$noProgressCount<-0
+            # cobra$noProgressCount = 0
         else:
             xStart = cobra.sac_res['xbest']
             xStart = xStart.reshape(cobra.sac_res['dimension'])   # if xbest has shape (1,dim) --> reshape to (dim,)

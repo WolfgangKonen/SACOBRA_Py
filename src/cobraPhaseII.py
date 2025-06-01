@@ -50,13 +50,13 @@ class CobraPhaseII:
            - train RBF surrogate models on the current set of infill points
            - select start point ``xStart``: either current-best ``xbest`` or random start (see :class:`.RandomStarter`)
            - perform sequential optimization, starting from ``xStart``. Result is ``xNew = p2.opt_res['x']``
-           - evaluate xNew on the real functions + do refine step (if ``EQU.active``). Result is the updated EvaluatorReal object ``p2.ev1``
+           - evaluate ``xNew`` on the real functions +  (if ``EQU.active``) do refine step. Result is the updated EvaluatorReal object ``p2.ev1``
            - calculate p-effect for onlinePLOG
-           - update cobra information (A, Fres, Gres and others)
+           - update cobra information: The new infill point ``xNew`` and its evaluation on the real functions is added to the ``cobra``'s arrays  ``A``, ``Fres``, ``Gres``
            - update and save cobra: data frames ``df``, ``df2``, elements ``sac_res['xbest', 'fbest', 'ibest']``
-           - adjust margins ``p2.EPS``, :math:`\\mu` (see :class:`.EQUoptions`), adjust  :math:`\\rho` (see :class:`.RBFoptions`) and ``Cfeas``, ``Cinfeas``
+           - adjust margins ``p2.EPS``, :math:`\\mu` (see :class:`.EQUoptions`), adjust  :math:`\\rho` (see :class:`.RBFoptions`) and ``p2.Cfeas``, ``p2.Cinfeas`` (see :meth:`phase2Funcs.adjustMargins`)
 
-        The result is a modified object ``cobra`` (detailed diagnostic info in ``cobra.df``, ``cobra.df2``) and the
+        The result is a modified object ``cobra`` (detailed diagnostic info in ``cobra.df``, ``cobra.df2``). The
         optimization results can be retrieved from ``cobra`` with methods :meth:`.get_fbest`, :meth:`.get_xbest`
         and  :meth:`.get_xbest_cobra`.
 
@@ -122,7 +122,7 @@ class CobraPhaseII:
             # update and save cobra: data frames df, df2, keys xbest, fbest, ibest in sac_res
             updateSaveCobra(self.cobra, self.p2, self.p2.EPS, pf2.fitFuncPenalRBF, pf2.distRequirement)
 
-            # adjust margin self.p2.EPS and adjust counters (self.p2.Cfeas, self.p2.Cinfeas):
+            # adjust margin self.p2.EPS, self.p2.currentMu, cobra.sac_opts.RBF.rho and adjust counters (self.p2.Cfeas, self.p2.Cinfeas):
             pf2.adjustMargins(self.cobra, self.p2)
 
             # TODO: [conditional] repairInfeasible

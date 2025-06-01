@@ -2,7 +2,7 @@
 Constraint Optimization Problems
 --------------------------------
 
-This document defines COPs (Constraint Optimization Problems) and introduces the G-problem benchmark.
+This chapter defines COPs (Constraint Optimization Problems) and introduces the G-problem benchmark.
 
 
 COPs

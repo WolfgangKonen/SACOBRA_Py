@@ -39,12 +39,14 @@ class CobraInitializer:
         :param s_opts: the options
         :type s_opts: SACoptions
     """
+
     def __init__(self, x0, fn: object, fName: str, lower: np.ndarray, upper: np.ndarray,
                  is_equ: np.ndarray,
                  solu = None,
                  s_opts: SACoptions = SACoptions(50),
                  ) -> object:
         """
+        docstring for __init__
         """
         #
         # STEP 0: first settings and checks
@@ -81,7 +83,7 @@ class CobraInitializer:
         # STEP 1: (optional) rescaling
         #
         originalfn = fn
-        originalXStart = x0
+        originalx0 = x0
         originalL = lower
         originalU = upper
         lb = np.repeat(s_opts.ID.newLower, dimension)
@@ -138,12 +140,12 @@ class CobraInitializer:
                         'lower': lower,
                         'upper': upper,
                         'x0': x0,
-                        'xStart': x0.copy(),  # will be overwritten with xbest below and in phase II
-                        'dimension': dimension,
                         'originalfn': originalfn,
                         'originalL': originalL,
                         'originalU': originalU,
-                        'originalXStart': originalXStart,
+                        'originalx0': originalx0,
+                        'xStart': x0.copy(),  # will be overwritten with xbest below and in phase II
+                        'dimension': dimension,
                         'is_equ': is_equ,
                         'iteration': 0,
                         'fe': fe,
@@ -397,3 +399,16 @@ class CobraInitializer:
         minL = np.quantile(x, 0.1)
         return (maxL - minL) / 2
 
+    # NOTE: the purpose of this function is just to supply a docstring (used in appendix of Sphinx docu):
+    def create_sac_res(self):
+        """
+        Return a dictionary with the following elements, accessible with e.g. ``sac_res['fn']``:
+
+        - **fn**: function returning ``(1+nConstraints)``-dim vector: [objective to minimize, constraints], optionally rescaled
+        - **originalfn**: the same, but before rescaling
+        - ...
+
+        :return: SACOBRA results
+        :rtype: dict
+        """
+        return self.sac_res

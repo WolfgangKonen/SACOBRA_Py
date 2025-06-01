@@ -109,9 +109,13 @@ def updateInfoAndCounters(cobra: CobraInitializer, p2: Phase2Vars, currentMu=0):
         p2.Cfeas = 0
 
 
+# NOTE: We cannot have adjustMargins(self, cobra) in phase2Vars, because adjustMargins needs to import equHandling
+# and equHandling needs to import phase2Vars. The way to avoid this circular import is to have adjustMargins in
+# this separate module phase2Funcs.
 def adjustMargins(cobra: CobraInitializer, p2: Phase2Vars):
     """
-    Adjust margin p2.EPS (and p2.currentMu); conditionally reset counters p2.Cfeas, p2.Cinfeas.
+    Adjust margins ``p2.EPS``, :math:`\\mu =` ``p2.currentMu`` and :math:`\\rho =` ``cobra.sac_opts.RBF.rho``;
+    conditionally reset counters ``p2.Cfeas``, ``p2.Cinfeas``.
 
     :param cobra:   SACOBRA settings and results
     :param p2:      these members may be changed : EPS, currentMu, Cfeas, Cinfeas
