@@ -60,13 +60,18 @@ Problem G13 has 3 equality constraints and dimension 5. It requires with ``feval
 <img src="demo/error_plot_G13.png" alt="Error Plot G13" title="Error curve obtained by SACOBRA" width=600 />
 
 ## Documentation
-
+<!--
 | title | descr|
 |-------|------|
 | "bla" |blabla|
+-->
+
+A more extensive documentation can be found in both formats HTML and PDF under these links:
 
 [HTML](https://wolfgangkonen-sacobra-py.readthedocs.io/en/latest/)      
 [PDF](https://wolfgangkonen-sacobra-py.readthedocs.io/_/downloads/en/latest/pdf/) 
+
+(prepared with *Sphinx* and deployed with *readthedocs.io*)
 
 
 ### Version History
