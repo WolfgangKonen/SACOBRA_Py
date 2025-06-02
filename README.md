@@ -5,7 +5,7 @@ SACOBRA is a package for constrained optimization with relatively few function e
 
 SACOBRA stands for **Self-Adjusting Constraint Optimization By Radial basis function Approximation**. It is used for numerical optimization and can handle an arbitrary number of inequality and/or equality constraints.
 
-SACOBRA was originally developed in R. This repository **SACOBRA_Py** contains the beta version of a Python port, which is simplified in code and up to 4 times faster than the R version. (The R-version of SACOBRA is available from [this GitHub repository](https://github.com/WolfgangKonen/SACOBRA).)
+SACOBRA was originally developed in R. This repository **SACOBRA_Py** contains the beta version of a Python port, which is simplified in code and faster than the R version by a factor of 4 - 10. (The R-version of SACOBRA is available from [this GitHub repository](https://github.com/WolfgangKonen/SACOBRA).)
 
 ## How to install
 
@@ -60,13 +60,18 @@ Problem G13 has 3 equality constraints and dimension 5. It requires with ``feval
 <img src="demo/error_plot_G13.png" alt="Error Plot G13" title="Error curve obtained by SACOBRA" width=600 />
 
 ## Documentation
-
+<!--
 | title | descr|
 |-------|------|
 | "bla" |blabla|
+-->
+
+A more extensive documentation can be found in both formats HTML and PDF under these links:
 
 [HTML](https://wolfgangkonen-sacobra-py.readthedocs.io/en/latest/)      
 [PDF](https://wolfgangkonen-sacobra-py.readthedocs.io/_/downloads/en/latest/pdf/) 
+
+(prepared with *Sphinx* and deployed with *readthedocs.io*)
 
 
 ### Version History
@@ -77,8 +82,8 @@ Beta Version, it contains
 - support for arbitrary inequality and equality constraints
 - cubic RBF surrogate models
 - both interpolating and approximating RBFs
+- documentation with Sphinx and readthedocs.io
 - the majority of G-problems from the G-problem benchmark suite
-- a basic documentation
 
 and it was extensively tested on these G-problems.
 
