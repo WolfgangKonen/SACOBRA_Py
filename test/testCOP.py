@@ -95,7 +95,7 @@ class TestCOP(unittest.TestCase):
 
         # print(cobra.df)
         # print(cobra.df2)
-        print(f"final err: {np.array(cobra.df.Best - G06.fn(G06.solu)[0])[-1]}")
+        print(f"final err: {np.array(cobra.df.fBest - G06.fn(G06.solu)[0])[-1]}")
         print("[test_G06_R] all assertions passed (degree=1, seed=42)")
         dummy = 0
 
@@ -130,7 +130,7 @@ class TestCOP(unittest.TestCase):
 
             # print(cobra.df)
             # print(cobra.df2)
-            fin_err = np.array(cobra.df.Best - G06.fn(G06.solu)[0])[-1]
+            fin_err = np.array(cobra.df.fBest - G06.fn(G06.solu)[0])[-1]
             fin_err_list = np.concatenate((fin_err_list, fin_err), axis=None)
             print(f"final err: {fin_err}")
             dummy = 0

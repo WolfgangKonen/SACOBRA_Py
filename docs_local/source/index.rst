@@ -12,7 +12,7 @@ SACOBRA_Py documentation
 
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Contents:
 
    overview
@@ -21,6 +21,6 @@ SACOBRA_Py documentation
    optim
    example
    appendix
-   playground	
+   api
 
 

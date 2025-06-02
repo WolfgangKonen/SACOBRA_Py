@@ -7,18 +7,29 @@ from opt.idOptions import IDoptions         # needed for docstring
 
 class InitDesigner:
     """
-    Create matrix ``self.A`` with shape ``(P, d)`` of sample points in (potentially rescaled) input space
+    The **initial design** is a set of ``P`` points from input space with dimension ``d``. The problem functions
+    :math:`f,g,h` are evaluated at these ``P`` points and these evaluated sets form the basis of the later optimization:
+    From the characteristics of the evaluated sets, the classes :class:`.CobraInitializer` and :class:`.CobraPhaseII`
+    deduce decisions about certain adjustments:
+
+    - whether to adjust constraint functions or not, see :meth:`.CobraInitializer.adCon`,
+    - which :ref:`DRC <DRC-label>` to select, see :meth:`.CobraInitializer.adDRC`.
+    - whether to apply :math:`plog(f)` or not, see :ref:`AdFitter <AdFitter-label>` (called in each iteration in :class:`.CobraPhaseII`),
+
+    :class:`.CobraPhaseII` uses the evaluated sets to train the initial fitness and constraint surrogate models.
+
+    In detail: Create matrix ``self.A`` with shape ``(P, d)`` of sample points in (potentially rescaled) input space
     ``[lower, upper]`` :math:`\subset \mathbb{R}^d`, where ``P = initDesPoints`` and ``d =`` input space dimension.
 
-    Apply ``fn`` to these points and split the result in objective
-    function values ``self.Fres`` (with shape ``(P,)``) and constraint function values ``self.Gres`` (with shape
-    ``(P,nC)`` where ``nC`` = number of constraints).
+    Apply ``fn`` to these points and split the result in objective function (:math:`f`) values ``self.Fres``
+    with shape ``(P,)`` and constraint function (:math:`g,h`) values ``self.Gres`` with shape
+    ``(P,nC)``, where ``nC`` = number of constraints.
 
     :param x0:  the last point ``self.A[-1,:]`` is ``x0``
     :param fn:  see parameter ``fn`` in :class:`cobraInit.CobraInitializer`
     :param lower: vector of shape ``(d,)``
     :param upper: vector of shape ``(d,)``
-    :param s_opts: object of class :class:`SACoptions`. Here we use from element  :class:`IDoptions` ``s_opts.ID``
+    :param s_opts: object of class :class:`SACoptions`. Here we use from element  :class:`.IDoptions` ``s_opts.ID``
                    the elements ``initDesign`` and ``initDesPoints``.
     :type s_opts: SACoptions
     """

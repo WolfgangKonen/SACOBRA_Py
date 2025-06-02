@@ -33,7 +33,7 @@ class EvaluatorReal:
             self.feasPred = np.repeat(False, s_opts.ID.initDesPoints)
             self.optimConv = np.repeat(1, s_opts.ID.initDesPoints)  # vector to store optimizer convergence
             self.optimTime = np.repeat(0, s_opts.ID.initDesPoints)
-            self.feval = np.repeat(np.nan, s_opts.ID.initDesPoints)  # vector to store function evaluations on surrogate
+            self.feMax = np.repeat(np.nan, s_opts.ID.initDesPoints)  # vector to store function evaluations on surrogate
 
         else:
             df = cobra.df
@@ -44,7 +44,7 @@ class EvaluatorReal:
             self.feasPred = df.feasPred
             self.optimConv = df.optimConv
             self.optimTime = df.optimTime
-            self.feval = df.FEval
+            self.feMax = df.FEval
 
         self.is_equ = cobra.sac_res['is_equ']
         # equ_ind is the index to all equality constraints in p2.constraintSurrogates:
@@ -108,7 +108,7 @@ class EvaluatorReal:
             newPredY = getPredY0(self.xNew, fitnessSurrogate, p2)
         self.predY = concat(self.predY, newPredY)  # bug fix: now predY is the fitness surrogate value /WK/
         self.predVal = concat(self.predVal, f_value)  # fitness + penalty (in case of NMKB et al.) /WK/
-        self.feval = concat(self.feval, p2.opt_res['feval'])
+        self.feMax = concat(self.feMax, p2.opt_res['feMax'])
         self.optimConv = concat(self.optimConv, p2.opt_res['res_code'])
         self.optimTime = concat(self.optimTime, p2.opt_res['time_ms'])
         newPredC = np.array([])
@@ -197,14 +197,14 @@ class EvaluatorReal:
                     self.refi = {'x': x_opt,
                                  'minf': f_opt,
                                  'res_code': info['warnflag'],    # the return code
-                                 'feval': 0,
+                                 'feMax': 0,
                                  }
                 elif BFGS_METH == 1:
                     res = minimize(myf2, self.xNew, method='L-BFGS-B', bounds=lbfgs_bounds)
                     self.refi = {'x': res.x,
                                  'minf': res.fun,
                                  'res_code': res.message,    # the return code
-                                 'feval': res.nfev,
+                                 'feMax': res.nfev,
                                  }
                 else:  # i.e. BFGS_METH == 2
                     raise RuntimeError(f"BFGS_METH={BFGS_METH} does not work (raises nlopt.runtime_error)")
@@ -224,7 +224,7 @@ class EvaluatorReal:
                     # self.refi = {'x': x,
                     #              'minf': minf,
                     #              'res_code': opt.last_optimize_result(),  # the return code
-                    #              'feval': opt.get_numevals(),
+                    #              'feMax': opt.get_numevals(),
                     #              }
 
                     # # just a debug test: would a G03-specific normalization to sphere surface solve the refine issue?
@@ -234,7 +234,7 @@ class EvaluatorReal:
                     # self.refi = {'x': x,
                     #              'minf': 0,
                     #              'res_code': 0,  # the return code
-                    #              'feval': 0}
+                    #              'feMax': 0}
 
             else:  # i.e. "COBYLA"
                 opt = nlopt.opt(nlopt.LN_COBYLA, self.xNew.size)
@@ -264,7 +264,7 @@ class EvaluatorReal:
                 self.refi = {'x': x,
                              'minf': minf,
                              'res_code': opt.last_optimize_result(),    # the return code
-                             'feval': opt.get_numevals(),
+                             'feMax': opt.get_numevals(),
                              }
 
             # if (cg$convergence == 1) {  # iteration limit maxit has been reached
@@ -345,7 +345,7 @@ class EvaluatorReal:
         Calculate self.newNumViol, .newMaxViol, ... for the equality case (sac_opts.EQU.active=True)
 
         :param cobra:   object of class CobraInitializer
-        :param currentMu: current artificial equality margin :math:`\mu`
+        :param currentMu: current artificial equality margin :math:`\\mu`
         :param newPredC: prediction for xNew on constraint surrogates
         :return: nothing, but these elements of self are changed: (a) numbers newNumViol, newMaxViol, newNumPred,
                      trueNumViol, trueMaxViol; (b) vectors feas, feasPred

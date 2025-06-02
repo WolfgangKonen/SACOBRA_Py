@@ -13,7 +13,7 @@ class SACoptions:
         parameters defined in this class, they are hierarchically organized in nested option classes.
 
         :param feval: number of function evaluations
-        :param XI:  Distance-Requirement-Cycle (DRC) that controls exploration: Each infill point has a forbidden-sphere of radius ``XI[c]`` around it. ``c`` loops cyclically through ``XI``'s inidices. If ``XI==None``, then CobraInitializer will set it, depending on objective range, to short DRC ``[0.001, 0.0]`` or long DRC ``[0.3, 0.05, 0.001, 0.0005, 0.0]``.
+        :param XI:  Distance-Requirement-Cycle (:ref:`DRC <DRC-label>`) that controls exploration: Each infill point has a forbidden-sphere of radius ``XI[c]`` around it. ``c`` loops cyclically through ``XI``'s inidices. If ``XI==None``, then CobraInitializer will set it, depending on objective range, to short DRC ``[0.001, 0.0]`` or long DRC ``[0.3, 0.05, 0.001, 0.0005, 0.0]``.
         :param skipPhaseI: whether to skip **SACOBRA_Py** phase I or not
         :param DOSAC: controls the default options for ``ISAoptions ISA``. 0: take plain COBRA settings, 1: full SACOBRA settings, 2: reduced SACOBRA settings
         :param saveIntermediate: whether to save intermediate results or not (TODO)

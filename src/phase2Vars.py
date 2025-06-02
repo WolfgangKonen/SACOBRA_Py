@@ -17,6 +17,9 @@ class Phase2Vars:
     - **Cinfeas**        how many infeasible infills in a row (see :meth:`.adjustMargins`, updateInfoAndCounters)
     - **fitnessSurrogate** the objective surrogate model
     - **constraintSurrogates** the constraint surrogate models
+    - **pEffect**       number, calculated in calcPEffect in each iteration: If > 1, apply plog(Fres).
+    - **PLOG**          boolean vector: whether plog(Fres) was applied in iteration i
+    - **pshift**        float vector: with which p-shift was plog(Fres) applied (if at all) in iteration i
 
     Example: ``p2 = Phase2Vars(); print(p2.num);``
     """

@@ -1,3 +1,4 @@
+import pandas as pd
 # need to specify SACOBRA_Py.src as source folder in File - Settings - Project Structure,
 # then the following import statements will work:
 from cobraInit import CobraInitializer
@@ -8,6 +9,7 @@ from trainSurrogates import trainSurrogates, calcPEffect
 from seqOptimizer import SeqOptimizer, check_if_cobra_optimizable
 from evaluatorReal import EvaluatorReal
 from updateSaveCobra import updateSaveCobra
+from opt.equOptions import EQUoptions
 
 
 class CobraPhaseII:
@@ -46,17 +48,17 @@ class CobraPhaseII:
 
         Perform in a loop, until the budget ``feval`` is exhausted:
 
-           - select cyclically an element ``p2.ro`` from DRC ``XI``
+           - select cyclically an element ``p2.ro`` from :ref:`DRC <DRC-label>` ``XI``. Add the appropriate DRC-constraint as extra constraint to the set of constraints
            - train RBF surrogate models on the current set of infill points
            - select start point ``xStart``: either current-best ``xbest`` or random start (see :class:`.RandomStarter`)
-           - perform sequential optimization, starting from ``xStart``. Result is ``xNew = p2.opt_res['x']``
+           - perform sequential optimization, starting from ``xStart``, subject to the ``nConstraint + 1`` constraints. Result is ``xNew = p2.opt_res['x']``
            - evaluate ``xNew`` on the real functions +  (if ``EQU.active``) do refine step. Result is the updated EvaluatorReal object ``p2.ev1``
            - calculate p-effect for onlinePLOG
            - update cobra information: The new infill point ``xNew`` and its evaluation on the real functions is added to the ``cobra``'s arrays  ``A``, ``Fres``, ``Gres``
-           - update and save cobra: data frames ``df``, ``df2``, elements ``sac_res['xbest', 'fbest', 'ibest']``
+           - update and save ``cobra``: data frames :ref:`df <df-label>`, :ref:`df2 <df2-label>`, elements ``sac_res['xbest', 'fbest', 'ibest']`` of  dict :ref:`cobra.sac_res <sacres-label>`
            - adjust margins ``p2.EPS``, :math:`\\mu` (see :class:`.EQUoptions`), adjust  :math:`\\rho` (see :class:`.RBFoptions`) and ``p2.Cfeas``, ``p2.Cinfeas`` (see :meth:`phase2Funcs.adjustMargins`)
 
-        The result is a modified object ``cobra`` (detailed diagnostic info in ``cobra.df``, ``cobra.df2``). The
+        The result is a modified object ``cobra`` (detailed results in dict :ref:`sac_res <sacres-label>` and detailed diagnostic info in data frames :ref:`df <df-label>`, :ref:`df2 <df2-label>`). The
         optimization results can be retrieved from ``cobra`` with methods :meth:`.get_fbest`, :meth:`.get_xbest`
         and  :meth:`.get_xbest_cobra`.
 
@@ -139,3 +141,72 @@ class CobraPhaseII:
 
         # TODO: some final settings to self.cobra, self.p2
         return self
+
+    # NOTE: the purpose of this function is just to supply a docstring (used in appendix of Sphinx docu):
+    def create_df(self) -> pd.DataFrame:
+        """
+        Return a data frame with the following elements, accessible with e.g. ``cobra.df['iter']``.
+        Data frame ``cobra.df`` contains ``feval`` rows, one for each true function evaluation.
+
+        The contents of a specific row of ``cobra.df`` is:
+
+        - **iter**: the iteration number
+        - **y**: the objective function value at the infill point of this iteration
+        - **predY**: the fitness surrogate value at the same infill point
+        - **predSolu**: the fitness surrogate value at the true solution (if provided, else none)
+        - **feasible**: is the current infill point feasible on the true objective?
+        - **feasPred**: is the current infill point predicted to be feasible by the fitness surrogate?
+        - **nViolations**: the number of violations in the constraint surrogates' prediction at the infill point
+        - **trueNViol**: the number of violations in the true constraints at the infill point
+        - **maxViolation**: the maximum violation of the constraint surrogates' prediction at the infill point
+        - **trueMaxViol**: the maximum violation of the true constraints at the infill point
+        - **feMax**: the number of iterations of the sequential optimizer in producing this infill point
+        - **fBest**: the all-time best feasible objective values. As long as no feasible point is found, the fitness of the one with the least maximum violation
+        - **distA**: distance of true solu to infill point, rescaled space. min distance for multiple solu's, None if no solu is provided
+        - **distOrig**: the same, but in original space
+        - **RS**: True if it is an iteration with a random start
+        - ...
+
+        :return: SACOBRA optimization results
+        :rtype: pd.DataFrame
+        """
+        return self.df
+
+    # NOTE: the purpose of this function is just to supply a docstring (used in appendix of Sphinx docu):
+    def create_df2(self) -> pd.DataFrame:
+        """
+        Return a data frame with the following elements, accessible with e.g. ``cobra.df2['iter']``.
+        Data frame ``cobra.df2`` contains ``feval - initDesPoints`` rows, one for each true function evaluation in phase II.
+
+        The contents of a specific row of ``cobra.df2`` is:
+
+        - **iter**: the iteration number
+        - **predY**: the fitness surrogate value at the same infill point
+        - **predVal**: surrogate fitness + penalty at xNew
+        - **predSolu**: the fitness surrogate value at the true solution (if provided, else none)
+        - **predSoluPenal**: surrogate fitness + penalty at the true solu (only diagnostics)
+        - **sigmaD**: ...
+        - **penaF**: ...
+        - **XI**: ...
+        - **rho**: ...
+        - **fBest**: the all-time best feasible objective values. As long as no feasible point is found, the fitness of the one with the least maximum violation
+        - **EPS**: ...
+        - **muVec**: ...
+        - **PLOG**: ...
+        - **pshift**: ...
+        - **pEffect**: ...
+        - **state**: ...
+        - ...
+
+        Only if the COP contains equality constraints and if equality handling is active (:class:`.EQUoptions`
+        ``EQU.active==True``), then the following row elements are not ``None``:
+
+        - **nv_cB**: number of (artificial) constraint violations (``> conTol``) before refine on surrogates
+        - **nv_cA**: number of (artificial) constraint violations (``> conTol``) after refine on surrogates
+        - **nv_tB**: number of (artificial) constraint violations (``> conTol``) before refine on true constraints
+        - **nv_tA**: number of (artificial) constraint violations (``> conTol``) after refine on true constraints
+
+        :return: SACOBRA optimization results
+        :rtype: pd.DataFrame
+        """
+        return self.df2

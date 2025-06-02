@@ -19,6 +19,11 @@ Phase II
 .. autoclass:: randomStarter.RandomStarter
    :members: __init__, random_start
 
+.. _AdFitter-label:
+
+.. autoclass:: trainSurrogates.AdFitter
+   :members: __init__, __call__
+
 .. autoclass:: phase2Vars.Phase2Vars
 
 .. autofunction:: phase2Funcs.adjustMargins

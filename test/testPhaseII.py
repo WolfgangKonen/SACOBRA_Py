@@ -209,7 +209,7 @@ class TestPhaseII(unittest.TestCase):
         print("[test_seq_funcs passed]")
 
     def test_RS_EPS(self):
-        """ A short optimization run (feval=20) on a simple COP (sphere + 1 inequality constraint with Random Start (RS)
+        """ A short optimization run (feMax=20) on a simple COP (sphere + 1 inequality constraint with Random Start (RS)
             enabled Test (for two different parameters ``rstype``)
 
             - whether the Python side has the same iterations with RS as the R side

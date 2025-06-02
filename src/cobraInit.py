@@ -131,7 +131,7 @@ class CobraInitializer:
         verboseprint(s_opts.verbose, important=False,
                      message=f"Shapes of A, Fres, Gres: {A.shape}, {Fres.shape}, {Gres.shape}")
         # print(A[-1,:])
-        fe = A.shape[0]  # number of function evaluations = number of rows of A
+        # fe = A.shape[0]  # number of function evaluations = number of rows of A (never used, we have p2.num)
 
         #
         # STEP 4: update structures
@@ -147,8 +147,8 @@ class CobraInitializer:
                         'xStart': x0.copy(),  # will be overwritten with xbest below and in phase II
                         'dimension': dimension,
                         'is_equ': is_equ,
-                        'iteration': 0,
-                        'fe': fe,
+                        # 'iteration': 0,   # never used
+                        # 'fe': fe,         # never used, we have p2.num
                         'A': A,
                         'Fres': Fres,
                         'Gres': Gres,
@@ -260,14 +260,14 @@ class CobraInitializer:
                     'xbestArray': xbestArray,
                     'phase': phaseVec,
                     'xStart': xbest.reshape(dimension,),         # bug fix
-                    'rs': np.array([])      # will be populated by random_start
+                    'rs': np.array([])      # (only for debug logging, see RandomStarter.decide_about_random_start)
                     }
         self.sac_res.update(sac_res2)       # update dict sac_res with the content of sac_res2
         self.df = None
         self.df2 = pd.DataFrame()
 
         # TODO:
-        # if (is.character(cobra$CA$ITER)) if (cobra$CA$ITER == "all") cobra$CA$ITER = seq(initDesPoints, feval, 1)
+        # if (is.character(cobra$CA$ITER)) if (cobra$CA$ITER == "all") cobra$CA$ITER = seq(initDesPoints, feMax, 1)
         #
         # cobra$radi = np.repeat(cobra$TRlist$radiInit, initDesPoints)
 
@@ -296,7 +296,8 @@ class CobraInitializer:
 
             # --- adFit is now called in *each* iteration of cobraPhaseII (adaptive plog) ---
 
-            self.sac_res['RSDONE'] = np.repeat(np.nan, s_opts.ID.initDesPoints)
+            # --- never used: ---
+            # self.sac_res['RSDONE'] = np.repeat(np.nan, s_opts.ID.initDesPoints)
 
         self.sac_opts = s_opts
 
@@ -406,6 +407,14 @@ class CobraInitializer:
 
         - **fn**: function returning ``(1+nConstraints)``-dim vector: [objective to minimize, constraints], optionally rescaled
         - **originalfn**: the same, but before rescaling
+        - **lower**: lower-bound vector with dimension :math:`d`, optionally rescaled
+        - **originalL**: the same, but before rescaling
+        - **upper**: upper-bound vector with dimension :math:`d`, optionally rescaled
+        - **originalU**: the same, but before rescaling
+        - **x0**: initial start point, either given with the problem formulation or a random point, optionally resacled
+        - **originalx0**: the same, but before rescaling
+        - **xStart**: start point for each sequential optimization: initially ``x0``, but in later iterations replaced by ``xbest`` or random start
+
         - ...
 
         :return: SACOBRA results

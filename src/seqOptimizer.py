@@ -54,7 +54,7 @@ class SeqOptimizer:
         if tol_e.size > 0:
             opt.add_equality_mconstraint(sf_factory.h_vec_c, tol_e)
         opt.set_xtol_rel(s_opts.SEQ.tol)
-        opt.set_maxeval(s_opts.SEQ.feval)
+        opt.set_maxeval(s_opts.SEQ.feMax)
 
         try:
             x = opt.optimize(xStart)
@@ -68,7 +68,7 @@ class SeqOptimizer:
         p2.opt_res = {'x': x,
                       'minf': minf,
                       'res_code': opt.last_optimize_result(),
-                      'feval': opt.get_numevals(),
+                      'feMax': opt.get_numevals(),
                       'time_ms': time_ms
                       }
         verboseprint(s_opts.verbose, False,
@@ -347,8 +347,8 @@ def subProbPhaseI(x, cobra: CobraInitializer, p2: Phase2Vars):
 # y < - subProbConstraintHandling(x, cobra, penalty1, penalty2, maxViolation, cobra$sigmaD, cobra$penaF)
 # if (cobra$trueFuncForSurrogates) y < - cobra$fn(x)[1] + (penalty1 * cobra$sigmaD[1] * 100 + penalty2) * cobra$penaF[1]
 # # cat(">>SubProb: ", interpRBF(x, cobra$fitnessSurrogate), " / ",
-# #     (C * cobra$feval)^alpha * sum(maxViolation)^beta , " ||",
-# #     (C * cobra$feval)^alpha, " / ", sum(maxViolation)^beta ,"\n")
+# #     (C * cobra$feMax)^alpha * sum(maxViolation)^beta , " ||",
+# #     (C * cobra$feMax)^alpha, " / ", sum(maxViolation)^beta ,"\n")
 # # cat("<<< leaving subProb\n")
 # return (y)
 # }  # subProb()
@@ -361,7 +361,7 @@ def subProbPhaseI(x, cobra: CobraInitializer, p2: Phase2Vars):
 # isresCobyla < - function(xStart, fn=subProb2, hin=gCOBRA, cobra)
 # {
 # # maxeval=cobra$seqFeval;
-# # subMin$feval=subMin$iter;
+# # subMin$feMax=subMin$iter;
 # hin_c = cobra$gCOBRA_c
 # subMin1 < - isres2(xStart, fn=fn,
 #                    lower=cobra$lower, upper = cobra$upper, hin = hin, maxeval = cobra$seqFeval, cobra = cobra);
@@ -395,7 +395,7 @@ def subProbPhaseI(x, cobra: CobraInitializer, p2: Phase2Vars):
 #     C = 0.5
 # alpha = 2
 # beta = 2
-# y < -interpRBF(x, cobra$fitnessSurrogate) + (C * cobra$feval) ^ alpha * sum(maxViolation) ^ beta
+# y < -interpRBF(x, cobra$fitnessSurrogate) + (C * cobra$feMax) ^ alpha * sum(maxViolation) ^ beta
 # },
 #
 # # A.E. Smith and D.M. Tate: Genetic optimization using a penalty function. In Proceedings of the
@@ -441,7 +441,7 @@ def subProbPhaseI(x, cobra: CobraInitializer, p2: Phase2Vars):
 # #  C=5
 # #  alpha=2
 # #  beta=2
-# #  y<-interpRBF(x, cobra$fitnessSurrogate) + (C * cobra$feval)^alpha * sum(maxViolation)^beta
+# #  y<-interpRBF(x, cobra$fitnessSurrogate) + (C * cobra$feMax)^alpha * sum(maxViolation)^beta
 # # }else{y<-interpRBF(x, cobra$fitnessSurrogate) + (penalty1*sigmaD[1] + penalty2)*penaF[1]}
 #
 # return (y)

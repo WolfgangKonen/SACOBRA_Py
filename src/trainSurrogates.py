@@ -14,10 +14,11 @@ class AdFitter:
     """
     def __init__(self, cobra: CobraInitializer, p2: Phase2Vars, Fres):
         """
-            The values provided in ``Fres`` are conditionally plog-transformed and the results
-            are available from ``self.surrogateInput``
-        :param cobra:
-        :param p2:      changes p2.PLOG, p2.pshift
+        The values provided in ``Fres`` are conditionally plog-transformed and the results
+        are available from ``self.surrogateInput``.
+
+        :param cobra:   AdFitter needs ``sac_opts`` and ``sac_res``
+        :param p2:      AdFitter needs ``p2.pEffect`` and changes ``p2.PLOG``, ``p2.pshift``
         :param Fres:    the ``Fres`` input, may be either cobra.sac_res['Fres'] or cobra.for_rbf['Fres']
         """
         s_opts = cobra.get_sac_opts()
@@ -33,7 +34,7 @@ class AdFitter:
                 if p2.pEffect > 1:
                     self.PLOG = True
                     Fres = plog(Fres, pShift=self.pshift)
-                # else: leave Fres = s_res['Fres']
+                # else: leave Fres at its input value
 
             else:  # i.e. if not s_opts.isa.onlinePLOG
                 if self.FRange > s_opts.ISA.TFRange:
@@ -43,7 +44,7 @@ class AdFitter:
 
                     self.PLOG = True
                     Fres = plog(Fres, pShift=self.pshift)
-                # else: leave Fres = s_res['Fres']
+                # else: leave Fres at its input value
 
         p2.PLOG = np.concat((p2.PLOG, [self.PLOG]))
         p2.pshift = np.concat((p2.pshift, [self.pshift]))
@@ -51,9 +52,12 @@ class AdFitter:
         self.FRange_after = (max(Fres) - min(Fres))
         verboseprint(s_opts.verbose, False,
                      f"[adFit] FRange = {self.FRange}, PLOG={self.PLOG}, new FRange = {self.FRange_after}")
-        dummy = 0
 
     def __call__(self):
+        """
+        :return: ``self.surrogateInput``, a potentially plog-transformed ``Fres``
+        :rtype: np.ndarray
+        """
         return self.surrogateInput
 
     def get_PLOG(self):
@@ -120,7 +124,7 @@ def trainSurrogates(cobra: CobraInitializer, p2: Phase2Vars):
     # would otherwise occur in calls to RBFInterpolator (bug fix 2025/06/03)
 
     # important: use here the Fres from cobra.for_rbf (!), will be also used for Fres1, Fres2 below.
-    p2.adFit = AdFitter(cobra, p2, cobra.for_rbf['Fres'])
+    p2.adFit = AdFitter(cobra, p2, cobra.for_rbf['Fres'].copy())
     Fres = p2.adFit()   # the __call__ method returns p2.adfit.surrogateInput, a potentially plog-transformed Fres
 
 

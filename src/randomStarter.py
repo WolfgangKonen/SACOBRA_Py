@@ -89,7 +89,7 @@ class RandomStarter:
             else:
                 xStart = self.rng.random(d)  # uniform random in [0,1)
             xStart = xStart @ np.diag(upper - lower) + lower
-            # this is just for debug logging:
+            # this is just for debug logging: sac_res['rs'] is a vector with (1+d)*n_rs elements: (iter_rs, xStart_rs) for each iteration with a random start
             cobra.sac_res['rs'] = np.concatenate((cobra.sac_res['rs'], p2.num, xStart), axis=None)
             verboseprint(s_opts.verbose, s_opts.ISA.RS_verb,
                          f"[random_start] random xStart = {xStart} at iteration {p2.num}"

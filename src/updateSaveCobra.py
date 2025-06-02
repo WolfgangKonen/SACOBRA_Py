@@ -36,7 +36,7 @@ def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, EPS,
     xNew = p2.ev1.xNew
     feas = p2.ev1.feas
     feasPred = p2.ev1.feasPred
-    feval = p2.ev1.feval
+    feMax = p2.ev1.feMax
     optimConv = p2.ev1.optimConv
     optimTime = p2.ev1.optimTime
     predY = p2.ev1.predY
@@ -141,8 +141,8 @@ def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, EPS,
              'trueNViol': s_res['trueNumViol'],
              'maxViolation': s_res['maxViol'],
              'trueMaxViol': s_res['trueMaxViol'],
-             'FEval': feval,
-             'Best': s_res['fbestArray'],
+             'feMax': feMax,
+             'fBest': s_res['fbestArray'],
              'optimizer': np.repeat(s_opts.SEQ.optimizer, s_res['Fres'].shape[0]),
              'optimConv': optimConv,
              'optimTime': optimTime,
@@ -163,9 +163,9 @@ def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, EPS,
         #     predY = predY,  # surrogate fitness
         #     predSolu = df_predSolu,
         #     feasible = T,
-        #     FEval = feval,
+        #     feMax = feMax,
         #     realfeval = c(realfeval, nrow(get("ARCHIVE", envir=intern.archive.env))),
-        #     Best = cobra$fbestArray,
+        #     fBest = cobra$fbestArray,
         #     optimizer = rep(cobra$seqOptimizer, length(cobra$Fres)),
         #     optimizationTime = ev1$optimizationTime,
         #     conv = optimizerConvergence,
@@ -201,7 +201,7 @@ def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, EPS,
     #     testit::assert (df$fxbest[!df$RS] == df$fxStart[!df$RS])
     # }
 
-    cobra.df['seed'] = s_opts.cobraSeed
+    cobra.df['seed'] = s_opts.cobraSeed    # needed?
 
     # result data frame df2:
     last = cobra.df.shape[0] - 1
@@ -215,7 +215,7 @@ def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, EPS,
          'penaF': s_opts.SEQ.penaF[1],  # the 1st of the three elements is the currently active penaF
          'XI': p2.gama,
          'rho': s_opts.RBF.rho,
-         'fBest': cobra.df.Best[last],
+         'fBest': cobra.df.fBest[last],
          'EPS': EPS,
          'muVec': p2.currentMu,  # this is df2$currentMu in R
          'PLOG': p2.PLOG[-1],
@@ -242,10 +242,13 @@ def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, EPS,
     #     TRdelta=cobra$TRdelta
     # ))
 
-    # consistency check for data frames df and df2:
+    # consistency checks for data frames df and df2:
     msg = "[updateSaveCobra] wrong nrow for df and df2"
     if s_opts.phase1DesignPoints is None:
         assert cobra.df.shape[0] == cobra.df2.shape[0] + s_opts.ID.initDesPoints, msg
+        assert np.all(np.array(cobra.df['predY'][s_opts.ID.initDesPoints:]) == np.array(cobra.df2['predY']))
+        assert np.all(np.array(cobra.df['predSolu'][s_opts.ID.initDesPoints:]) == np.array(cobra.df2['predSolu']))
+        assert np.all(np.array(cobra.df['fBest'][s_opts.ID.initDesPoints:]) == np.array(cobra.df2['fBest']))
     else:
         assert cobra.df.shape[0] == cobra.df2.shape[0] + s_opts.phase1DesignPoints, msg
 

@@ -18,7 +18,7 @@ The initialization in **SACOBRA_Py** is done by creating an object of class :cla
 - adjust several elements according to constraint range, see :meth:`.CobraInitializer.adCon`
 - calculate for each initial design point ``numViol``, the number of violated constraints, and ``maxViol``, the maximum constraint violation. If equality constraints are involved, calculate :math:`\mu_{init}`, the radius for an artificial feasibility tube around each equality constraint (see :class:`.EQUoptions`) and base the calculation of ``numViol`` and ``maxViol`` on this artificial feasibility. 
 - calculate the so-far best (artificial) feasible point. If no point fulfills (artificial) feasibility, form the set of points with minimum ``numViol`` and take from this set the one point with the best objective.
-- set up result dictionary :ref:`self.sac_res <sacres-label>`
+- set up result dictionary :ref:`sac_res <sacres-label>`
 - adjust :ref:`DRC <DRC-label>` according to objective range, see :meth:`.adDRC`
 
 
@@ -42,7 +42,8 @@ setting different from the defaults is desired.
 
 .. _DRC-label:
 
-**Distance Requirement Cycle**
+Distance Requirement Cycle (DRC)
+================================
 
 The Distance Requirement Cycle (DRC) is the vector ``XI`` that controls exploration: Each already evaluated infill point is surrounded by a forbidden-sphere of radius ``XI[c]`` with ``c = i mod XI.size`` (``c`` loops cyclically through ``XI``’s inidices`, that's where the name *cycle* comes from). A new infill point is searched under the additional constraint that it has to be a distance ``XI[c]`` away from all other already evaluted infill points. The larger ``XI[c]``, the more exploration.
 

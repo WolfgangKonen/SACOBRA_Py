@@ -16,6 +16,35 @@ SACOBRA stands for **Self-Adjusting Constraint Optimization By Radial basis func
 
 SACOBRA was originally developed in R. This repository **SACOBRA_Py** contains the beta version of a Python port, which is simplified in code and up to 4 times faster than the R version. (The R-version of SACOBRA is available from `this GitHub repository <https://github.com/WolfgangKonen/SACOBRA>`_.)
 
+
+
+Documentation
+-----------------
+
+
+
+This documentation contains:
+
+    - a brief introduction to COPs (constrained optimization problems) and to the G-problem benchmark
+    - how initialization of SACOBRA_Py works
+    - how optimization in SACOBRA_Py is done
+    - usage examples
+    - an appendix with further details (dict ``cobra.sac_res`` and data frames ``cobra.df``, ``cobra.df2``)
+
+
+Authors and Credits
+-------------------
+
+The **SACOBRA_Py** Python port is developed by
+
+- Wolfgang Konen, TH Köln
+
+It is based on the earlier R package SACOBRA which was authored by
+
+- Samineh Bagheri, formerly TH Köln, now inovex GmbH
+- Thomas Baeck, Univ. Leiden
+- Wolfgang Konen, TH Köln
+
 The **SACOBRA_Py** realization relies on these other Python packages and software tools:
 
 - ``lhsmdu`` for latin hypercube sampling (LHS) in the initial design phase
@@ -25,15 +54,3 @@ The **SACOBRA_Py** realization relies on these other Python packages and softwar
 - ``readthedocs.io`` for deploying and hosting the documentation pages
 
 We acknowledge and are thankful for all the work put into these great open-source software tools!
-
-
-Documentation
------------------
-
-This documentation contains:
-
-    - a brief introduction to COPs (constrained optimization problems) and to the G-problem benchmark
-    - how initialization of SACOBRA_Py works
-    - how optimization in SACOBRA_Py is done
-    - usage examples
-    - an appendix with further details (data frames ``cobra.df``, ``cobra.df2``)
