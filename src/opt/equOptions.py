@@ -17,11 +17,11 @@ class EQUoptions:
         :param muFinal: lower bound for margin :math:`\mu`. ``muFinal`` should be set to a small but non-zero value (larger than machine accuracy).
         :param muGrow: every ``muGrow`` (e.g. 100) iterations, re-enlarge the :math:`\mu`-band. If 0, then re-enlarge never
         :param mu4inequality: use the artificial feasibility band also for inequalities (experimental)
-        :param refine: enables the refine mechanism for equality handling
-        :param refineMaxit: maximum number of iterations used in the refine step. Note that the refine
-          step runs on the surrogate models and does not impose any extra real function evaluation
-        :param refineAlgo: optimizer for refine step ["COBYLA"|"L-BFGS-B"]
-        :param refinePrint: whether to print "cg-values (before,after,true)" after each refine step
+        :param refine: enables the :ref:`refine step <refineStep-label>` for equality handling
+        :param refineMaxit: maximum number of iterations used in the :ref:`refine step <refineStep-label>`. Note that the refine
+          step runs on the surrogate models and does not impose any extra real function evaluations
+        :param refineAlgo: optimizer for :ref:`refine step <refineStep-label>` ["COBYLA"|"L-BFGS-B"]
+        :param refinePrint: whether to print "cg-values (before,after,true)" after each :ref:`refine step <refineStep-label>`
     """
     def __init__(self,
                  active=True,

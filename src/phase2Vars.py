@@ -37,6 +37,7 @@ class Phase2Vars:
         self.fitnessSurrogate2 = None
         self.err1 = np.array([], dtype=np.float64)
         self.err2 = np.array([], dtype=np.float64)
+        self.errRatio = None
         self.noProgressCount = 0
         self.printP = True
         self.write_XI = True

@@ -5,6 +5,7 @@ from scipy.interpolate import RBFInterpolator
 class RBFmodel:
     """
     Wrapper for RBFInterpolator to provide a syntax similar to RbfInter.R.
+
     Usage:
         myModel = RBFmodel(xobs,yobs)   # equivalent to trainCubicRBF
         yflat = myModel(xflat)          # combines interpRBF and predict.RBFinter, with xflat.shape = [d,n]
@@ -26,7 +27,6 @@ class RBFmodel:
         N = xobs.shape[0]
         try:
             self.model = RBFInterpolator(xobs, yobs, kernel=kernel, degree=degree, smoothing=N*rho)
-            # TODO: check if this works also for matrix yobs
         except np.linalg.LinAlgError:
             # LinAlgError ('Singular Matrix') is raised by RBFInterpolator if xobs contains identical rows
             # (identical infill points). We avoid this with cobra.for_rbf['A'] (instead of cobra.sac_res['A']),
@@ -36,7 +36,7 @@ class RBFmodel:
 
     def __call__(self, xflat: np.ndarray):
         """
-        Apply RBF model(s) to data xflat
+        Apply RBF model(s) to data ``xflat``
 
         :param xflat:   vector of length d  - or -  matrix of shape (n,d)
         :return:        response of model(s), either vector of length n  - or -  matrix of shape (n,nmodels)

@@ -23,7 +23,7 @@ A constrained optimization problem (COP) for numerical and continuous quantities
 
 
 
-G-problem benchmark
+G-Problem Benchmark
 -----------------------------
 
 The G-problem benchmark suite originates from a CEC 2006 competition [LiangRunar]_. It is a set of 24 constrained optimization problems (COPs, G-problems) G01, ..., G24 with various properties like dimension, number of equality / inequality constraints, feasibility ratio, etc. Eight of the 24 COPs have equality constraints. Although these problems were introduced as a suite in the technical report [LiangRunar]_ at CEC 2006, many of them have been used by different authors earlier.

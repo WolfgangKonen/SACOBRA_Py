@@ -5,7 +5,8 @@ from cobraInit import CobraInitializer
 from phase2Vars import Phase2Vars
 import phase2Funcs as pf2
 from randomStarter import RandomStarter
-from trainSurrogates import trainSurrogates, calcPEffect
+from surrogator import Surrogator
+# from trainSurrogates import trainSurrogates, calcPEffect
 from seqOptimizer import SeqOptimizer, check_if_cobra_optimizable
 from evaluatorReal import EvaluatorReal
 from updateSaveCobra import updateSaveCobra
@@ -52,8 +53,8 @@ class CobraPhaseII:
            - train RBF surrogate models on the current set of infill points
            - select start point ``xStart``: either current-best ``xbest`` or random start (see :class:`.RandomStarter`)
            - perform sequential optimization, starting from ``xStart``, subject to the ``nConstraint + 1`` constraints. Result is ``xNew = p2.opt_res['x']``
-           - evaluate ``xNew`` on the real functions +  (if ``EQU.active``) do refine step. Result is the updated EvaluatorReal object ``p2.ev1``
-           - calculate p-effect for onlinePLOG
+           - evaluate ``xNew`` on the real functions +  (if ``EQU.active``) do :ref:`refine step <refineStep-label>`. Result is the updated EvaluatorReal object ``p2.ev1``
+           - calculate :ref:`p-effect <pEffect-label>` for onlinePLOG (see :meth:`.Surrogator.calcPEffect`)
            - update cobra information: The new infill point ``xNew`` and its evaluation on the real functions is added to the ``cobra``'s arrays  ``A``, ``Fres``, ``Gres``
            - update and save ``cobra``: data frames :ref:`df <df-label>`, :ref:`df2 <df2-label>`, elements ``sac_res['xbest', 'fbest', 'ibest']`` of  dict :ref:`cobra.sac_res <sacres-label>`
            - adjust margins ``p2.EPS``, :math:`\\mu` (see :class:`.EQUoptions`), adjust  :math:`\\rho` (see :class:`.RBFoptions`) and ``p2.Cfeas``, ``p2.Cinfeas`` (see :meth:`phase2Funcs.adjustMargins`)
@@ -78,7 +79,7 @@ class CobraPhaseII:
             # TODO: MS (model-selection) part
 
             # train RBF surrogate models:
-            self.cobra = trainSurrogates(self.cobra, self.p2)
+            self.p2 = Surrogator.trainSurrogates(self.cobra, self.p2)
 
             if first_pass:
                 # needed just for assertion check in testCOP.test_G06_R:
@@ -114,8 +115,8 @@ class CobraPhaseII:
             xNew = self.p2.opt_res['x']
             self.p2.ev1.update(xNew, self.cobra, self.p2, self.p2.currentMu)
 
-            # [conditional] calcPEffect (SACOBRA) for onlinePLOG
-            calcPEffect(self.p2, self.p2.ev1.xNew, self.p2.ev1.xNewEval)
+            # calcPEffect (SACOBRA) for onlinePLOG
+            Surrogator.calcPEffect(self.p2, self.p2.ev1.xNew, self.p2.ev1.xNewEval)
 
             # update cobra information (A, Fres, Gres and others)
             pf2.updateInfoAndCounters(self.cobra, self.p2)
@@ -199,7 +200,8 @@ class CobraPhaseII:
         - ...
 
         Only if the COP contains equality constraints and if equality handling is active (:class:`.EQUoptions`
-        ``EQU.active==True``), then the following row elements are not ``None``:
+        ``EQU.active==True``), then the following row elements are not ``None``, instead they contain these
+        attributes evaluated *for the new infill point*:
 
         - **nv_cB**: number of (artificial) constraint violations (``> conTol``) before refine on surrogates
         - **nv_cA**: number of (artificial) constraint violations (``> conTol``) after refine on surrogates

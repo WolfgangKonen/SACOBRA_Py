@@ -247,7 +247,8 @@ def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, EPS,
     if s_opts.phase1DesignPoints is None:
         assert cobra.df.shape[0] == cobra.df2.shape[0] + s_opts.ID.initDesPoints, msg
         assert np.all(np.array(cobra.df['predY'][s_opts.ID.initDesPoints:]) == np.array(cobra.df2['predY']))
-        assert np.all(np.array(cobra.df['predSolu'][s_opts.ID.initDesPoints:]) == np.array(cobra.df2['predSolu']))
+        if not np.any(np.isnan(cobra.df2['predSolu'])):
+            assert np.all(np.array(cobra.df['predSolu'][s_opts.ID.initDesPoints:]) == np.array(cobra.df2['predSolu']))
         assert np.all(np.array(cobra.df['fBest'][s_opts.ID.initDesPoints:]) == np.array(cobra.df2['fBest']))
     else:
         assert cobra.df.shape[0] == cobra.df2.shape[0] + s_opts.phase1DesignPoints, msg

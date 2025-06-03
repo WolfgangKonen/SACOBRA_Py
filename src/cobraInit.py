@@ -333,7 +333,7 @@ class CobraInitializer:
         return self.sac_res['originalfn'](self.get_xbest())[0]
 
     def adDRC(self):        # , maxF, minF
-        """ Adjust DRC (distance requirement cycle), based on range of ``Fres`` """
+        """ Adjust :ref:`DRC <DRC-label>` (distance requirement cycle), based on range of ``Fres`` """
         FRange = (max(self.sac_res['Fres']) - min(self.sac_res['Fres']))
         if FRange > 1e+03:
             DRC = DRCS

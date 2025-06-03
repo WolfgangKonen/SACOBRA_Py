@@ -6,7 +6,8 @@ from seqOptimizer import SeqFuncFactory
 from cobraPhaseII import CobraPhaseII
 from innerFuncs import plog, plogReverse
 from rescaleWrapper import RescaleWrapper
-from trainSurrogates import trainSurrogates, calcPEffect
+from surrogator import Surrogator
+# from trainSurrogates import trainSurrogates, calcPEffect
 from opt.sacOptions import SACoptions
 from opt.idOptions import IDoptions
 from opt.isaOptions import ISAoptions
@@ -61,7 +62,7 @@ class TestPhaseII(unittest.TestCase):
             c2 = CobraPhaseII(cobra)
             p2 = c2.get_p2()
 
-            trainSurrogates(cobra, p2)
+            Surrogator.trainSurrogates(cobra, p2)
 
             fr_bef = p2.adFit.get_FRange_before()
             fr_aft = p2.adFit.get_FRange_after()
@@ -102,7 +103,7 @@ class TestPhaseII(unittest.TestCase):
                 xNew = xflat[i,:]
                 xNewEval = fn(xNew)
                 # print(i, p2.fitnessSurrogate1(xNew), p2.fitnessSurrogate2(xNew))
-                calcPEffect(p2, xNew, xNewEval)
+                Surrogator.calcPEffect(p2, xNew, xNewEval)
                 dummy = 0
             # print(p2.errRatio)
             assert np.allclose(p2.errRatio, errRatio_from_R, rtol=1e-5), \
@@ -176,7 +177,7 @@ class TestPhaseII(unittest.TestCase):
         c2 = CobraPhaseII(cobra)
         p2 = c2.get_p2()
 
-        trainSurrogates(cobra, p2)
+        Surrogator.trainSurrogates(cobra, p2)
 
         for ro in [1, 0.5]:
             p2.ro = ro

@@ -21,6 +21,6 @@ SACOBRA_Py documentation
    optim
    example
    appendix
-   api
+
 
 

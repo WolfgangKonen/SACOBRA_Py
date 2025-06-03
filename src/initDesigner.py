@@ -19,7 +19,7 @@ class InitDesigner:
     :class:`.CobraPhaseII` uses the evaluated sets to train the initial fitness and constraint surrogate models.
 
     In detail: Create matrix ``self.A`` with shape ``(P, d)`` of sample points in (potentially rescaled) input space
-    ``[lower, upper]`` :math:`\subset \mathbb{R}^d`, where ``P = initDesPoints`` and ``d =`` input space dimension.
+    ``[lower, upper]`` :math:`\\subset \mathbb{R}^d`, where ``P = initDesPoints`` and ``d =`` input space dimension.
 
     Apply ``fn`` to these points and split the result in objective function (:math:`f`) values ``self.Fres``
     with shape ``(P,)`` and constraint function (:math:`g,h`) values ``self.Gres`` with shape
