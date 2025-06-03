@@ -98,5 +98,27 @@ It is missing
 ## Publications
 You can read more about SACOBRA in the following scientific publications:
 
-< ... >
+S. Bagheri, W. Konen, and T. Bäck. *Equality constraint handling for surrogate-assisted
+constrained optimization.* In K. C. Tan, editor, Proc. World Congress on Computational
+Intelligence (WCCI), Vancouver, p. 1924-1931. IEEE, 2016.
+[URL](http://www.gm.fh-koeln.de/~konen/Publikationen/Bagh16-WCCI.pdf)
 
+S. Bagheri, W. Konen, T. Bäck. 
+*Online Selection of Surrogate Models for Constrained Black-Box Optimization.*
+In: Jin, Yaochu (Hrsg.): SSCI'2016, Athens, S. 1, IEEE, 2016. (**Best Student Paper Award**)
+[URL](http://www.gm.fh-koeln.de/~konen/Publikationen/Bagh16-SSCI.pdf)
+
+S. Bagheri, W. Konen, M. Emmerich, T. Bäck. 
+*Self-adjusting parameter control for surrogate-assisted constrained optimization under limited budgets.*
+In: Applied Soft Computing, vol. 61, p. 377-393, ISSN: 1568-4946, 2017.
+[URL](http://www.gm.fh-koeln.de/ciopwebpub/Bagh17b/ASOC-SACOBRA17.pdf)
+
+S. Bagheri, W. Konen, T. Bäck. 
+*Comparing Kriging and Radial Basis Function Surrogates.*
+In: Hoffmann, Frank; Hüllermeier, Eyke (Hrsg.): Proceedings 27. Workshop Computational Intelligence, S. 243-259, Universitätsverlag Karlsruhe, 2017.
+[URL](https://publikationen.bibliothek.kit.edu/1000074341)
+
+S. Bagheri, W. Konen, T. Bäck. 
+*How to Solve the Dilemma of Margin-Based Equality Handling Methods.*
+In: Hoffmann, Frank; Hüllermeier, Eyke; Mikut, Ralf (Hrsg.): Proceedings 27. Workshop Computational Intelligence, S. 257-270, Universitätsverlag Karlsruhe, 2017. (**Young Author Award**)
+[URL](https://blogs.gm.fh-koeln.de/ciop/files/2018/12/GMA2018.pdf)
