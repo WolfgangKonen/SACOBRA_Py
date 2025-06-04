@@ -1,5 +1,5 @@
 # SACOBRA_Py
-[SACOBRA_Py](https://github.com/WolfgangKonen/SACOBRA_Py) is the SACOBRA Python port.
+[SACOBRA_Py](https://github.com/WolfgangKonen/SACOBRA_Py) is the SACOBRA Python port realized in 2025.
 
 SACOBRA is a package for constrained optimization with relatively few function evaluations.
 
@@ -66,10 +66,10 @@ Problem G13 has 3 equality constraints and dimension 5. It requires with ``feval
 | "bla" |blabla|
 -->
 
-A more extensive documentation can be found in both formats HTML and PDF under these links:
+More detailed documentation can be found at [https://wolfgangkonen-sacobra-py.readthedocs.io](https://wolfgangkonen-sacobra-py.readthedocs.io) in the following formats:
 
-[HTML](https://wolfgangkonen-sacobra-py.readthedocs.io/en/latest/)      
-[PDF](https://wolfgangkonen-sacobra-py.readthedocs.io/_/downloads/en/latest/pdf/) 
+- [HTML](https://wolfgangkonen-sacobra-py.readthedocs.io/en/latest/)      
+- [PDF](https://wolfgangkonen-sacobra-py.readthedocs.io/_/downloads/en/latest/pdf/) 
 
 (prepared with *Sphinx* and deployed with *readthedocs.io*)
 
