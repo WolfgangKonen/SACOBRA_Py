@@ -1,8 +1,21 @@
 import numpy as np
+import matplotlib.pyplot as plt
 from cobraInit import CobraInitializer
 
+class COP:
+    """
+        Abstract base class, just indicating certain members that a COP has to have
+        (i.e. for calling functions like :meth:`show_error_plot`)
+    """
+    def __init__(self):
+        self.name = ""
+        self.fn = None
+        self.lower = None
+        self.upper = None
+        self.fbest = None
 
-class GCOP:
+
+class GCOP(COP):
     """
     Constraint Optimization Problem Benchmark (G Function Suite)
 
@@ -16,13 +29,13 @@ class GCOP:
     Only problems G02 and G03 have the extra parameter ``dimension``.
     All other problems G01, G04, ..., G24 have fixed dimensions.
 
-    Objects of class GCOP have the following useful attributes:
+    Objects of class ``GCOP`` have the following useful attributes:
 
     - **name**      name of the problem, given by the user as 1st argument
     - **dimension** input space dimension of the problem. For the scalable problems ``G02`` and ``G03``, the dimension should be given by the user, otherwise it will be set automatically
     - **lower**     lower bound vector, length = input space dimension
     - **upper**     upper bound vector, length = input space dimension
-    - **fn**        the COP functions which can be passed to **SACOBRA_Py** (see parameter ``fn`` in :class:`CobraInitializer`).
+    - **fn**        the COP functions which can be passed to **SACOBRA_Py** (see parameter ``fn`` in :ref:`class CobraInitializer <cobraInit-label>`).
     - **nConstraints** number of constraints
     - **x0**        the suggested optimization starting point, may be ``None`` if not available
     - **solu**      the best known solution(s), (only for diagnostics purposes). Can be ``None`` (not known) or a vector in case of a single solution or a matrix in case of multiple equivalent solutions (each row of the matrix is a solution)
@@ -30,6 +43,7 @@ class GCOP:
     - **info**      information about the problem, may be ``None`` if not available
     """
     def __init__(self, name, dimension=None):
+        super().__init__()
         all_names = [f"G{i+1:02d}" for i in range(24)]
         assert name in all_names, f"{name} is not an allowed G-function name"
         self.name = name
@@ -101,7 +115,7 @@ class GCOP:
 
     def _call_G03(self, dim):
         assert dim is not None, "[_call_G03] dimension has to be integer, not None"
-        assert dim is int, "[_call_G03] dimension has to be integer"
+        assert type(dim) is int, "[_call_G03] dimension has to be integer"
         self.dimension = dim
         self.lower = np.repeat(0, dim)
         self.upper = np.repeat(1, dim)
@@ -340,6 +354,20 @@ class GCOP:
         self.solu = np.array([193.724510070034967, 5.56944131553368433e-27, 17.3191887294084914,
                               100.047897801386839, 6.68445185362377892, 5.99168428444264833, 6.21451648886070451])
         self.x0 = None
+
+
+def show_error_plot(cobra: CobraInitializer, cop: COP, ylim=None, file=None):
+    err = cobra.sac_res['fbestArray'] - cop.fbest
+    plt.plot(range(err.size), np.abs(err), 'r-', label='error')
+    plt.title(cop.name, fontsize=20)
+    plt.xlabel('func evals ', fontsize=16)
+    plt.ylabel('error', fontsize=16)
+    plt.subplot(111).set_yscale("log")
+    if ylim is not None:
+        plt.subplot(111).set(ylim=ylim)
+    if file is not None:
+        plt.savefig(file)
+    plt.show()
 
 
 if __name__ == '__main__':

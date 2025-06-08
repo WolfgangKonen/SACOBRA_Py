@@ -14,14 +14,12 @@ SACOBRA is a package for constrained optimization with relatively few function e
 
 SACOBRA stands for **Self-Adjusting Constraint Optimization By Radial basis function Approximation**. It is used for numerical optimization and can handle an arbitrary number of inequality and/or equality constraints.
 
-SACOBRA was originally developed in R. This repository **SACOBRA_Py** contains the beta version of a Python port, which is simplified in code and up to 4 times faster than the R version. (The R-version of SACOBRA is available from `this GitHub repository <https://github.com/WolfgangKonen/SACOBRA>`_.)
+SACOBRA was originally developed in R. This repository **SACOBRA_Py** contains the beta version of a Python port, which is simplified in code and faster than the R version by a factor of 4 - 40. (The R-version of SACOBRA is available from `this GitHub repository <https://github.com/WolfgangKonen/SACOBRA>`_.)
 
 
 
 Documentation
 -----------------
-
-
 
 This documentation contains:
 
@@ -45,6 +43,8 @@ It is based on the earlier R package SACOBRA which was authored by
 - Thomas Baeck, Univ. Leiden
 - Wolfgang Konen, TH Köln
 
+SACOBRA uses many ideas from and extends COBRA, which was developed by R. G. Regis [Regis14]_.
+
 The **SACOBRA_Py** realization relies on these other Python packages and software tools:
 
 - ``lhsmdu`` for latin hypercube sampling (LHS) in the initial design phase
@@ -54,3 +54,5 @@ The **SACOBRA_Py** realization relies on these other Python packages and softwar
 - ``readthedocs.io`` for deploying and hosting the documentation pages
 
 We acknowledge and are thankful for all the work put into these great open-source software tools!
+
+.. [Regis14] R. G. Regis. Constrained optimization by radial basis function interpolation for high-dimensional expensive black-box problems with infeasible initial points. Engineering Optimization, 46(2):218-243, 2014.

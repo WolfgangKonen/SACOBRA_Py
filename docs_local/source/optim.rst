@@ -35,8 +35,8 @@ directly or whether to model :math:`plog(f())`. Here
 .. raw:: latex html
 
    \[	plog(y) =   \begin{cases}
-								 +\ln( 1+y) & \mbox{ if } y \geq 0 \\
-								 -\ln( 1-y) & \mbox{ if } y   <  0
+								 +\ln( 1+y) & \mbox{ if } \quad y \geq 0 \\
+								 -\ln( 1-y) & \mbox{ if } \quad y   <  0
                     \end{cases}  \]
 
 is a strictly monotonic squashing function.
@@ -85,6 +85,8 @@ very good job in reducing the maximum constraint violation. This is important wh
 reduced in the current iteration: Otherwise, a solution *'on the rim'* that was (artificially) feasible in the last
 iteration, might get lost in the current iteration because it is now infeasible.
 
+The refine step is carried out in :meth:`.EvaluatorReal.equ_refine` which is called from :meth:`.EvaluatorReal.update`.
+
 Details Phase II
 -----------------
 
@@ -99,4 +101,5 @@ Details Phase II
 .. autoclass:: surrogator.Surrogator
    :members: calcPEffect, trainSurrogates
 
-
+.. autoclass:: evaluatorReal.EvaluatorReal
+   :members: update, equ_refine, equ_num_max_viol, ine_num_max_viol

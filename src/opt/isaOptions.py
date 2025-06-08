@@ -5,12 +5,12 @@ class ISAoptions:
     """
         Internal self-adjusting (ISA) options for SACOBRA.
 
-        Defaults for DOSAC=1 (SACOBRA settings with fewer online adjustments). Other choices are
+        Defaults for ``isa_ver=1`` (SACOBRA settings with fewer online adjustments). Other choices are
 
-        - DOSAC=0 (:class:`.ISAoptions0`, COBRA-R settings = turn off SACOBRA), and
-        - DOSAC=2 (:class:`.ISAoptions2`, SACOBRA settings with fewer parameters and more online adjustments).
+        - ``isa_ver=0`` (:class:`.ISAoptions0`, COBRA-R settings = turn off SACOBRA), and
+        - ``isa_ver=2`` (:class:`.ISAoptions2`, SACOBRA settings with fewer parameters and more online adjustments).
 
-        :param DOSAC:
+        :param isa_ver: ISA version number (was ``DOSAC`` in R)
         :param RS: flag to enable/disable random start algorithm
         :param RStype: type of function to calculate probability to start the internal optimizer with a random start point. One out of ["CONSTANT", "SIGMOID"]
         :param RSauto:
@@ -34,13 +34,13 @@ class ISAoptions:
         :param onlineMinMax:
     """
     def __init__(self,
-                 DOSAC=1,
+                 isa_ver=1,
                  RS=True,
                  RStype="CONSTANT",  # "CONSTANT",  "SIGMOID"
                  RSauto=False,
-                 RSmax=0.3,     #
-                 RSmin=0.05,    #
-                 RS_Cs=10,      #
+                 RSmax=0.3,  #
+                 RSmin=0.05,  #
+                 RS_Cs=10,  #
                  RS_rep=False,  #
                  RS_verb=False,  #
                  aDRC=True,
@@ -57,10 +57,7 @@ class ISAoptions:
                  minMaxNormal=False,
                  onlineMinMax=False
                  ):
-        """
-
-        """
-        self.DOSAC = DOSAC
+        self.isa_ver = isa_ver
         self.RS = RS
         self.RStype = RStype
         self.RSauto = RSauto
@@ -86,18 +83,18 @@ class ISAoptions:
 
 class ISAoptions0(ISAoptions):
     """
-        Internal self-adjusting options for DOSAC=0 (COBRA-R settings = turn off SACOBRA).
+        Internal self-adjusting options for ``isa_ver=0`` (COBRA-R settings = turn off SACOBRA).
 
-        Differs only in default settings, parameters and their meaning are the same as in :class:`.ISAoptions`.
+        Differs only in default settings. The parameters and their meaning are the same as in :class:`.ISAoptions`.
     """
     def __init__(self,
-                 DOSAC=0,
+                 isa_ver=0,
                  RS=False,
                  RStype="SIGMOID",  # "CONSTANT",  "SIGMOID"
                  RSauto=False,
-                 RSmax=0.3,   # maximum probability of a random start
+                 RSmax=0.3,  # maximum probability of a random start
                  RSmin=0.05,  # minimum probability of a random start
-                 RS_Cs=10,    # if RS_Cs iterations w/o progress, do a random start
+                 RS_Cs=10,  # if RS_Cs iterations w/o progress, do a random start
                  RS_rep=False,  # if True, generate reproducible random numbers with my_rng2 (R and Python)
                  RS_verb=False,  # if True, be verbose in RandomStarter.random_start
                  aDRC=False,
@@ -115,7 +112,7 @@ class ISAoptions0(ISAoptions):
                  onlineMinMax=False
                  ):
         super().__init__(
-            DOSAC=DOSAC,
+            isa_ver=isa_ver,
             RS=RS,
             RStype=RStype,
             RSauto=RSauto,
@@ -142,18 +139,18 @@ class ISAoptions0(ISAoptions):
 
 class ISAoptions2(ISAoptions):
     """
-        Internal self-adjusting options for DOSAC=2 (SACOBRA with fewer parameters and more online adjustments).
+        Internal self-adjusting options for ``isa_ver=2`` (SACOBRA with fewer parameters and more online adjustments).
 
-        Differs only in default settings, parameters and their meaning are the same as in :class:`.ISAoptions`.
+        Differs only in default settings. The parameters and their meaning are the same as in :class:`.ISAoptions`.
     """
     def __init__(self,
-                 DOSAC=2,
+                 isa_ver=2,
                  RS=True,
                  RStype="CONSTANT",  # "CONSTANT",  "SIGMOID"
                  RSauto=True,
-                 RSmax=0.3,   # maximum probability of a random start
+                 RSmax=0.3,  # maximum probability of a random start
                  RSmin=0.05,  # minimum probability of a random start
-                 RS_Cs=10,    # if RS_Cs iterations w/o progress, do a random start
+                 RS_Cs=10,  # if RS_Cs iterations w/o progress, do a random start
                  RS_rep=False,  # if True, generate reproducible random numbers with my_rng2 (R and Python)
                  RS_verb=False,  # if True, be verbose in RandomStarter.random_start
                  aDRC=True,
@@ -164,14 +161,14 @@ class ISAoptions2(ISAoptions):
                  conPLOG=False,
                  conFitPLOG=False,
                  adaptivePLOG=False,
-                 onlinePLOG=True,   # TODO:  there is a bug with True
+                 onlinePLOG=True,  # TODO:  there is a bug with True
                  onlineFreqPLOG=10,
                  pEffectInit=3,
                  minMaxNormal=False,
                  onlineMinMax=False
                  ):
         super().__init__(
-            DOSAC=DOSAC,
+            isa_ver=isa_ver,
             RS=RS,
             RStype=RStype,
             RSauto=RSauto,

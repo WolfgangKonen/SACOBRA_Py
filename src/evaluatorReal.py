@@ -15,7 +15,8 @@ def concat(a, b):
 
 class EvaluatorReal:
     """
-        Evaluate the new infill point (found via surrogates) on the real functions.
+        Method :meth:`.EvaluatorReal.update` evaluates the new infill point ``xNew`` (found via sequential optimization
+        with surrogate models) on the real functions.
     """
     def __init__(self, cobra: CobraInitializer, p2: Phase2Vars):
         s_opts = cobra.sac_opts
@@ -25,7 +26,10 @@ class EvaluatorReal:
             self.predY = np.repeat(np.nan, s_opts.ID.initDesPoints)
             self.predVal = np.repeat(np.nan, s_opts.ID.initDesPoints)
             if self.CONSTRAINED:
-                # matrix to store predicted constraint values (TODO: is it needed if we have Gres?)
+                # matrix to store predicted constraint values (predicted by the current constraint surrogates).
+                # This differs from Gres which has the true constraint values.
+                # Since there are no current constraint surrogates when the initial design points are selected,
+                # we fill predC with zeros for the first initDesPoints:
                 self.predC = np.zeros((s_opts.ID.initDesPoints, nConstraints))
                 # feasibility of initial design:
                 self.feas = np.apply_along_axis(lambda x: np.max(x) <= 0, axis=1, arr=cobra.sac_res['Gres'])
@@ -54,8 +58,8 @@ class EvaluatorReal:
         # DON'T change here to 'self.is_equ is False' as the PEP hint suggest --> strange error in NLopt (!)
 
         # add fields that will be filled later (e.g. in update, equ_refine, equ_num_max_viol):
-        self.x_0 = None           # the state before refine
-        self.x_1 = None           # the state after refine
+        self.x_0 = None           # the infill point before refine
+        self.x_1 = None           # the infill point before refine
         self.xNew = None
         self.xNewEval = None
         self.refi = None          # dict with results from refine step optimization
@@ -74,16 +78,17 @@ class EvaluatorReal:
     def update(self, xNew: np.ndarray, cobra: CobraInitializer, p2: Phase2Vars, currentMu,
                fitnessSurrogate=None, f_value=None):
         """
-        Evaluate ``xNew`` on the real functions + do refine step (if ``cobra.sac_opts.EQU.active`` and
-        ''self.state == "optimized"``) + calculate various feasibility indicators (numViol, maxViol, ...)
+        Evaluate ``xNew`` on the real functions + do :ref:`refine step <refineStep-label>`
+        (if ``cobra.sac_opts.EQU.active`` and ``self.state == "optimized"``) +
+        calculate various feasibility indicators (``numViol``, ``maxViol``, ...)
 
-        :param xNew:    the result vector from sequential optimization on surrogates (the new best x)
+        :param xNew:    the new infill point (vector) resulting from sequential optimization on surrogates
         :param cobra:
         :param p2:
-        :param currentMu:  artificial margin 'mu' for equality constraints
-        :param fitnessSurrogate:
-        :param f_value:
-        :return: nothing, but many elements of self are updated: xNew, xNewEval, x0, x1, ...
+        :param currentMu:  current artificial margin :math:`\mu` for equality constraints
+        :param fitnessSurrogate:  if ``None``, use ``p2.fitnessSurrogate``
+        :param f_value: if ``None``, use ``p2.opt_res['minf']``
+        :return: nothing, but many elements of ``self`` are updated: ``xNew``, ``xNewEval``, ``x0``, ``x1``, ...
         """
         # update() corresponds to evalReal() in R, which is called in three places:
         # after seq.opt, after repair and after TR-step
@@ -142,13 +147,15 @@ class EvaluatorReal:
 
     def equ_refine(self, cobra: CobraInitializer, p2: Phase2Vars, currentMu):
         """
-        Do refine step for equality constraints on the new point stored in self.xNew.
+        Do :ref:`refine step <refineStep-label>` for equality constraints on the new point stored in ``self.xNew``.
 
         :param cobra:
         :param p2:
-        :param currentMu:
-        :return: nothing, but these elements of self are changed: (a) vectors xNew, x_0, x_1; (b) dict refi;
-                 (c) numbers nv_conB, nv_conA, nv_trueB, nv_trueA; (d) string state
+        :param currentMu: current artificial margin :math:`\mu` for equality constraints
+        :return: nothing, but these elements of self are changed:
+                 (a) vectors ``xNew``, ``x_0`` (the infill point before refine), ``x_1`` (the infill point after refine)
+                 (b) dict ``refi``;
+                 (c) numbers ``nv_conB``, ``nv_conA``, ``nv_trueB``, ``nv_trueA``; (d) string ``state``
         """
         s_opts = cobra.sac_opts
         s_res = cobra.sac_res
@@ -274,8 +281,8 @@ class EvaluatorReal:
             # }
             # if (any( is.na(cg$par))){browser()}
             #
-            self.x_0 = self.xNew       # the state before refine
-            self.x_1 = self.refi['x']  # the state after refine
+            self.x_0 = self.xNew       # the infill point before refine
+            self.x_1 = self.refi['x']  # the infill point after refine
 
             if s_opts.EQU.refinePrint:
                 # ------ The following is only debug/diagnostics: ----------------
@@ -342,13 +349,13 @@ class EvaluatorReal:
 
     def equ_num_max_viol(self, cobra: CobraInitializer, currentMu, newPredC):
         """
-        Calculate self.newNumViol, .newMaxViol, ... for the equality case (sac_opts.EQU.active=True)
+        Calculate ``self.newNumViol``, ``.newMaxViol``, ... for the equality case (``sac_opts.EQU.active=True``)
 
         :param cobra:   object of class CobraInitializer
-        :param currentMu: current artificial equality margin :math:`\\mu`
+        :param currentMu: current artificial equality margin :math:`\mu`
         :param newPredC: prediction for xNew on constraint surrogates
-        :return: nothing, but these elements of self are changed: (a) numbers newNumViol, newMaxViol, newNumPred,
-                     trueNumViol, trueMaxViol; (b) vectors feas, feasPred
+        :return: nothing, but these elements of ``self`` are changed: (a) numbers ``newNumViol``, ``newMaxViol``,
+                ``newNumPred``, ``trueNumViol``, ``trueMaxViol``; (b) vectors ``feas``, ``feasPred``
         """
         s_opts = cobra.sac_opts
         s_res = cobra.sac_res
@@ -406,12 +413,12 @@ class EvaluatorReal:
 
     def ine_num_max_viol(self, cobra: CobraInitializer, newPredC):
         """
-        Calculate self.newNumViol, .newMaxViol, ... for the inequality case (sac_opts.EQU.active=False)
+        Calculate ``self.newNumViol``, ``.newMaxViol``, ... for the inequality case (``sac_opts.EQU.active=False``)
 
         :param cobra:   object of class CobraInitializer
         :param newPredC: prediction for xNew on constraint surrogates
-        :return: nothing, but these elements of self are changed: (a) numbers newNumViol, newMaxViol, newNumPred,
-                     trueNumViol, trueMaxViol; (b) vectors feas, feasPred
+        :return: nothing, but these elements of ``self`` are changed: (a) numbers ``newNumViol``, ``newMaxViol``,
+                ``newNumPred``, ``trueNumViol``, ``trueMaxViol``; (b) vectors ``feas``, ``feasPred``
         """
         conTol = cobra.sac_opts.SEQ.conTol
         # number of constraint violations for new point:

@@ -1,12 +1,11 @@
 import numpy as np
-from gCOP import GCOP
+from gCOP import GCOP, show_error_plot
 from cobraInit import CobraInitializer
 from cobraPhaseII import CobraPhaseII
 from opt.sacOptions import SACoptions
 from opt.idOptions import IDoptions
 from opt.rbfOptions import RBFoptions
 from opt.seqOptions import SEQoptions
-from show_error_plot import show_error_plot
 
 G06 = GCOP("G06")
 

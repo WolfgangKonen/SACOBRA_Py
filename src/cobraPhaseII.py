@@ -53,7 +53,7 @@ class CobraPhaseII:
            - train RBF surrogate models on the current set of infill points
            - select start point ``xStart``: either current-best ``xbest`` or random start (see :class:`.RandomStarter`)
            - perform sequential optimization, starting from ``xStart``, subject to the ``nConstraint + 1`` constraints. Result is ``xNew = p2.opt_res['x']``
-           - evaluate ``xNew`` on the real functions +  (if ``EQU.active``) do :ref:`refine step <refineStep-label>`. Result is the updated EvaluatorReal object ``p2.ev1``
+           - evaluate ``xNew`` on the real functions +  (if ``EQU.active``) do :ref:`refine step <refineStep-label>`. Result is the updated :class:`.EvaluatorReal` object ``p2.ev1``
            - calculate :ref:`p-effect <pEffect-label>` for onlinePLOG (see :meth:`.Surrogator.calcPEffect`)
            - update cobra information: The new infill point ``xNew`` and its evaluation on the real functions is added to the ``cobra``'s arrays  ``A``, ``Fres``, ``Gres``
            - update and save ``cobra``: data frames :ref:`df <df-label>`, :ref:`df2 <df2-label>`, elements ``sac_res['xbest', 'fbest', 'ibest']`` of  dict :ref:`cobra.sac_res <sacres-label>`
@@ -149,21 +149,21 @@ class CobraPhaseII:
         Return a data frame with the following elements, accessible with e.g. ``cobra.df['iter']``.
         Data frame ``cobra.df`` contains ``feval`` rows, one for each true function evaluation.
 
-        The contents of a specific row of ``cobra.df`` is:
+        The contents of a specific row of ``cobra.df`` holds the results of a specific iteration, the *current* iteration:
 
         - **iter**: the iteration number
-        - **y**: the objective function value at the infill point of this iteration
-        - **predY**: the fitness surrogate value at the same infill point
+        - **y**: the objective function value at the current infill point
+        - **predY**: the fitness surrogate value at the current infill point
         - **predSolu**: the fitness surrogate value at the true solution (if provided, else none)
         - **feasible**: is the current infill point feasible on the true objective?
-        - **feasPred**: is the current infill point predicted to be feasible by the fitness surrogate?
+        - **feasPred**: is the current infill point *predicted* to be feasible by the fitness surrogate?
         - **nViolations**: the number of violations in the constraint surrogates' prediction at the infill point
         - **trueNViol**: the number of violations in the true constraints at the infill point
         - **maxViolation**: the maximum violation of the constraint surrogates' prediction at the infill point
         - **trueMaxViol**: the maximum violation of the true constraints at the infill point
-        - **feMax**: the number of iterations of the sequential optimizer in producing this infill point
-        - **fBest**: the all-time best feasible objective values. As long as no feasible point is found, the fitness of the one with the least maximum violation
-        - **distA**: distance of true solu to infill point, rescaled space. min distance for multiple solu's, None if no solu is provided
+        - **feMax**: the number of iterates that the sequential optimizer took when producing this infill point
+        - **fBest**: the all-time best feasible objective value. As long as no feasible point is found, the fitness of the one with the least maximum violation
+        - **distA**: distance of the true solution to infill point, in rescaled space. Minimum distance for multiple solu's, None if no solu is provided
         - **distOrig**: the same, but in original space
         - **RS**: True if it is an iteration with a random start
         - ...
@@ -177,12 +177,12 @@ class CobraPhaseII:
     def create_df2(self) -> pd.DataFrame:
         """
         Return a data frame with the following elements, accessible with e.g. ``cobra.df2['iter']``.
-        Data frame ``cobra.df2`` contains ``feval - initDesPoints`` rows, one for each true function evaluation in phase II.
+        Data frame ``cobra.df2`` contains ``feval - initDesPoints`` rows, one for each true function evaluation *in phase II*.
 
-        The contents of a specific row of ``cobra.df2`` is:
+        The contents of a specific row of ``cobra.df2`` holds the results of a specific iteration, the *current* iteration:
 
         - **iter**: the iteration number
-        - **predY**: the fitness surrogate value at the same infill point
+        - **predY**: the fitness surrogate value at the current infill point
         - **predVal**: surrogate fitness + penalty at xNew
         - **predSolu**: the fitness surrogate value at the true solution (if provided, else none)
         - **predSoluPenal**: surrogate fitness + penalty at the true solu (only diagnostics)
@@ -190,7 +190,7 @@ class CobraPhaseII:
         - **penaF**: ...
         - **XI**: ...
         - **rho**: ...
-        - **fBest**: the all-time best feasible objective values. As long as no feasible point is found, the fitness of the one with the least maximum violation
+        - **fBest**: the all-time best feasible objective value. As long as no feasible point is found, the fitness of the one with the least maximum violation
         - **EPS**: ...
         - **muVec**: ...
         - **PLOG**: ...
@@ -201,7 +201,7 @@ class CobraPhaseII:
 
         Only if the COP contains equality constraints and if equality handling is active (:class:`.EQUoptions`
         ``EQU.active==True``), then the following row elements are not ``None``, instead they contain these
-        attributes evaluated *for the new infill point*:
+        attributes evaluated *for the current infill point*:
 
         - **nv_cB**: number of (artificial) constraint violations (``> conTol``) before refine on surrogates
         - **nv_cA**: number of (artificial) constraint violations (``> conTol``) after refine on surrogates

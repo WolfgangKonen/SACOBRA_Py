@@ -22,8 +22,8 @@ class CobraInitializer:
         Initialize SACOBRA optimization:
 
         - problem formulation: x0, fn, lower, upper, is_equ, solu
-        - parameter settings: s_opts via :class:`SACoptions`
-        - create initial design: A, Fres, Gres via :class:`InitDesigner`
+        - parameter settings: s_opts via :class:`.SACoptions`
+        - create initial design: A, Fres, Gres via :class:`.InitDesigner`
 
         :param x0: start point, if given, then its dim has to be the same as ``lower``. If it  is/has NaN or None
                    on input, it is replaced by a random point from ``[lower, upper]``.
@@ -36,14 +36,25 @@ class CobraInitializer:
         :param solu:  (optional, for diagnostics) true solution vector or solution matrix (one solution per row):
                       one or several feasible x that deliver the minimal objective value
         :type solu: np.ndarray or None
-        :param s_opts: the options
+        :param s_opts: the options. If not specified, take the default :class:`.SACoptions` object
         :type s_opts: SACoptions
+
+        Objects of class ``CobraInitializer`` (usually named ``cobra`` below) have the following useful attributes:
+
+        - **phase**     name of the optimization phase ['init' | 'optimized' | 'refined']
+        - **rng**       random number generator
+        - **rw**        RescaleWrapper
+        - **sac_opts**  the realized :class:`.SACoptions` object containing all the options
+        - **sac_res**   dictionary with the SACOBRA results from initialization and optimization, see :ref:`cobra.sac_res <sacres-label>` in the appendix for details
+        - **df**        data frame with diagnostic information from optimization, see :ref:`cobra.df <df-label>` in the appendix for details
+        - **df2**       data frame with further diagnostic information from optimization, see :ref:`cobra.df2 <df2-label>` in the appendix for details
+
     """
 
     def __init__(self, x0, fn: object, fName: str, lower: np.ndarray, upper: np.ndarray,
                  is_equ: np.ndarray,
                  solu = None,
-                 s_opts: SACoptions = SACoptions(50),
+                 s_opts: SACoptions = SACoptions(),
                  ) -> object:
         """
         docstring for __init__
@@ -275,10 +286,10 @@ class CobraInitializer:
         # STEP 8: SACOBRA initialization (depending on s_opts.ISA, perform adDRC and adCon)
         #
         # --- obsolete, we set s_opts.ISA directly to the right class (ISAoptions, ISAoptions0 or ISAoptions2) ---
-        # if s_opts.DOSAC == 0: s_opts.ISA = ISAoptions0()
-        # elif s_opts.DOSAC == 2: s_opts.ISA = ISAoptions2()
+        # if s_opts.isa_ver == 0: s_opts.ISA = ISAoptions0()
+        # elif s_opts.isa_ver == 2: s_opts.ISA = ISAoptions2()
         # ---
-        if s_opts.ISA.DOSAC > 0:
+        if s_opts.ISA.isa_ver > 0:
             verboseprint(s_opts.verbose, important=False, message="Parameter and function adjustment phase")
             # s_opts.pEffect = s_opts.ISA.pEffectInit    # obsolete, we have p2.pEffect
 
@@ -363,7 +374,7 @@ class CobraInitializer:
             GR = max(GRL) / min(GRL)
 
         if GR > s_opts.ISA.TGR:
-            verboseprint(s_opts.verbose, True, "GR={GR} is large --> normalizing constraint functions ...")
+            verboseprint(s_opts.verbose, True, f"GR={GR} is large --> normalizing constraint functions ...")
             GRfact = np.hstack((1, GRL * (1 / np.mean(GRL))))
 
             # finding the normalizing coefficient of the equality constraints
@@ -414,7 +425,16 @@ class CobraInitializer:
         - **x0**: initial start point, either given with the problem formulation or a random point, optionally resacled
         - **originalx0**: the same, but before rescaling
         - **xStart**: start point for each sequential optimization: initially ``x0``, but in later iterations replaced by ``xbest`` or random start
-
+        - **dimension**: input space dimension :math:`d`
+        - **nConstraints**: number of constraints
+        - **is_equ**: boolean vector of size ``nConstraints``: ``True`` if ``n``'th constraint is equality constraint
+        - **A**: matrix ``(nIter, dimension)`` holding the initial design + all infill points
+        - **Fres**: vector of size ``nIter``: objective value for each point in ``A``
+        - **Gres**: matrix ``(nIter, nConstraints)``: constraint values for each point in ``A``
+        - **predC**: matrix ``(nIter, nConstraints)``: *predicted* constraint values for each point in ``A``. The prediction of the current infill point is made with the current constraint surrogates which are formed from the ``nIter - 1`` previous points.
+        - **muVec**: vector of size ``nIter``: :math:`\\mu` in the ``i``'th iteration
+        - **numViol, trueNumViol, maxViol, trueMaxViol**: same as columns *nViolations, trueNViol, maxViolation, trueMaxViol* of :ref:`cobra.df <df-label>`
+        - **fbestArray**: vector of size ``nIter``: best feasible objective value in the ``i``'th iteration
         - ...
 
         :return: SACOBRA results

@@ -138,7 +138,7 @@ class Surrogator:
         #   A<-cobra$TA
         #   }
 
-        if s_opts.ISA.DOSAC > 0:
+        if s_opts.ISA.isa_ver > 0:
             if p2.PLOG[-1] and p2.printP:
               verboseprint(s_opts.verbose, True ,f"PLOG transformation is done ( iter={A.shape[0]} )")
         p2.printP = False
