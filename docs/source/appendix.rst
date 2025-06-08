@@ -10,7 +10,7 @@ With
 
           cobra = CobraInitializer(...)
 
-we generate the main data structure ``cobra`` of **SACOBRA_Py**. Some of its more complex elements are described below.
+we generate the main data structure ``cobra`` of **SACOBRA_Py**. Some of its data frame and dictionary elements are described below.
 
 .. _sacres-label:
 

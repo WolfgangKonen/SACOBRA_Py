@@ -13,7 +13,7 @@ A constrained optimization problem (COP) for numerical and continuous quantities
 
 .. raw:: latex html
 
-	\[ Min    \quad  f(\vec{x}), \quad \vec{x} \in [\vec{a},\vec{b}] \subset \mathbb{R}^d \]
+	\[ \text{Minimize}    \quad  f(\vec{x}), \quad \vec{x} \in [\vec{a},\vec{b}] \subset \mathbb{R}^d \]
 .. raw:: latex html
 
 	\[ \text{subject to}  \quad  g_{i}(\vec{x}) \leq 0,  \quad i=1,2,\ldots,m \]
