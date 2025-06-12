@@ -4,23 +4,31 @@ from scipy.interpolate import RBFInterpolator
 
 class RBFmodel:
     """
-    Wrapper for RBFInterpolator to provide a syntax similar to RbfInter.R.
+        Wrapper for
+        `SciPy's RBFInterpolator <https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.RBFInterpolator.html>`_ to provide
+        a syntax similar to SACOBRA's RbfInter.R.
 
-    Usage:
-        myModel = RBFmodel(xobs,yobs)   # equivalent to trainCubicRBF
-        yflat = myModel(xflat)          # combines interpRBF and predict.RBFinter, with xflat.shape = [d,n]
+        Usage:
+
+        .. code-block::
+
+          mdl = RBFmodel(xobs,yobs) # equivalent to trainCubicRBF
+          yflat = mdl(xflat)        # apply the model to new observations xflat, with xflat.shape = [n,d]
     """
     def __init__(self, xobs: np.ndarray, yobs: np.ndarray, kernel="cubic", degree: int = None, rho=0.0):
         """
-        Create RBF model(s) from observations (xobs,yobs)
+        Create RBF model(s) from observations ``(xobs,yobs)``. Shape m of ``yobs`` controls whether one RBF
+        model (m=1) or several RBF models (m>1) are formed.
 
-        :param xobs:    (n x d)-matrix of n d-dimensional vectors x_i
-        :param yobs:    vector of shape (n,) with observations f(x_i) - or -
-                        matrix of shape (n,m) with observations f_j(x_i) for m functions f_j, j=1,...,m
-        :param kernel:
+        :param xobs:    (n x d)-matrix of n d-dimensional vectors :math:`\\vec{x}_i,\, i=0,...,n-1`
+        :param yobs:    vector of shape (n,) with observations :math:`f(\\vec{x}_i)` - or -
+                        matrix of shape (n,m) with observations :math:`f_j(\\vec{x}_i)` for :math:`m` functions :math:`f_j,\, j=0,...,m-1`
+        :param kernel:  the allowed kernels of `RBFInterpolator <https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.RBFInterpolator.html>`_
         :param degree:  the default None means, that the kernel-specific defaults specified in
-                        RBFInterpolator are taken (e.g. degree=1 for "cubic")
-        :param rho:     set smoothing parameter to ``N*rho`` where ``N=xobs.shape[0]``
+                        `RBFInterpolator <https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.RBFInterpolator.html>`_
+                        are taken (e.g. degree=1 for "cubic")
+        :param rho:     set `RBFInterpolator <https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.RBFInterpolator.html>`_'s
+                        parameter ``smoothing`` to ``N*rho`` where ``N=xobs.shape[0]``
         """
         self.d = xobs.shape[1]
         self.nmodels = 1 if yobs.ndim == 1 else yobs.shape[1]
@@ -36,10 +44,14 @@ class RBFmodel:
 
     def __call__(self, xflat: np.ndarray):
         """
-        Apply RBF model(s) to data ``xflat``
+        Apply RBF model(s) to data ``xflat``.
 
         :param xflat:   vector of length d  - or -  matrix of shape (n,d)
-        :return:        response of model(s), either vector of length n  - or -  matrix of shape (n,nmodels)
+        :return:        response of model(s): If m==1, then either number or vector of length n, depending on size n of xflat.
+          If m>1 then either vector of shape m or matrix of shape (n,nmodels), depending on size n of xflat.
+
+        .. hint:: The shape m refers to the size m of yobs in constructor :meth:`.__init__`.
+
         """
         if xflat.ndim == 1:
             xflat = xflat.reshape(1, xflat.shape[0])

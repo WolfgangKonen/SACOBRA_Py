@@ -27,19 +27,21 @@ The p-Effect
 -------------
 Functions with both very small and very large slopes (e.g. :math:`f(x)=exp(x^2)`) are difficult to model accurately by
 RBF models: The models tend to oscillate. It is much better to squash the function with a log-like transform to a
-smaller slope range.
+smaller slope range. On the other hand, for very simple functions like  :math:`f(x)=x` it is disadvantageous to squash
+them, because a linear function becomes non-linear and thus harder to model.
 
-The *p-effect* is a number which allows to decide in each iteration whether to model the objective function :math:`f()`
+The *p-effect* is a number :math:`p_\text{eff}` which allows to decide in each iteration whether to model the objective function :math:`f()`
 directly or whether to model :math:`plog(f())`. Here
 
 .. raw:: latex html
 
    \[	plog(y) =   \begin{cases}
-								 +\ln( 1+y) & \mbox{ if } \quad y \geq 0 \\
-								 -\ln( 1-y) & \mbox{ if } \quad y   <  0
+								 +\ln( 1+\bar{y}) & \mbox{ if } \quad \bar{y} \geq 0 \\
+								 -\ln( 1-\bar{y}) & \mbox{ if } \quad \bar{y}   <  0
                     \end{cases}  \]
 
-is a strictly monotonic squashing function.
+is a strictly monotonic squashing function, where
+:math:`\bar{y}=y-p_{shift}` with default ``pshift = 0``.
 
 Given the set :math:`S` of already evaluated points in input space with :math:`M_f, M_p` being the surrogate models for
 :math:`f(), plog(f())` using all points in :math:`S`,  we calculate
@@ -61,7 +63,7 @@ For a more stable decision we define the *p-effect* number as
 and decide to build :math:`M_p` if :math:`p_\text{eff}>1` and to build :math:`M_f` else.
 
 The calculation of :math:`p_\text{eff}>1` is done in :meth:`.Surrogator.calcPEffect`.
-The conditional application of :math:`plog(f())` is done in :class:`.Surrogator.AdFitter`.
+The conditional application of :math:`plog()` is done in :class:`.Surrogator.AdFitter`.
 
 .. _refineStep-label:
 
@@ -100,6 +102,9 @@ Details Phase II
 
 .. autoclass:: surrogator.Surrogator
    :members: calcPEffect, trainSurrogates
+
+.. autoclass:: rbfModel.RBFmodel
+   :members: __init__, __call__
 
 .. autoclass:: evaluatorReal.EvaluatorReal
    :members: update, equ_refine, equ_num_max_viol, ine_num_max_viol

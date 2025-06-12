@@ -144,9 +144,9 @@ class CobraPhaseII:
         return self
 
     # NOTE: the purpose of this function is just to supply a docstring (used in appendix of Sphinx docu):
-    def create_df(self) -> pd.DataFrame:
+    def get_df(self) -> pd.DataFrame:
         """
-        Return a data frame with the following elements, accessible with e.g. ``cobra.df['iter']``.
+        Return data frame ``cobra.df`` with the following elements, accessible with e.g. ``cobra.df['iter']``.
         Data frame ``cobra.df`` contains ``feval`` rows, one for each true function evaluation.
 
         The contents of a specific row of ``cobra.df`` holds the results of a specific iteration, the *current* iteration:
@@ -156,27 +156,32 @@ class CobraPhaseII:
         - **predY**: the fitness surrogate value at the current infill point
         - **predSolu**: the fitness surrogate value at the true solution (if provided, else none)
         - **feasible**: is the current infill point feasible on the true objective?
-        - **feasPred**: is the current infill point *predicted* to be feasible by the fitness surrogate?
+        - **feasPred**: is the current infill point *predicted* to be feasible by the surrogate models?
         - **nViolations**: the number of violations in the constraint surrogates' prediction at the infill point
         - **trueNViol**: the number of violations in the true constraints at the infill point
         - **maxViolation**: the maximum violation of the constraint surrogates' prediction at the infill point
         - **trueMaxViol**: the maximum violation of the true constraints at the infill point
         - **feMax**: the number of iterates that the sequential optimizer took when producing this infill point
         - **fBest**: the all-time best feasible objective value. As long as no feasible point is found, the fitness of the one with the least maximum violation
-        - **distA**: distance of the true solution to infill point, in rescaled space. Minimum distance for multiple solu's, None if no solu is provided
+        - **dist**: distance of the true solution to infill point, in rescaled space. Minimum distance for multiple solu's, None if no solu is provided
         - **distOrig**: the same, but in original space
         - **RS**: True if it is an iteration with a random start
+        - **XI**: :ref:`DRC <DRC-label>` for this iteration
+        - **optimConv**: convergence of sequential optimization
+        - **optimTime**: time of this sequential optimization
+        - **optimizer**: optimization algorithm
+        - **seed**: ```sac_opts.cobraSeed``
         - ...
 
-        :return: SACOBRA optimization results
+        :return: SACOBRA diagnostic information
         :rtype: pd.DataFrame
         """
         return self.df
 
     # NOTE: the purpose of this function is just to supply a docstring (used in appendix of Sphinx docu):
-    def create_df2(self) -> pd.DataFrame:
+    def get_df2(self) -> pd.DataFrame:
         """
-        Return a data frame with the following elements, accessible with e.g. ``cobra.df2['iter']``.
+        Return data frame ``cobra.df2`` with the following elements, accessible with e.g. ``cobra.df2['iter']``.
         Data frame ``cobra.df2`` contains ``feval - initDesPoints`` rows, one for each true function evaluation *in phase II*.
 
         The contents of a specific row of ``cobra.df2`` holds the results of a specific iteration, the *current* iteration:
@@ -188,16 +193,15 @@ class CobraPhaseII:
         - **predSoluPenal**: surrogate fitness + penalty at the true solu (only diagnostics)
         - **sigmaD**: ...
         - **penaF**: ...
-        - **XI**: ...
-        - **rho**: ...
+        - **XI**: :ref:`DRC <DRC-label>` for this iteration
+        - **rho**: smoothing factor :math:`\\rho` (interpolating / approximating RBFs)
         - **fBest**: the all-time best feasible objective value. As long as no feasible point is found, the fitness of the one with the least maximum violation
-        - **EPS**: ...
-        - **muVec**: ...
-        - **PLOG**: ...
-        - **pshift**: ...
-        - **pEffect**: ...
-        - **state**: ...
-        - ...
+        - **EPS**: the current safety margin EPS in constraint surrogates
+        - **muVec**: artificial equality constraint enlargement :math:`\\mu`
+        - **PLOG**: whether :math:`plog` transformation is used in the current iteration (see :ref:`p-Effect <pEffect-label>`)
+        - **pshift**: shift used in :math:`plog` transformation (see :ref:`p-Effect <pEffect-label>`)
+        - **pEffect**: the :ref:`p-Effect <pEffect-label>` value
+        - **state**: name of iteration state ['initialized' | 'optimized' | 'refined']
 
         Only if the COP contains equality constraints and if equality handling is active (:class:`.EQUoptions`
         ``EQU.active==True``), then the following row elements are not ``None``, instead they contain these
@@ -208,7 +212,7 @@ class CobraPhaseII:
         - **nv_tB**: number of (artificial) constraint violations (``> conTol``) before refine on true constraints
         - **nv_tA**: number of (artificial) constraint violations (``> conTol``) after refine on true constraints
 
-        :return: SACOBRA optimization results
+        :return: SACOBRA diagnostic information
         :rtype: pd.DataFrame
         """
         return self.df2

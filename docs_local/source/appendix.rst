@@ -1,3 +1,5 @@
+.. _appendix-label:
+
 ------------
 Appendix
 ------------
@@ -10,7 +12,8 @@ With
 
           cobra = CobraInitializer(...)
 
-we generate the main data structure ``cobra`` of **SACOBRA_Py**. Some of its data frame and dictionary elements are described below.
+we generate the main data structure ``cobra`` of **SACOBRA_Py** (see :class:`.CobraInitializer`).
+Some of its data frame and dictionary elements are described below.
 
 .. _sacres-label:
 
@@ -22,9 +25,7 @@ cobra.sac_res
 .. .. autodata:: cobraInit.CobraInitializer.sac_res
    <this seems not to work so far>
 
-.. autofunction:: cobraInit.CobraInitializer.create_sac_res
-
-.. hint:: some text
+.. autofunction:: cobraInit.CobraInitializer.get_sac_res
 
 
 .. _df-label:
@@ -35,7 +36,7 @@ cobra.df
 ``cobra.df`` is a data frame which holds diagnostic information about the optimization process.
 ``df`` is only for diagnostics, its elements are not used by the optimization process in any form.
 
-.. autofunction:: cobraPhaseII.CobraPhaseII.create_df
+.. autofunction:: cobraPhaseII.CobraPhaseII.get_df
 
 
 
@@ -47,4 +48,4 @@ cobra.df2
 ``cobra.df2`` is a data frame which holds diagnostic information about the optimization process.
 ``df2`` is only for diagnostics, its elements are not used by the optimization process in any form.
 
-.. autofunction:: cobraPhaseII.CobraPhaseII.create_df2
+.. autofunction:: cobraPhaseII.CobraPhaseII.get_df2

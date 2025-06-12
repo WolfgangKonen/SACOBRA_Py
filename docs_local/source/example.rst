@@ -55,7 +55,7 @@ A sketch of the COP is shown here (click on image to enlarge):
    :width: 300px
    :align: center
 
-We initialize **SACOBRA_Py** with default options and phase-II-optimization obtains a very satisfactory result
+We initialize **SACOBRA_Py** with default options, start phase-II-optimization and obtain a very satisfactory result
 with error < 9 e-13.
 
 

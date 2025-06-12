@@ -41,13 +41,15 @@ class CobraInitializer:
 
         Objects of class ``CobraInitializer`` (usually named ``cobra`` below) have the following useful attributes:
 
-        - **phase**     name of the optimization phase ['init' | 'optimized' | 'refined']
+        - **phase**     name of the optimization phase ['init' | 'phase1' | 'phase2']
         - **rng**       random number generator
         - **rw**        RescaleWrapper
         - **sac_opts**  the realized :class:`.SACoptions` object containing all the options
         - **sac_res**   dictionary with the SACOBRA results from initialization and optimization, see :ref:`cobra.sac_res <sacres-label>` in the appendix for details
         - **df**        data frame with diagnostic information from optimization, see :ref:`cobra.df <df-label>` in the appendix for details
         - **df2**       data frame with further diagnostic information from optimization, see :ref:`cobra.df2 <df2-label>` in the appendix for details
+
+        See :ref:`appendix-label` for more details on :ref:`cobra.sacres <sacres-label>`, :ref:`cobra.df <df-label>`, :ref:`cobra.df2 <df2-label>`.
 
     """
 
@@ -412,9 +414,9 @@ class CobraInitializer:
         return (maxL - minL) / 2
 
     # NOTE: the purpose of this function is just to supply a docstring (used in appendix of Sphinx docu):
-    def create_sac_res(self):
+    def get_sac_res(self):
         """
-        Return a dictionary with the following elements, accessible with e.g. ``sac_res['fn']``:
+        Return dictionary ``sac_res`` with the following elements, accessible with e.g. ``sac_res['fn']``:
 
         - **fn**: function returning ``(1+nConstraints)``-dim vector: [objective to minimize, constraints], optionally rescaled
         - **originalfn**: the same, but before rescaling
