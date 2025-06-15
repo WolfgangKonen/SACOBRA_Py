@@ -47,8 +47,9 @@ class RBFmodel:
         Apply RBF model(s) to data ``xflat``.
 
         :param xflat:   vector of length d  - or -  matrix of shape (n,d)
-        :return:        response of model(s): If m==1, then either number or vector of length n, depending on size n of xflat.
-          If m>1 then either vector of shape m or matrix of shape (n,nmodels), depending on size n of xflat.
+        :return:        response of model(s): See :meth:`__init__` for definition of parameter m.  If m==1, then the
+            return value is either a number or a vector of length n, depending on size n of xflat.
+            If m>1, then it is either vector of shape m or matrix of shape (n,m), depending on size n of xflat.
 
         .. hint:: The shape m refers to the size m of yobs in constructor :meth:`.__init__`.
 
