@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 
 from cobraInit import CobraInitializer
-from gCOP import GCOP
+from gCOP import GCOP, show_error_plot
 from cobraPhaseII import CobraPhaseII
 from opt.equOptions import EQUoptions
 from opt.isaOptions import ISAoptions
@@ -11,7 +11,6 @@ from opt.sacOptions import SACoptions
 from opt.idOptions import IDoptions
 from opt.rbfOptions import RBFoptions
 from opt.seqOptions import SEQoptions
-from show_error_plot import show_error_plot
 
 verb = 1
 
@@ -62,6 +61,33 @@ class ExamCOP:
         c2.p2.dim = G01.dimension
         return c2
 
+    def solve_G02(self, cobraSeed, dimension=2, feval=150, verbIter=10):
+        """ Test whether COP G02 has statistical similar results to the R side with squares=T, if we set on the
+            Python side RBF.degree=2 (which is similar, but not the same).
+
+            We test that the median of 15 final errors is < 1e-9, which is statistically better than the R side
+            (see ex_COP.R)
+        """
+        print(f"Starting solve_G02({cobraSeed}, ...) ...")
+        G02 = GCOP("G02", dimension)
+
+        # x0 = np.arange(dimension)/dimension    # fixed x0
+        cobra = CobraInitializer(G02.x0, G02.fn, G02.name, G02.lower, G02.upper, G02.is_equ,
+                                 solu=G02.solu,
+                                 s_opts=SACoptions(verbose=verb, verboseIter=verbIter, feval=feval, cobraSeed=cobraSeed,
+                                                   ID=IDoptions(initDesign="LHS", rescale=True),
+                                                   RBF=RBFoptions(degree=2, rho=2.5, rhoDec=2.0),
+                                                   SEQ=SEQoptions(finalEpsXiZero=True, conTol=0)))     # conTol=1e-7
+        print(f"idp = {cobra.sac_opts.ID.initDesPoints}")
+        c2 = CobraPhaseII(cobra).start()
+
+        fin_err = np.array(cobra.get_fbest() - G02.fbest)
+        print(f"final err: {fin_err}")
+        c2.p2.fin_err = fin_err
+        c2.p2.fe_thresh = 1e-9
+        c2.p2.dim = G02.dimension
+        return c2
+
     def solve_G03(self, cobraSeed, dimension=7, feval=150, verbIter=10):
         """ Test whether COP G03 has statistical similar results to the R side with squares=T, if we set on the
             Python side RBF.degree=2 (which is similar, but not the same).
@@ -77,8 +103,8 @@ class ExamCOP:
         x0 = np.arange(dimension)/dimension    # fixed x0
         cobra = CobraInitializer(x0, G03.fn, G03.name, G03.lower, G03.upper, G03.is_equ,
                                  s_opts=SACoptions(verbose=verb, verboseIter=verbIter, feval=feval, cobraSeed=cobraSeed,
-                                                   ID=IDoptions(initDesign="RAND_REP", rescale=True),
-                                                   RBF=RBFoptions(degree=1),
+                                                   ID=IDoptions(initDesign="LHS", rescale=True),
+                                                   RBF=RBFoptions(degree=2),
                                                    EQU=equ,
                                                    SEQ=SEQoptions(finalEpsXiZero=True, conTol=0)))     # conTol=1e-7
         print(f"idp = {cobra.sac_opts.ID.initDesPoints}")
@@ -199,6 +225,93 @@ class ExamCOP:
         print(f"final err: {fin_err}")
         c2.p2.fe_thresh = 1e-9
         c2.p2.dim = G07.dimension
+        return c2
+
+    def solve_G08(self, cobraSeed, feval=180, verbIter=10):
+        """ Test whether COP G08 has statistical equivalent results to the R side with squares=T, if we set on the
+            Python side RBF.degree=2 (which is similar, but not the same).
+
+            We test that the median of 15 final errors is < 5e-6, which is statistically equivalent to the R side
+            (see ex_COP.R, function solve_G07, multi_gfnc)
+        """
+        print(f"Starting solve_G08({cobraSeed}) ...")
+        G08 = GCOP("G08")
+        idp = 3*4//2
+
+        cobra = CobraInitializer(G08.x0, G08.fn, G08.name, G08.lower, G08.upper, G08.is_equ,
+                                 solu=G08.solu,
+                                 s_opts=SACoptions(verbose=verb, verboseIter=verbIter, feval=feval, cobraSeed=cobraSeed,
+                                                   ID=IDoptions(initDesign="LHS", initDesPoints=idp),
+                                                   RBF=RBFoptions(degree=2),
+                                                   SEQ=SEQoptions(finalEpsXiZero=True, conTol=0)))   # conTol=0 | 1e-7
+
+        c2 = CobraPhaseII(cobra).start()
+
+        fin_err = np.array(cobra.get_fbest() - G08.fbest)
+        c2.p2.fin_err = fin_err
+        print(f"final err: {fin_err}")
+        c2.p2.fe_thresh = 1e-9
+        c2.p2.dim = G08.dimension
+        return c2
+
+    def solve_G09(self, cobraSeed, feval=500, verbIter=50):
+        """ Test whether COP G09 has statistical equivalent results to the R side with squares=T, if we set on the
+            Python side RBF.degree=2 (which is similar, but not the same).
+
+            We test that the median of 15 final errors is < 5e-6, which is statistically equivalent to the R side
+            (see ex_COP.R, function solve_G07, multi_gfnc)
+        """
+        print(f"Starting solve_G09({cobraSeed}) ...")
+        G09 = GCOP("G09")
+        idp = 10*11//2
+        # G09.x0 = G09.solu + 0.01
+
+        cobra = CobraInitializer(G09.x0, G09.fn, G09.name, G09.lower, G09.upper, G09.is_equ,
+                                 solu=G09.solu,
+                                 s_opts=SACoptions(verbose=verb, verboseIter=verbIter, feval=feval, cobraSeed=cobraSeed,
+                                                   ID=IDoptions(initDesign="LHS", initDesPoints=idp),
+                                                   RBF=RBFoptions(degree=2),
+                                                   SEQ=SEQoptions(finalEpsXiZero=True, conTol=1e-7)))   # conTol=0 | 1e-7
+
+        c2 = CobraPhaseII(cobra).start()
+
+        fin_err = np.array(cobra.get_fbest() - G09.fbest)
+        c2.p2.fin_err = fin_err
+        print(f"final err: {fin_err}")
+        c2.p2.fe_thresh = 5e-02
+        c2.p2.dim = G09.dimension
+        print(G09.fbest)
+        print(cobra.get_fbest())
+        return c2
+
+    def solve_G10(self, cobraSeed, feval=180, verbIter=10):
+        """ Test whether COP G10 has statistical equivalent results to the R side with squares=T, if we set on the
+            Python side RBF.degree=2 (which is similar, but not the same).
+
+            We test that the median of 15 final errors is < 5e-6, which is statistically equivalent to the R side
+            (see ex_COP.R, function solve_G07, multi_gfnc)
+        """
+        print(f"Starting solve_G10({cobraSeed}) ...")
+        G10 = GCOP("G10")
+        idp = 9*10//2
+
+        cobra = CobraInitializer(G10.x0, G10.fn, G10.name, G10.lower, G10.upper, G10.is_equ,
+                                 solu=G10.solu,
+                                 s_opts=SACoptions(verbose=verb, verboseIter=verbIter, feval=feval, cobraSeed=cobraSeed,
+                                                   ID=IDoptions(initDesign="RAND_REP", initDesPoints=idp),
+                                                   RBF=RBFoptions(degree=2),
+                                                   ISA=ISAoptions(TGR=1e3),
+                                                   SEQ=SEQoptions(finalEpsXiZero=True, conTol=1e-7)))   # conTol=0 | 1e-7
+
+        c2 = CobraPhaseII(cobra).start()
+
+        fin_err = np.array(cobra.get_fbest() - G10.fbest)
+        c2.p2.fin_err = fin_err
+        print(f"final err: {fin_err}")
+        c2.p2.fe_thresh = 1e-9
+        c2.p2.dim = G10.dimension
+        print(G10.fbest)
+        print(cobra.get_fbest())
         return c2
 
     def solve_G11(self, cobraSeed, feval=70, verbIter=10):
@@ -440,7 +553,7 @@ if __name__ == '__main__':
     # cop.solve_G05(42)
     # cop.solve_G06(42)
     # cop.solve_G07(42)
-    cop.solve_G11(42)
+    # cop.solve_G11(42)
     # cop.solve_G12(42)
     # cop.solve_G13(62)
     # cop.solve_G14(62)
@@ -452,6 +565,6 @@ if __name__ == '__main__':
     # cc2 = cop.multi_gfnc(cop.solve_G17, "G17", 10, 54)
     # cc2 = cop.multi_gfnc(cop.solve_G14, "G14", 6, 54)
     # cc2 = cop.multi_gfnc(cop.solve_G01, "G01", 6, 54)
-    # cc2 = cop.multi_gfnc(cop.solve_G21, "G21", 10, 54)
-    cop.solve_G04(42, feval=170, verbIter=10)
+    # cc2 = cop.multi_gfnc(cop.solve_G09, "G09", 10, 54)
+    cop.solve_G02(43, feval=300, verbIter=10)
 

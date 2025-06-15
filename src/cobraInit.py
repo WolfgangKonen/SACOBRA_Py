@@ -374,10 +374,12 @@ class CobraInitializer:
             GR = -np.inf    # inhibit constraint normalization
         else:
             GR = max(GRL) / min(GRL)
+        self.sac_res['GR'] = GR
 
         if GR > s_opts.ISA.TGR:
             verboseprint(s_opts.verbose, True, f"GR={GR} is large --> normalizing constraint functions ...")
-            GRfact = np.hstack((1, GRL * (1 / np.mean(GRL))))
+            # GRfact = np.hstack((1, GRL * (1 / np.mean(GRL))))   # probably buggy: at least for G10, some constraint ranges get bigger than before (!)
+            GRfact = np.hstack((1, GRL))                          # fix 2025/06/12: seems to give smaller Gres ranges
 
             # finding the normalizing coefficient of the equality constraints
             if equ_ind.size != 0:
@@ -398,6 +400,10 @@ class CobraInitializer:
             self.sac_res['fn'] = fn
 
             self.sac_res['Gres'] = Gres @ np.diag(1/GRfact[1:])
+            self.for_rbf['Gres'] = self.for_rbf['Gres'] @ np.diag(1/GRfact[1:])
+            # bug fix 2025/06/12: the line with 'for_rbf' was missing before and this led to wrong constraint surrogate
+            # models whenever 'normalizing constraint functions' was active(mind-buggingly high and wrong maxViol
+            # --> no feasible points were found). With this 'for_rbf'-line, everything is OK.
 
         self.sac_res['Grange'] = np.mean(GRL)
         self.sac_res['GrangeEqu'] = np.mean(GRL[equ_ind]) if equ_ind.size > 0 else np.mean(GRL)

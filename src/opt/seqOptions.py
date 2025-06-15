@@ -25,7 +25,7 @@ class SEQoptions:
                  sigmaD=[3.0, 2.0, 100],
                  epsilonInit=None, epsilonMax=None,
                  finalEpsXiZero=True,  # if True, then set EPS=XI=0 in final iteration (full exploit, might require
-                 # SEQ.conTol=1e-7 instead of 0.0)
+                                       # SEQ.conTol=1e-7 instead of 0.0)
                  trueFuncForSurrogates=False
                  ):
         self.optimizer = optimizer
