@@ -90,7 +90,17 @@ This example can be found in `sacobra_ineq.py <../../../demo/sacobra_ineq.py>`_:
     fin_err = np.array(cobra.get_fbest() - G06.fbest)
     print(f"final error: {fin_err}")
 
-We first load G06 from the G-problem benchmark suite. G06 is a problem with 2 inequality constraints. The object
+We first load G06 from the G-problem benchmark suite. G06 is a 2D problem with
+two circular-shaped inequality constraints such that the feasible region is a very narrow crescent-shaped region.
+A sketch of G06 is shown here (click on image to enlarge):
+
+.. image:: ../../demo/G06_sketch_combined.png
+   :height: 225px
+   :width: 520px
+   :align: center
+
+
+The object
 :class:`.CobraInitializer` ``cobra`` is initialized with the G06 problem characteristica and its :class:`.SACoptions`
 are set:
 
