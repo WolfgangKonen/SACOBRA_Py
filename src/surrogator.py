@@ -81,7 +81,7 @@ class Surrogator:
         """
             Calculates the :ref:`p-effect <pEffect-label>` in variable ``p2.pEffect``.
 
-            If > 1 and if ``s_opts.ISA.onlinePLOG``, class :class:`.AdFitter` will apply plog to ``Fres``,
+            If ``p2.pEffect`` > 1 and if ``s_opts.ISA.onlinePLOG``, class :class:`.AdFitter` will apply plog to ``Fres``,
             else ``Fres`` is used directly.
 
         :param p2:      changes ``p2.err1``, ``p2.err2``, ``p2.pEffect``
