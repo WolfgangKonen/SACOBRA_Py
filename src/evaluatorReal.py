@@ -85,7 +85,7 @@ class EvaluatorReal:
         :param xNew:    the new infill point (vector) resulting from sequential optimization on surrogates
         :param cobra:
         :param p2:
-        :param currentMu:  current artificial margin :math:`\mu` for equality constraints
+        :param currentMu:  current artificial margin :math:`\\mu` for equality constraints
         :param fitnessSurrogate:  if ``None``, use ``p2.fitnessSurrogate``
         :param f_value: if ``None``, use ``p2.opt_res['minf']``
         :return: nothing, but many elements of ``self`` are updated: ``xNew``, ``xNewEval``, ``x0``, ``x1``, ...
@@ -151,7 +151,7 @@ class EvaluatorReal:
 
         :param cobra:
         :param p2:
-        :param currentMu: current artificial margin :math:`\mu` for equality constraints
+        :param currentMu: current artificial margin :math:`\\mu` for equality constraints
         :return: nothing, but these elements of self are changed:
                  (a) vectors ``xNew``, ``x_0`` (the infill point before refine), ``x_1`` (the infill point after refine)
                  (b) dict ``refi``;
@@ -193,8 +193,8 @@ class EvaluatorReal:
                 def myf2(x):
                     return myf(x, None)
 
-                BFGS_METH = 1       # 0: fmin_l_bfgs_b,
-                                    # 1: minimize with method 'L-BFGS-B',
+                BFGS_METH = 1       # 0: 'fmin_l_bfgs_b' (from scipy.optimize),
+                                    # 1: 'minimize' (from scipy.optimize) with method 'L-BFGS-B',
                                     # 2: nlopt with method 'nlopt.LD_LBFGS' (does not work)
                 lbfgs_bounds = zip(s_res['lower'].tolist(), s_res['upper'].tolist())
                 if BFGS_METH == 0:
@@ -352,7 +352,7 @@ class EvaluatorReal:
         Calculate ``self.newNumViol``, ``.newMaxViol``, ... for the equality case (``sac_opts.EQU.active=True``)
 
         :param cobra:   object of class CobraInitializer
-        :param currentMu: current artificial equality margin :math:`\mu`
+        :param currentMu: current artificial equality margin :math:`\\mu`
         :param newPredC: prediction for xNew on constraint surrogates
         :return: nothing, but these elements of ``self`` are changed: (a) numbers ``newNumViol``, ``newMaxViol``,
                 ``newNumPred``, ``trueNumViol``, ``trueMaxViol``; (b) vectors ``feas``, ``feasPred``

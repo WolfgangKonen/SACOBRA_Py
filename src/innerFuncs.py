@@ -33,10 +33,10 @@ def plog(f, pShift=0.0):
 
     Let :math:`f' =  f - p_{shift}`. Then:
 
-    :math:`plog(f) = +\ln(1 + f'),  \quad\mbox{if}\quad f' \ge 0`
+    :math:`plog(f) = +\\ln(1 + f'),  \\quad\\mbox{if}\\quad f' \\ge 0`
     and
 
-    :math:`plog(f) = -\ln(1 - f'), \quad\mbox{if}\quad f'  <   0`
+    :math:`plog(f) = -\\ln(1 - f'), \\quad\\mbox{if}\\quad f'  <   0`
 
 
     :param f:   function value(s), number or np.array
@@ -46,7 +46,7 @@ def plog(f, pShift=0.0):
     return np.sign(f - pShift) * np.log(1 + np.abs(f - pShift))
 
 
-def plogReverse(y, pShift=0):
+def plogReverse(y, pShift=0.0):
     """
     Inverse of ``plog(f, pShift)``.
 
@@ -54,6 +54,9 @@ def plogReverse(y, pShift=0):
     :param pShift:  optional shift
     :return:    np.sign(y) * (np.exp(|y|) - 1) + pShift
     """
+    if isinstance(y, float):   # bug fix 2025/06/24:
+        if y > 709:            # avoid 'RuntimeWarning: overflow encountered in exp' (G02 with dim=10)
+            return np.sign(y) * np.inf + pShift
     return np.sign(y) * (np.exp(np.abs(y)) - 1) + pShift
     # /WK/2025/03/06: bug fix for negative y
 

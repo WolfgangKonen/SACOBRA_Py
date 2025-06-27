@@ -23,6 +23,7 @@ class RescaleWrapper:
         return new_x
 
     def inverse(self, x):
+        assert x.ndim == 1
         orig_x = np.array([np.interp(x[i], (self.lb[i], self.ub[i]), (self.lower[i], self.upper[i]))
                            for i in range(self.dim)])
         return orig_x

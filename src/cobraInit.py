@@ -253,6 +253,7 @@ class CobraInitializer:
             fbest = Fres[index]
             xbest = A[index, :]
             ibest = index
+        xbest = xbest.reshape(xbest.size)   # bug fix 2025-06-24: reshape xbest to 1D-array of length xbest.size
         fbestArray = np.repeat(fbest, s_opts.ID.initDesPoints)
         xbestArray = np.tile(xbest, (s_opts.ID.initDesPoints, 1))
 

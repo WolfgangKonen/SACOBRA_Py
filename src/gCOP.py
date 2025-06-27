@@ -105,19 +105,40 @@ class GCOP(COP):
         assert dim is not None, "[call_G02] dimension has to be integer, not None"
         self.dimension = dim
         self.lower = np.repeat(1e-16, dim)
-        self.upper = np.repeat(19, dim)
+        self.upper = np.repeat(10, dim)         # 2025-06-24: bug fix (was wrongly 19 before)
         self.nConstraints = 2
         self.is_equ = np.repeat(False, 2)
-        if dim == 2: self.solu = np.array([1.600859, 0.4684985])
-        elif dim == 10: self.solu = np.array([3.1238477, 3.0690696, 3.0139085,
-                                              2.9572856, 1.4654789, 0.3684877,
-                                              0.3633289, 0.3592627, 0.3547453, 0.3510025])
+        # The solutions termed "from DE" in the following are obtained with <<COBRA\Gfunctions>>\DE-generic-extended.R
+        # using JDEoptim, a package for solving constrained problems with DE.
+        if dim == 2: self.solu = np.array([1.6008602843, 0.4684980990])   # obj: -0.3649797459, from DE
+                                 # np.array([1.60086121, 0.46849783])     # obj: -0.3649797442617135, from Py,suboptimal
+                                 # np.array([1.600859, 0.4684985])        # obj: -0.3649797244269320, from R, suboptimal
+        elif dim == 5: self.solu = np.array([3.0886272420, 1.5311204979, 2.9465340514,
+                                             0.2334226684, 0.2305854508])     # obj: -0.5814473067, from DE
+        elif dim == 7: self.solu = np.array([3.0974219957, 3.0318021794, 2.9642628331, 1.4679408490, 0.2669415866,
+                                             0.2637519943, 0.2606890385])     # obj: -0.6864762988, from DE
+        #elif dim == 10: self.solu = np.array([3.1239852575, 3.0692969714, 3.0144779061, 2.9576914789,
+        #                                      1.4660059513, 0.3681391192, 0.3633228644, 0.3591229426,
+        #                                      0.3549991928, 0.3509437094])   # obj: -0.7473103360, from DE with tol=1e-8, slightly suboptimal (2e-8)
+        elif dim == 10: self.solu = np.array([3.1239117562, 3.0691330010, 3.0142866213, 2.9576201757,
+                                              1.4660185135, 0.3680737262, 0.3633602148, 0.3591136996,
+                                              0.3550141915, 0.3510189134])    # obj: -0.7473103548, from DE with tol=1e-12
+        #elif dim == 20: self.solu = np.array([3.16246061572185, 3.12833142812967, 3.09479212988791, 3.06145059523469,
+        #                                      3.02792915885555, 2.99382606701730, 2.95866871765285, 2.92184227312450,
+        #                                      0.49482511456933, 0.48835711005490, 0.48231642711865, 0.47664475092742,
+        #                                      0.47129550835493, 0.46623099264167, 0.46142004984199, 0.45683664767217,
+        #                                      0.45245876903267, 0.44826762241853, 0.44424700958760, 0.44038285956317]) # obj: -0.8036191041255873, from [Liang06]
+        elif dim == 20: self.solu = np.array([3.1623465037,   3.1282200815,   3.0948284180,   3.0612270157,
+                                              3.0279708896,   2.9938348748,   2.9587345282,   2.9218340067,
+                                              0.4948773109,   0.4880695344,   0.4825050138,   0.4768426559,
+                                              0.4713529405,   0.4659614374,   0.4615081090,   0.4569067813,
+                                              0.4522163554,   0.4482935274,   0.4445568660,   0.4402364050])            # obj: -0.8036190502, from DE with tol=1e-12, slightly better (5e-08)
         else: self.solu = None
         # no x0 provided
 
         def denom(x):
-            return np.sqrt(np.sum(np.array([(i+1)*x[i] for i in range(dim)])))
-        self.fn = lambda x: np.array([-np.abs(np.sum(np.cos(x)**4)-(2*np.prod(np.cos(x)**2))/denom(x)),
+            return np.sqrt(np.sum(np.array([(i+1)*(x[i]**2) for i in range(dim)])))     # bug fix 2025-06-23
+        self.fn = lambda x: np.array([-np.abs((np.sum(np.cos(x)**4)-(2*np.prod(np.cos(x)**2)))/denom(x)),
                                       0.75 - np.prod(x),
                                       np.sum(x) - 7.5*dim])
 
@@ -129,7 +150,7 @@ class GCOP(COP):
         self.upper = np.repeat(1, dim)
         self.nConstraints = 1
         self.is_equ = np.repeat(True, 1)
-        self.solu = np.repeat(1/np.sqrt(dim), dim)
+        self.solu = np.repeat(1/np.sqrt(dim), dim)          # with objective = -1.0
         # no x0 provided
         self.fn = lambda x: np.array([-((np.sqrt(dim)) ** dim) * np.prod(x),
                                       np.sum(x*x)-1])
@@ -578,6 +599,7 @@ def show_error_plot(cobra: CobraInitializer, cop: COP, ylim=None, file=None):
 
 
 if __name__ == '__main__':
+    G02 = GCOP("G02", 20)
     G01 = GCOP("G01")
     print(G01.solu)
     print(G01.fn(G01.solu))
