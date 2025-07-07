@@ -1,5 +1,8 @@
 # SACOBRA_Py
-[SACOBRA_Py](https://github.com/WolfgangKonen/SACOBRA_Py) is the SACOBRA Python port realized in 2025.
+
+<img src="demo/sacobra-logo.png" alt="SACOBRA_Py Logo" title="SACOBRA_Py Logo" width=400 />
+
+[SACOBRA_Py](https://github.com/WolfgangKonen/SACOBRA_Py) is the SACOBRA Python port, which was implemented in 2025.
 
 SACOBRA is a package for constrained optimization with relatively few function evaluations.
 
@@ -73,6 +76,9 @@ More detailed documentation can be found at [https://wolfgangkonen-sacobra-py.re
 
 (prepared with *Sphinx* and deployed with *readthedocs.io*)
 
+### Authors and Credits
+
+see [here](https://wolfgangkonen-sacobra-py.readthedocs.io/en/latest/overview.html#authors-and-credits)
 
 ### Version History
 #### V0.8
