@@ -189,60 +189,48 @@ class EvaluatorReal:
                     conR = s_res['fn'](x)[1:]
                     return np.sum(concat(np.maximum(0, conR[self.ine_ind]) ** 2, conR[self.equ_ind] ** 2))
 
-            if s_opts.EQU.refineAlgo == "L-BFGS-B":
-                def myf2(x):
-                    return myf(x, None)
+            def myf2(x):
+                return myf(x, None)
 
-                BFGS_METH = 1       # 0: 'fmin_l_bfgs_b' (from scipy.optimize),
-                                    # 1: 'minimize' (from scipy.optimize) with method 'L-BFGS-B',
-                                    # 2: nlopt with method 'nlopt.LD_LBFGS' (does not work)
-                lbfgs_bounds = zip(s_res['lower'].tolist(), s_res['upper'].tolist())
-                if BFGS_METH == 0:
-                    x_opt, f_opt, info = fmin_l_bfgs_b(myf2, x0=self.xNew, bounds=list(lbfgs_bounds),
-                                                       maxiter=s_opts.EQU.refineMaxit,
-                                                       approx_grad=True)
-                    self.refi = {'x': x_opt,
-                                 'minf': f_opt,
-                                 'res_code': info['warnflag'],    # the return code
-                                 'feMax': 0,
-                                 }
-                elif BFGS_METH == 1:
-                    res = minimize(myf2, self.xNew, method='L-BFGS-B', bounds=lbfgs_bounds)
-                    self.refi = {'x': res.x,
-                                 'minf': res.fun,
-                                 'res_code': res.message,    # the return code
-                                 'feMax': res.nfev,
-                                 }
-                else:  # i.e. BFGS_METH == 2
-                    raise RuntimeError(f"BFGS_METH={BFGS_METH} does not work (raises nlopt.runtime_error)")
-                    # opt = nlopt.opt(nlopt.LD_LBFGS, self.xNew.size)
-                    # opt.set_lower_bounds(s_res['lower'])
-                    # opt.set_upper_bounds(s_res['upper'])
-                    # opt.set_min_objective(myf)
-                    # opt.set_xtol_rel(-1)
-                    # opt.set_maxeval(s_opts.EQU.refineMaxit)
-                    # try:
-                    #     x = opt.optimize(self.xNew)
-                    # except nlopt.runtime_error: # nlopt.RoundoffLimited:
-                    #     print(f"WARNING: refine [{p2.num}] nlopt.runtime_error exception " # RoundoffLimited
-                    #           f"(result code {opt.last_optimize_result()})")
-                    #     x = self.xNew.copy()
-                    # minf = opt.last_optimum_value()
-                    # self.refi = {'x': x,
-                    #              'minf': minf,
-                    #              'res_code': opt.last_optimize_result(),  # the return code
-                    #              'feMax': opt.get_numevals(),
-                    #              }
+            # lbfgs_bounds = zip(s_res['lower'].tolist(), s_res['upper'].tolist())
+            lbfgs_bounds = [(s_res['lower'][i], s_res['upper'][i]) for i in range(s_res['upper'].size)]
+            # --- options for s_opts.EQU.refineAlgo: ---
+            # BFGS_0: 'fmin_l_bfgs_b' (from scipy.optimize),
+            # BFGS_1: 'minimize' (from scipy.optimize) with method 'L-BFGS-B',
+            # COBYQA: 'minimize' (from scipy.optimize) with method 'COBYQA'
+            # COBYLA: nlopt (from nlopt) with method LN_COBYLA
+            if s_opts.EQU.refineAlgo == "BFGS_0":
+                # --- only for comparing with R side ---
+                # self.xNew = np.array([-0.24730173, -1.00000000 , 0.63872554, -1.00000000 , 0.01828732, -1.00000000,  1.00000000])
+                # --- only test for G03 ---
+                # self.xNew = np.maximum(-0.8, self.xNew)
+                # self.xNew = np.minimum(+0.8, self.xNew)
 
-                    # # just a debug test: would a G03-specific normalization to sphere surface solve the refine issue?
-                    # # Answer: No: It works for d<=7, but fails for d>7, as the other methods.
-                    # x = self.xNew.copy()
-                    # x = x / np.sqrt(np.sum(x*x))
-                    # self.refi = {'x': x,
-                    #              'minf': 0,
-                    #              'res_code': 0,  # the return code
-                    #              'feMax': 0}
-
+                x_opt, f_opt, info = fmin_l_bfgs_b(myf2, x0=self.xNew, bounds=list(lbfgs_bounds),
+                                                   maxiter=s_opts.EQU.refineMaxit,
+                                                   approx_grad=True)
+                self.refi = {'x': x_opt,
+                             'minf': f_opt,
+                             'res_code': info['warnflag'],    # the return code
+                             'res_msg': info['task'],
+                             'feMax': 0,
+                             }
+            elif s_opts.EQU.refineAlgo == "BFGS_1":
+                res = minimize(myf2, self.xNew, method='L-BFGS-B', bounds=lbfgs_bounds)
+                self.refi = {'x': res.x,
+                             'minf': res.fun,
+                             'res_code': res.status,     # the return code
+                             'res_msg': res.message,
+                             'feMax': res.nfev,
+                             }
+            elif s_opts.EQU.refineAlgo == "COBYQA":
+                res = minimize(myf2, self.xNew, method='COBYQA', bounds=lbfgs_bounds)
+                self.refi = {'x': res.x,
+                             'minf': res.fun,
+                             'res_code': res.status,     # the return code
+                             'res_msg': res.message,
+                             'feMax': res.nfev,
+                             }
             else:  # i.e. "COBYLA"
                 opt = nlopt.opt(nlopt.LN_COBYLA, self.xNew.size)
                 opt.set_lower_bounds(s_res['lower'])
@@ -292,6 +280,11 @@ class EvaluatorReal:
                 #      equality constraints (not the RBF models) gives usually 1e-8 or better.
                 cgbefore = myf(self.x_0, None)
                 cgafter = myf(self.x_1, None)
+                DEBUG_G03 = False
+                if DEBUG_G03:
+                    z_0 = (self.x_0 + 1) / 2.
+                    z_1 = (self.x_1 + 1) / 2.
+                    print(f"||z_0||-1={np.sqrt(np.sum(z_0**2))-1}, ||z_1||={np.sqrt(np.sum(z_1**2))-1}")
                 if self.refi['res_code'] >= 0:
                     assert self.refi['minf'] == cgafter
                 conA = p2.constraintSurrogates(self.x_1)[0]

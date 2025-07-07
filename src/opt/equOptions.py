@@ -12,7 +12,7 @@ class EQUoptions:
         :param initType: the equality margin :math:`\mu` is initialized with one of these choices:
           ``["TAV"|"TMV"|"EMV"|"useGrange"]``
         :param muType: type of function used to shrink margin :math:`\mu` during the optimization process.
-          One out of ``["SAexpFunc"|"expFunc"|"funcDim"|"funcSDim"|"Zhang"|"CONS"]``, see ``modifyMu``
+          One out of ``["SAexpFunc"|"expFunc"|"funcDim"|"funcSDim"|"Zhang"|"CONS"]``, see ``modifyMu`` in ``equHandling.py``
         :param muDec: decay factor for margin :math:`\mu`, see ``modifyMu``
         :param muFinal: lower bound for margin :math:`\mu`. ``muFinal`` should be set to a small but non-zero value (larger than machine accuracy).
         :param muGrow: every ``muGrow`` (e.g. 100) iterations, re-enlarge the :math:`\mu`-band. If 0, then re-enlarge never
@@ -20,7 +20,7 @@ class EQUoptions:
         :param refine: enables the :ref:`refine step <refineStep-label>` for equality handling
         :param refineMaxit: maximum number of iterations used in the :ref:`refine step <refineStep-label>`. Note that the refine
           step runs on the surrogate models and does not impose any extra real function evaluations
-        :param refineAlgo: optimizer for :ref:`refine step <refineStep-label>` ["COBYLA"|"L-BFGS-B"]
+        :param refineAlgo: optimizer for :ref:`refine step <refineStep-label>` ["BFGS_0"|"BFGS_1"|"COBYQA"|"COBYLA"]
         :param refinePrint: whether to print "cg-values (before,after,true)" after each :ref:`refine step <refineStep-label>`
     """
     def __init__(self,
@@ -33,7 +33,7 @@ class EQUoptions:
                  muGrow=0,
                  refine=True,
                  refineMaxit=1000,  # 100,
-                 refineAlgo="L-BGFS-B",  # COBYLA  L-BGFS-B
+                 refineAlgo="BFGS_0",  # BFGS_0 BFGS_1 COBYQA COBYLA
                  refinePrint=False
                  ):
         self.active = active

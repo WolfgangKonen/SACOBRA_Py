@@ -138,6 +138,14 @@ class CobraPhaseII:
                     final_gama = 0.0
                     # s_opts.EQU.refine = False
 
+            self.p2.time_init += self.p2.fitnessSurrogate.time_init
+            self.p2.time_init += self.p2.fitnessSurrogate1.time_init
+            self.p2.time_init += self.p2.fitnessSurrogate2.time_init
+            self.p2.time_init += self.p2.constraintSurrogates.time_init
+            self.p2.time_call += self.p2.fitnessSurrogate.time_call
+            self.p2.time_call += self.p2.fitnessSurrogate1.time_call
+            self.p2.time_call += self.p2.fitnessSurrogate2.time_call
+            self.p2.time_call += self.p2.constraintSurrogates.time_call
         # end while self.p2.num
 
         # TODO: some final settings to self.cobra, self.p2

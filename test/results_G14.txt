@@ -41,3 +41,4 @@ feval=500, SEQ.conTol=1e-7, muGrow=0, rho=2.5, rhoGrow=0, cobraSeed=54...63
 [G14] median(final error) = 2.415486e-02 is smaller than thresh = 0.1
 [G14] median(|final error|) = 2.415486e-02
 [G14] ... finished (33731.1788 msec per run, 6 runs)
+

@@ -16,7 +16,7 @@ from opt.seqOptions import SEQoptions
 
 verb = 1
 class OneS:
-    def one_s(self, gname: str, cobraSeed: int, feval=300, conTol=0.0):
+    def one_s(self, gname: str, dim: int, cobraSeed: int, feval=300, conTol=0.0):
         """ One SACOBRA configuration for all G-problems.
 
             Run this configuration on COP ``gname`` with given seed, using ``feval`` and ``conTol`` as specified
@@ -28,11 +28,9 @@ class OneS:
         :param conTol:      constraint tolerance, common values are 0 or 1e-7
         :return:    ``c2``, the resulting object after running ``CobraPhaseII.start()``
         """
-        print(f"Starting one_s({gname}, {cobraSeed}) ...")
-        if gname == "G02":
-            gcop = GCOP(gname, dimension=5)
-        elif gname == "G03":
-            gcop = GCOP(gname, dimension=10)
+        print(f"Starting one_s({gname}, dim={dim}, {cobraSeed}) ...")
+        if gname in {"G02", "G03"}:
+            gcop = GCOP(gname, dimension=dim)
         else:
             gcop = GCOP(gname)
 
@@ -46,7 +44,7 @@ class OneS:
                                  solu=gcop.solu,
                                  s_opts=SACoptions(verbose=verb, verboseIter=100, feval=feval, cobraSeed=cobraSeed,
                                                    ID=IDoptions(initDesign="LHS", initDesPoints=idp),
-                                                   RBF=RBFoptions(degree=2),
+                                                   RBF=RBFoptions(degree=1.5, interpolator="sacobra"),
                                                    EQU=equ,
                                                    SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol)))
         if feval > idp: c2 = CobraPhaseII(cobra).start()
@@ -57,7 +55,7 @@ class OneS:
         c2.p2.fin_err = fin_err
         print(f"final err: {fin_err}")
         c2.p2.fe_thresh = 1e-1
-        c2.p2.dim = gcop.dimension
+        c2.p2.dim = dim
         c2.p2.conTol = conTol
         # show_error_plot(cobra, gcop,)  #  ylim=[1e-4,1e0]
         # print(gcop.fn(gcop.solu))
@@ -65,7 +63,7 @@ class OneS:
         print(c2.cobra.get_fbest())
         return c2
 
-    def one_s_multi_g_r(self, gnames: list, runs: int, cobraSeed: int, feval=300, conTol: float|None=0):
+    def one_s_multi_g_r(self, gnames: list, dims: list, runs: int, cobraSeed: int, feval=300, conTol: float|None=0):
         """
             Perform SACOBRA-runs with method ``meth`` on multiple G-problems and multiple runs:
 
@@ -73,6 +71,7 @@ class OneS:
             - ``meth = 'solve'``: G-problem-specific SACOBRA configuration (see ex_COP.py)
 
         :param gnames:  list of G-problem names
+        :param dims:    list of corresponding dimensions (only relevant for G02 and G03)
         :param runs:    how many runs
         :param cobraSeed: run ``r in range(runs)`` gets seed ``cobraSeed + r``
         :param feval:   budget of real function evaluations
@@ -82,20 +81,31 @@ class OneS:
         """
         cop = ExamCOP()        # is used indirectly below in eval(...)
         df2 = pd.DataFrame()
-        for gname in gnames:
+        for i, gname in enumerate(gnames):
+            dim = dims[i]
             for meth in [ 'one_s', 'solve',]:   #
                 for run in range(runs):
                     start = time.perf_counter()
                     if conTol is None:          # use the default conTol of each method
-                        if meth == 'one_s':
-                            c2 = self.one_s(gname, cobraSeed + run, feval)
-                        else:   # i.e. if meth=='solve'
-                            c2 = eval(f"cop.solve_{gname}(cobraSeed + run, feval={feval}, verbIter=100)")
+                        conTolStr = ""
                     else:
-                        if meth == 'one_s':
-                            c2 = self.one_s(gname, cobraSeed + run, feval, conTol=conTol)
-                        else:   # i.e. if meth=='solve'
-                            c2 = eval(f"cop.solve_{gname}(cobraSeed + run, feval={feval}, verbIter=100, conTol={conTol})")
+                        conTolStr = f", conTol={conTol}"
+
+                    #     if meth == 'one_s':
+                    #         c2 = self.one_s(gname, dim, cobraSeed + run, feval)
+                    #     else:   # i.e. if meth=='solve'
+                    #         if gname in {"G02", "G03"}:
+                    #             c2 = eval(f"cop.solve_{gname}(cobraSeed + run, {dim}, feval={feval}, verbIter=100)")
+                    #         else:
+                    #             c2 = eval(f"cop.solve_{gname}(cobraSeed + run, feval={feval}, verbIter=100)")
+                    # else:
+                    if meth == 'one_s':
+                        c2 = eval(f"self.one_s(gname, dim, cobraSeed + run, feval {conTolStr})")
+                    else:   # i.e. if meth=='solve'
+                        if gname in {"G02", "G03"}:
+                            c2 = eval(f"cop.solve_{gname}(cobraSeed + run, {dim}, feval={feval}, verbIter=100 {conTolStr})")
+                        else:
+                            c2 = eval(f"cop.solve_{gname}(cobraSeed + run, feval={feval}, verbIter=100 {conTolStr})")
                     time_ms = (time.perf_counter() - start) / runs * 1000
                     fin_err = c2.p2.fin_err
                     new_row_df2 = pd.DataFrame(
@@ -177,9 +187,13 @@ class OneS:
 
 if __name__ == '__main__':
     one = OneS()
-    gnames = ["G01", "G02", "G03", "G04", "G05", "G06", "G07", "G08", "G09", "G10", "G11", "G12", "G13"]
+    # gnames = ["G01", "G02", "G03", "G04", "G05", "G06", "G07", "G08", "G09", "G10", "G11", "G12", "G13"]
+    # dims   = [   -1,     2,     5,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1]
     gnames = ["G03",]  #  "G08", "G09", "G10",
-    df2 = one.one_s_multi_g_r(gnames, 10, 54, feval=500, conTol=0)       # conTol=0 | 1e-7
+    dims   = [    2,]
+    # gnames = ["G10", "G11", "G12", "G13"]
+    # dims   = [   -1,    -1,    -1,    -1,]
+    df2 = one.one_s_multi_g_r(gnames, dims,1, 54, feval=100, conTol=0)       # conTol=0 | 1e-7
     # init_df = one.multi_init(gnames, 54, feval=120)
     # one.df_analyze("df2_conTol0.0-fe500-G01-G13.feather", "df2_conTol1e-7-fe500-G01-G13.feather")
     # one.df_analyze("df2_conTol0.0-fe500-G01-G13.feather","df2_conTol1e-7-fe500-G01-G13.feather")

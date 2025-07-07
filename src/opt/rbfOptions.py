@@ -13,6 +13,11 @@ class RBFoptions:
         :param width: only relevant for scalable (e.g. Gaussian) kernels. Determines the width :math:`\\sigma`
         :param widthFactor: only for scalable kernels. Additional constant factor applied to each width :math:`\\sigma`
         :param gaussRule: only relevant for Gaussian kernels, see ``trainGaussRBF``
+        :param interpolator: "scipy" or "sacobra", which interpolation method to use. In case of "scipy", use
+         `SciPy's RBFInterpolator <https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.RBFInterpolator.html>`_
+         (faster and simpler in code). In case of  "sacobra", use an object of class :class:`.RBFsacob`, which is
+         SACOBRA's own implementation of RBF models (allows with `degree=1.5`` the option equivalent to ``squares=T``
+         in SACOBRA R, which means only pure squares in the polynomial tail).
     """
     def __init__(self,
                  model="cubic",
@@ -23,6 +28,7 @@ class RBFoptions:
                  width=-1,
                  widthFactor=1.0,
                  gaussRule="One",
+                 interpolator="scipy",
                  ):
         """
 
@@ -35,3 +41,4 @@ class RBFoptions:
         self.width = width
         self.widthFactor = widthFactor
         self.gaussRule = gaussRule
+        self.interpolator=interpolator

@@ -15,6 +15,9 @@ def fn(x):
 
 
 class TestRbfModel(unittest.TestCase):
+    def __init__(self):
+        super().__init__()
+        self.val = 24
 
     def test_rbf_model(self):
         nobs = 100
@@ -50,7 +53,7 @@ class TestRbfModel(unittest.TestCase):
 
     def test_linear_func(self):
         """
-            test whether linear function fn is RBF-modeled (cubic, 10/100 observationgs, with/without polynomial tail)
+            test whether linear function fn is RBF-modeled (cubic, 10/100 observations, with/without polynomial tail)
             the same way in Python and in R. Uses new RNG my_rng2 (avoid cycles!)
         """
         d = 2

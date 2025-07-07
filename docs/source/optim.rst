@@ -43,8 +43,8 @@ directly or whether to model :math:`plog(f())`. Here
 is a strictly monotonic squashing function, where
 :math:`\bar{y}=y-p_{shift}` with default ``pshift = 0``.
 
-Given the set :math:`S` of already evaluated points in input space with :math:`M_f, M_p` being the surrogate models for
-:math:`f(), plog(f())` using all points in :math:`S`,  we calculate
+Given the set :math:`S` of already evaluated points in input space and given :math:`M_f, M_p` as the surrogate models
+for :math:`f(), plog(f())` when using all points in :math:`S`,  we calculate
 for a new infill point :math:`\vec{x}_{k}` the ratio
 
 .. raw:: latex html
@@ -104,6 +104,9 @@ Details Phase II
    :members: calcPEffect, trainSurrogates
 
 .. autoclass:: rbfModel.RBFmodel
+   :members: __init__, __call__
+
+.. autoclass:: rbfSacobra.RBFsacob
    :members: __init__, __call__
 
 .. autoclass:: evaluatorReal.EvaluatorReal

@@ -1,0 +1,48 @@
+--------------------------------------------------------------------------
+
+Timing results RBF models:
+[These are results from test_Gprob_RBF() in testRbfsacob.py.]
+
+*** Time RBF models (G06, d=2, degree=1) w/o fitnessSurrogate1,2 ***
+time_init [scipy, sacobra]
+[0.0371011 0.7859362]       21.24
+time_call [scipy, sacobra]
+[1.08800929 6.74024742]      6.24
+
+*** Time RBF models (G06, d=2, degree=1) with fitnessSurrogate1,2 ***
+time_init [scipy, sacobra]
+[0.059694  1.6816043]       28.17
+time_call [scipy, sacobra]
+[1.11758087 7.03546229]      6.29
+
+*** Time RBF models (G06, d=2, degree=2) with fitnessSurrogate1,2 ***
+time_init [scipy, sacobra]
+[0.0600377 1.6712609]       27.85
+time_call [scipy, sacobra]
+[1.0138432  6.77473281]      6.69
+
+
+*** Time RBF models (G07, d=10, degree=1) with fitnessSurrogate1,2 ***
+time_init [scipy, sacobra]
+[ 0.5972385 24.2482967]     40.60
+time_call [scipy, sacobra]
+[ 6.14404628 28.15400481]    4.58
+
+*** Time RBF models (G07, d=10, degree=2) with fitnessSurrogate1,2 ***
+time_init [scipy, sacobra]
+[ 1.3131069 52.8071625]     40.22
+time_call [scipy, sacobra]
+[ 6.26364111 48.95584851]    7.82
+
+
+*** Time RBF models (G09, d=7, degree=1) with fitnessSurrogate1,2 ***
+time_init [scipy, sacobra]
+[ 0.5375605 26.9848804]     50.20
+time_call [scipy, sacobra]
+[ 3.53966711 18.35892098]    5.19
+
+*** Time RBF models (G09, d=7, degree=2) with fitnessSurrogate1,2 ***
+time_init [scipy, sacobra]
+[ 0.8407733 41.4455844]     49.29
+time_call [scipy, sacobra]
+[ 4.0348275  26.28940648]    6.52

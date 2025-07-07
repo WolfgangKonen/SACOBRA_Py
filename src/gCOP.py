@@ -189,7 +189,11 @@ class GCOP(COP):
         self.upper = np.concatenate((np.repeat(1200, 2), np.repeat(0.55, 2)))
         self.nConstraints = 5
         self.is_equ = np.array([False, False, True, True, True])
-        self.solu = np.array([679.94531748791177961,
+        # self.solu = np.array([679.95588962087254,       # other solution from Py, slightly better (2.59e-04) objective
+        #                       1026.05577523922420,      # but also slightly infeasible
+        #                       0.11886876389283,
+        #                       -0.39623704393831])
+        self.solu = np.array([679.94531748791177961,      # original (from R) and feasible solution
                               1026.06713513571594376,
                               0.11887636617838561,
                               -0.39623355240329272])

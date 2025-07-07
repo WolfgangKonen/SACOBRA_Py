@@ -73,12 +73,14 @@ class SoluContainer():
         Compute the distance of all infill points to the true solution. Each row of matrix ``A = cobra.sac_res['A']``
         contains an infill point.
 
-        Return a vector of ``A.shape[0]`` ``np.nan``'s if ``solu`` is None.
+        Returns distance vectors of length ``A.shape[0]``.
 
-        Return the minimum over solutions, if multiple equivalent solutions exist (``solu.ndim==2``)
+        If ``solu`` is None, this vector contains just ``np.nan``'s.
 
-        :param cobra: needed for infill points ``A`` and rescale wrapper
-        :return: tuple (distA, distOrig) = (vector of distances in rescaled space, ... of distances in original space)
+        Return the minimum over solutions, if multiple equivalent solutions exist (``solu.ndim==2``).
+
+        :param cobra: needed for the infill points ``A`` (see above) and for the rescale wrapper
+        :return: tuple (distA, distOrig) = (vector of distances in rescaled space, ... in original space)
         """
         A = cobra.sac_res['A']
         if self.solu is None:

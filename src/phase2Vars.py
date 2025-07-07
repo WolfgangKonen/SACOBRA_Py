@@ -53,4 +53,6 @@ class Phase2Vars:
         self.pshift = np.array([], dtype=np.float64)
         self.fin_err = None     # number, will be set in ex_COP.py
         self.fe_thresh = None   # number, will be set in ex_COP.py
+        self.time_init = 0.0
+        self.time_call = 0.0
 

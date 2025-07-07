@@ -92,7 +92,7 @@ class ExamCOP:
         c2.p2.conTol = conTol
         return c2
 
-    def solve_G03(self, cobraSeed, dimension=10, feval=150, verbIter=10, conTol=0):      # conTol=0 | 1e-7
+    def solve_G03(self, cobraSeed, dimension=8, feval=150, verbIter=10, conTol=0):      # conTol=0 | 1e-7
         """ Test whether COP G03 has statistical similar results to the R side with squares=T, if we set on the
             Python side RBF.degree=2 (which is similar, but not the same).
 
@@ -102,15 +102,15 @@ class ExamCOP:
         print(f"Starting solve_G03({cobraSeed}, dim={dimension}, ...) ...")
         G03 = GCOP("G03", dimension)
 
-        equ = EQUoptions(muDec=1.6, muFinal=1e-7, refinePrint=False, refineAlgo="L-BFGS-B")  # "L-BFGS-B COBYLA"
         x0 = G03.x0             # None --> a random x0 will be set
         # x0 = np.arange(dimension)/dimension    # fixed x0
+        equ_opt = EQUoptions(muGrow=100, muDec=1.6, muFinal=1e-7, refineAlgo="BFGS_1", refinePrint=False)
         cobra = CobraInitializer(x0, G03.fn, G03.name, G03.lower, G03.upper, G03.is_equ,
                                  solu=G03.solu,
                                  s_opts=SACoptions(verbose=verb, verboseIter=verbIter, feval=feval, cobraSeed=cobraSeed,
                                                    ID=IDoptions(initDesign="LHS", rescale=True),
                                                    RBF=RBFoptions(degree=2, rho=0.0, rhoDec=2.0),
-                                                   EQU=equ,
+                                                   EQU=equ_opt,
                                                    SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol)))
         print(f"idp = {cobra.sac_opts.ID.initDesPoints}")
         c2 = CobraPhaseII(cobra).start()
@@ -133,11 +133,12 @@ class ExamCOP:
         print(f"Starting solve_G04({cobraSeed}) ...")
         G04 = GCOP("G04")
 
+        equ_opt = EQUoptions(muGrow=100, muDec=1.6, muFinal=1e-7, refineAlgo="BFGS_0", refinePrint=False)
         cobra = CobraInitializer(G04.x0, G04.fn, G04.name, G04.lower, G04.upper, G04.is_equ,
                                  s_opts=SACoptions(verbose=verb, verboseIter=verbIter, feval=feval, cobraSeed=cobraSeed,
                                                    ID=IDoptions(initDesign="LHS", rescale=False),
                                                    RBF=RBFoptions(degree=2),
-                                                   EQU=EQUoptions(muDec=1.6, muFinal=1e-7, refinePrint=False),
+                                                   EQU=equ_opt,
                                                    SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol)))
         c2 = CobraPhaseII(cobra).start()
 
@@ -165,7 +166,7 @@ class ExamCOP:
                                  s_opts=SACoptions(verbose=verb, verboseIter=verbIter, feval=feval, cobraSeed=cobraSeed,
                                                    ID=IDoptions(initDesign="LHS", initDesPoints=idp),
                                                    RBF=RBFoptions(degree=2),
-                                                   EQU=EQUoptions(muDec=1.6, muFinal=1e-7, refinePrint=False,
+                                                   EQU=EQUoptions(muDec=1.6, muFinal=1e-12, refinePrint=False,
                                                                   refineAlgo="COBYLA"),  # "L-BFGS-B COBYLA"
                                                    SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol)))
         c2 = CobraPhaseII(cobra).start()
@@ -545,7 +546,7 @@ class ExamCOP:
         fin_err_list = np.array([])
         c2 = None
         for run in range(runs):
-            c2 = gfnc(cobraSeed + run)
+            c2 = gfnc(cobraSeed + run, verbIter=100)
             fin_err = c2.p2.fin_err
             fin_err_list = np.concatenate((fin_err_list, fin_err), axis=None)
 
@@ -579,7 +580,7 @@ if __name__ == '__main__':
     # cop.solve_G14(62)
     # cop.solve_G17(62)
     # cop.solve_G21(63)
-    # cc2 = cop.multi_gfnc(cop.solve_G01, "G01", 10, 48)
+    cc2 = cop.multi_gfnc(cop.solve_G05, "G05", 5, 49)
     # cc2 = cop.multi_gfnc(cop.solve_G04, "G04", 15, 42)
     # cc2 = cop.multi_gfnc(cop.solve_G15, "G15", 10, 48)
     # cc2 = cop.multi_gfnc(cop.solve_G17, "G17", 10, 54)
@@ -587,5 +588,5 @@ if __name__ == '__main__':
     # cc2 = cop.multi_gfnc(cop.solve_G01, "G01", 6, 54)
     # cc2 = cop.multi_gfnc(cop.solve_G09, "G09", 10, 54)
     # cc2 = cop.multi_gfnc(cop.solve_G02, "G02", 10, 54)
-    cop.solve_G03(57, dimension=10, feval=200, verbIter=10)
+    # cop.solve_G03(57, dimension=8, feval=500, verbIter=20)
 

@@ -8,9 +8,8 @@ from phase2Vars import Phase2Vars
 
 class RandomStarter:
     """
-        Decide which start point ``xStart`` to take for the next sequential optimizer step
-
-        Either cobra.sac_res['xbest'] or a random point in search space
+        Decide which start point ``xStart`` to take for the next sequential optimizer step:
+        Either ``cobra.sac_res['xbest']`` or a random point in search space.
     """
     def __init__(self, s_opts: SACoptions):
         """
@@ -26,8 +25,8 @@ class RandomStarter:
 
     def random_start(self, cobra: CobraInitializer, p2: Phase2Vars) -> np.ndarray:
         """
-        This method decides whether ``xStart`` is ``cobra.sac_res['xbest']`` or a random start point. In the latter
-        case we set ``p2.rs_done == True``.
+        This method decides whether ``cobra.sac_res['xbest']`` or a random start point is used for the next ``xStart``.
+        In the latter case we set ``p2.rs_done == True``.
 
         If ``ISA.RS==False`` the probability for random start is 0.
 
