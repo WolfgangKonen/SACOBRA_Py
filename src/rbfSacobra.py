@@ -15,13 +15,13 @@ def dist_line(x: np.ndarray, xp: np.ndarray):
     """
     Euclidean distance of ``x`` to all points ``xp``
 
-    It is probably easier (and faster?) to use
+    It is perhaps easier to use
     `euclidean_distances <https://scikit-learn.org/stable/modules/generated/sklearn.metrics.pairwise.euclidean_distances.html>`_
-    from scikit-learn.
+    from scikit-learn. But measurements have shown that it is 6 - 10 times (!) *slower*.
 
     :param x:   vector of dimension d
     :param xp:  n points x_i of dimension d are arranged in (n x d) matrix ``xp``.
-#'                If ``xp`` is a vector, it is interpreted as (n x 1) matrix, i.e. d=1.
+                If ``xp`` is a vector, it is interpreted as (n x 1) matrix, i.e. d=1.
     :return:    vector of length n, the Euclidean distances
     """
     if xp.ndim == 1:
@@ -61,16 +61,18 @@ class RBFsacob:
                         matrix of shape (n,m) with observations :math:`f_j(\\vec{x}_i)` for :math:`m` functions :math:`f_j,\, j=0,...,m-1`
         :param kernel:  RBF kernel type, currently only "cubic" implemented. The names should match to SciPy's
                         `RBFInterpolator <https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.RBFInterpolator.html>`_
-        :param degree:  degree of polynomial tail, see below
+        :param degree:  degree of polynomial tail, see :ref:`below <degree_label>`
         :param rho:     smoothing parameter. If = 0, we have interpolating RBFs, if > 0, we have approximating RBFs (the
                         larger ``rho``, the more approximating)
         :param width:   optional width parameter for Gaussian or MQ RBFs
 
+.. _degree_label:
+
         Parameter ``degree`` controls whether RBF models are augmented with a polynomial tail. Allowed values:
 
-        - 0: no polynomial tail
+        - 0 or -1: no polynomial tail
         - 1: linear polynomial tail
-        - 1.5: linear plus pure squares tail (e.g. x1*x1, x2*x2) (option ``squares`` in R's SACOBRA)
+        - 1.5: linear plus pure squares tail (e.g. x1*x1, x2*x2) (option ``squares`` in SACOBRA R)
         - 2: linear plus quadratic polynomial tail (all monomials of degree 1 and 2)
 
         """
@@ -118,9 +120,13 @@ class RBFsacob:
         - 1.5: linear plus pure squares (e.g. x1*x1, x2*x2) (option ``squares`` in R's SACOBRA)
         - 2: linear plus quadratic polynomial tail (all monomials of degree 1 and 2)
 
-        Return ``self`` with elements ``coef`` and ``d2`` filled appropriately.
+        Return ``self`` with elements ``coef`` and ``d2`` filled appropriately:
 
-        ``self.coef`` is a (npts+d2 x m) matrix holding in column m the coefficients for the m'th model.
+        - ``self.d2``: number of columns in polynomial tail matrix
+        - ``self.d2 = 0 | 1+d | 1+2*d | 1+d+d**2``  for ``degree = 0 | 1 | 1.5 | 2``
+        - ``self.coef``: ``((npts+d2) x m)`` matrix holding in column ``m`` the coefficients for the ``m``'th model.
+
+        ``d`` is the dimension of observation vectors :math:`\\vec{x}_i`, i.e. the number of columns of ``xobs``.
         """
         npts = xp.shape[0]
         assert phi.shape[0] == npts and phi.shape[1] == npts

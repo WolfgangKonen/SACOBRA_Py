@@ -104,14 +104,14 @@ class ExamCOP:
 
         x0 = G03.x0             # None --> a random x0 will be set
         # x0 = np.arange(dimension)/dimension    # fixed x0
-        equ_opt = EQUoptions(muGrow=100, muDec=1.6, muFinal=1e-7, refineAlgo="BFGS_1", refinePrint=False)
+        equ_opt = EQUoptions(muGrow=100, muDec=1.6, muFinal=1e-12, refineAlgo="BFGS_1", refinePrint=False)
         cobra = CobraInitializer(x0, G03.fn, G03.name, G03.lower, G03.upper, G03.is_equ,
                                  solu=G03.solu,
                                  s_opts=SACoptions(verbose=verb, verboseIter=verbIter, feval=feval, cobraSeed=cobraSeed,
                                                    ID=IDoptions(initDesign="LHS", rescale=True),
                                                    RBF=RBFoptions(degree=2, rho=0.0, rhoDec=2.0),
                                                    EQU=equ_opt,
-                                                   SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol)))
+                                                   SEQ=SEQoptions(finalEpsXiZero=True, trueFuncForSurrogates=True, conTol=conTol)))
         print(f"idp = {cobra.sac_opts.ID.initDesPoints}")
         c2 = CobraPhaseII(cobra).start()
 

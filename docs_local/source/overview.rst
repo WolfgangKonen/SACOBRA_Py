@@ -10,6 +10,11 @@ SACOBRA_Py
 
 **SACOBRA_Py**, available from `<https://github.com/WolfgangKonen/SACOBRA_Py>`_, is the SACOBRA Python port.
 
+.. image:: ../../demo/sacobra-logo.png
+   :height: 153px
+   :width: 576px
+   :align: center
+
 SACOBRA is a package for constrained optimization with relatively few function evaluations.
 
 SACOBRA stands for **Self-Adjusting Constraint Optimization By Radial basis function Approximation**. It is used for numerical optimization and can handle an arbitrary number of inequality and/or equality constraints.

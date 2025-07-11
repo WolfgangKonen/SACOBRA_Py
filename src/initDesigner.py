@@ -18,12 +18,14 @@ class InitDesigner:
 
     :class:`.CobraPhaseII` uses the evaluated sets to train the initial fitness and constraint surrogate models.
 
-    In detail, the constructor of ``InitDesigner`` does the following: Create matrix ``self.A`` with shape ``(P, d)`` of sample points in (potentially rescaled) input space
-    ``[lower, upper]`` :math:`\\subset \\mathbb{R}^d`, where ``P = s_opts.initDesPoints`` and ``d =`` input space dimension.
-    The recipe how to select the sample points is prescribed by the :ref:`type of initial design <initDesign-label>`  ``s_opts.initDesign``.
+    In detail, the constructor of ``InitDesigner`` does the following: Create the **initial design** in matrix
+    ``**self.A**`` with shape ``(P, d)`` of sample points in (potentially rescaled) input space
+    ``[lower, upper]`` :math:`\\subset \\mathbb{R}^d`, where ``P = s_opts.ID.initDesPoints`` and ``d =`` input space dimension.
+    The recipe how to select the sample points is prescribed by the :ref:`type of initial design <initDesign-label>`
+    ``s_opts.ID.initDesign``.
 
-    Apply ``fn`` to these points and split the result in objective function (:math:`f`) values ``self.Fres``
-    with shape ``(P,)`` and constraint function (:math:`g,h`) values ``self.Gres`` with shape
+    Apply ``fn`` to these points and split the result in objective function (:math:`f`) values **self.Fres**
+    with shape ``(P,)`` and constraint function (:math:`g,h`) values **self.Gres** with shape
     ``(P,nC)``, where ``nC`` = number of constraints.
 
     :param x0:  the last point ``self.A[-1,:]`` is ``x0``
@@ -74,8 +76,16 @@ class InitDesigner:
         """
         Return the three results ``A``, ``Fres`` and ``Gres`` of the initial design
 
-        :return: (self.A, self.Fres, self.Gres)
+        :return: tuple (**self.A**, **self.Fres**, **self.Gres**)
+
         :rtype: (np.ndarray, np.ndarray, np.ndarray)
+
+        The return tuple contains:
+
+        - **self.A**: ``(P,d)``-matrix with initial design
+        - **self.Fres**: ``(P,)``-vector with objective evaluated at each initial design point
+        - **self.Gres**: ``(P,nC)``-matrix with constraints evaluated at each initial design point
+
         """
         return self.A, self.Fres, self.Gres
 

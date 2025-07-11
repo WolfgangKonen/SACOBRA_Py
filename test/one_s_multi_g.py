@@ -83,7 +83,7 @@ class OneS:
         df2 = pd.DataFrame()
         for i, gname in enumerate(gnames):
             dim = dims[i]
-            for meth in [ 'one_s', 'solve',]:   #
+            for meth in ['solve',]:   #  'one_s',
                 for run in range(runs):
                     start = time.perf_counter()
                     if conTol is None:          # use the default conTol of each method
@@ -190,10 +190,10 @@ if __name__ == '__main__':
     # gnames = ["G01", "G02", "G03", "G04", "G05", "G06", "G07", "G08", "G09", "G10", "G11", "G12", "G13"]
     # dims   = [   -1,     2,     5,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1]
     gnames = ["G03",]  #  "G08", "G09", "G10",
-    dims   = [    2,]
+    dims   = [   10,]
     # gnames = ["G10", "G11", "G12", "G13"]
     # dims   = [   -1,    -1,    -1,    -1,]
-    df2 = one.one_s_multi_g_r(gnames, dims,1, 54, feval=100, conTol=0)       # conTol=0 | 1e-7
+    df2 = one.one_s_multi_g_r(gnames, dims,3, 54, feval=300, conTol=0)       # conTol=0 | 1e-7
     # init_df = one.multi_init(gnames, 54, feval=120)
     # one.df_analyze("df2_conTol0.0-fe500-G01-G13.feather", "df2_conTol1e-7-fe500-G01-G13.feather")
     # one.df_analyze("df2_conTol0.0-fe500-G01-G13.feather","df2_conTol1e-7-fe500-G01-G13.feather")
