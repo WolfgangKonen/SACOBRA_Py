@@ -58,11 +58,11 @@ For a more stable decision we define the *p-effect* number as
 
 .. raw:: latex html
 
-    \[ p_\text{eff} = \text{median}\{ p_k \}	\]`
+    \[ p_\text{eff} = \log_{10}(\text{median}\{ p_k \})	\]`
 
-and decide to build :math:`M_p` if :math:`p_\text{eff}>1` and to build :math:`M_f` else.
+and decide to build :math:`M_p` if :math:`p_\text{eff}>0` and to build :math:`M_f` else.
 
-The calculation of :math:`p_\text{eff}>1` is done in :meth:`.Surrogator.calcPEffect`.
+The calculation of :math:`p_\text{eff}` is done in :meth:`.Surrogator.calcPEffect`.
 The conditional application of :math:`plog()` is done in :class:`.Surrogator.AdFitter`.
 
 .. _refineStep-label:
@@ -84,8 +84,8 @@ the solution, we run a refine optimization with objective
 In the case of one equality constraints, this projects from the rim of the feasibility band to the central equality
 surface. In the case of multiple constraints, things get of course more involved, but usually the refine step does a
 very good job in reducing the maximum constraint violation. This is important when the feasibility band :math:`\mu` is
-reduced in the current iteration: Otherwise, a solution *'on the rim'* that was (artificially) feasible in the last
-iteration, might get lost in the current iteration because it is now infeasible.
+reduced for the next iteration: Otherwise, a solution *'on the rim'* that was (artificially) feasible in the current
+iteration, might get lost in the next iteration because it is then infeasible.
 
 The refine step is carried out in :meth:`.EvaluatorReal.equ_refine` which is called from :meth:`.EvaluatorReal.update`.
 

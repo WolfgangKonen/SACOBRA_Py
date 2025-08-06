@@ -2,15 +2,16 @@ import pandas as pd
 # need to specify SACOBRA_Py.src as source folder in File - Settings - Project Structure,
 # then the following import statements will work:
 from cobraInit import CobraInitializer
+from opt.isaOptions import P_LOGIC
 from phase2Vars import Phase2Vars
 import phase2Funcs as pf2
 from randomStarter import RandomStarter
 from surrogator import Surrogator
-# from trainSurrogates import trainSurrogates, calcPEffect
 from seqOptimizer import SeqOptimizer, check_if_cobra_optimizable
 from evaluatorReal import EvaluatorReal
+from surrogator2 import Surrogator2
 from updateSaveCobra import updateSaveCobra
-from opt.equOptions import EQUoptions
+# from opt.equOptions import EQUoptions
 
 
 class CobraPhaseII:
@@ -28,6 +29,8 @@ class CobraPhaseII:
 
         cobra.phase = "phase2"
         self.cobra = cobra
+        self.df = None
+        self.df2 = None
 
     def get_cobra(self):
         """
@@ -45,23 +48,30 @@ class CobraPhaseII:
 
     def start(self):
         """
-        Start the main optimization loop of phase II
+        Start the main optimization loop of phase II.
 
         Perform in a loop, until the budget ``feval`` is exhausted:
 
-           - select cyclically an element ``p2.ro`` from :ref:`DRC <DRC-label>` ``XI``. Add the appropriate DRC-constraint as extra constraint to the set of constraints
-           - train RBF surrogate models on the current set of infill points
+           - select cyclically an element ``p2.ro`` from :ref:`DRC <DRC-label>` ``XI``. Add the appropriate
+             DRC-constraint as extra constraint to the set of constraints
+           - train RBF surrogate models on the current set of infill points (see :class:`.Surrogator.AdFitter`,
+             :class:`.Surrogator`, :class:`.RBFmodel`)
            - select start point ``xStart``: either current-best ``xbest`` or random start (see :class:`.RandomStarter`)
-           - perform sequential optimization, starting from ``xStart``, subject to the ``nConstraint + 1`` constraints. Result is ``xNew = p2.opt_res['x']``
-           - evaluate ``xNew`` on the real functions +  (if ``EQU.active``) do :ref:`refine step <refineStep-label>`. Result is the updated :class:`.EvaluatorReal` object ``p2.ev1``
-           - calculate :ref:`p-effect <pEffect-label>` for onlinePLOG (see :meth:`.Surrogator.calcPEffect`)
-           - update cobra information: The new infill point ``xNew`` and its evaluation on the real functions is added to the ``cobra``'s arrays  ``A``, ``Fres``, ``Gres``
-           - update and save ``cobra``: data frames :ref:`df <df-label>`, :ref:`df2 <df2-label>`, elements ``sac_res['xbest', 'fbest', 'ibest']`` of  dict :ref:`cobra.sac_res <sacres-label>`
-           - adjust margins ``p2.EPS``, :math:`\\mu` (see :class:`.EQUoptions`), adjust  :math:`\\rho` (see :class:`.RBFoptions`) and ``p2.Cfeas``, ``p2.Cinfeas`` (see :meth:`phase2Funcs.adjustMargins`)
+           - perform sequential optimization, starting from ``xStart``, subject to the ``nConstraint + 1`` constraints.
+             Result is ``xNew = p2.opt_res['x']``
+           - evaluate ``xNew`` on the real functions +  (if ``EQU.active``) do :ref:`refine step <refineStep-label>`.
+             Result is the updated :class:`.EvaluatorReal` object ``p2.ev1``
+           - calculate :ref:`p-effect <pEffect-label>` for ``onlinePLOG`` (see :meth:`.Surrogator.calcPEffect`)
+           - update cobra information: The new infill point ``xNew`` and its evaluation on the real functions is added
+             to the ``cobra``'s arrays  ``A``, ``Fres``, ``Gres``
+           - update and save ``cobra``: data frames :ref:`df <df-label>`, :ref:`df2 <df2-label>`, elements
+             ``sac_res['xbest', 'fbest', 'ibest']`` of  dict :ref:`cobra.sac_res <sacres-label>`
+           - adjust margins ``p2.EPS``, :math:`\\mu` (see :class:`.EQUoptions`), adjust  :math:`\\rho`
+             (see :class:`.RBFoptions`) and ``p2.Cfeas``, ``p2.Cinfeas`` (see :meth:`phase2Funcs.adjustMargins`)
 
-        The result is a modified object ``cobra`` (detailed results in dict :ref:`sac_res <sacres-label>` and detailed diagnostic info in data frames :ref:`df <df-label>`, :ref:`df2 <df2-label>`). The
-        optimization results can be retrieved from ``cobra`` with methods :meth:`.get_fbest`, :meth:`.get_xbest`
-        and  :meth:`.get_xbest_cobra`.
+        The result is a modified object ``cobra`` (detailed results in dict :ref:`sac_res <sacres-label>` and detailed
+        diagnostic info in data frames :ref:`df <df-label>`, :ref:`df2 <df2-label>`). The optimization results can be
+        retrieved from ``cobra`` with methods :meth:`.get_fbest`, :meth:`.get_xbest` and  :meth:`.get_xbest_cobra`.
 
         :return: ``self``
         """
@@ -71,6 +81,7 @@ class CobraPhaseII:
         self.p2.currentMu = s_res['muVec'][0]
         first_pass = True
         final_gama = None
+
         while self.p2.num < s_opts.feval:
             self.p2.gama = s_opts.XI[(self.p2.globalOptCounter % s_opts.XI.size)]
             if final_gama is not None:      # final_gama is set at the end of while loop if s_opts.SEQ.finalEpsXiZero is
@@ -79,7 +90,10 @@ class CobraPhaseII:
             # TODO: MS (model-selection) part
 
             # train RBF surrogate models:
-            self.p2 = Surrogator.trainSurrogates(self.cobra, self.p2)
+            if s_opts.ISA.pEffectLogic == P_LOGIC.XNEW:
+                self.p2 = Surrogator.trainSurrogates(self.cobra, self.p2)
+            elif s_opts.ISA.pEffectLogic == P_LOGIC.MIDPTS:
+                self.p2 = Surrogator2.trainSurrogatesNew(self.cobra, self.p2)
 
             if first_pass:
                 # needed just for assertion check in testCOP.test_G06_R:
@@ -116,7 +130,14 @@ class CobraPhaseII:
             self.p2.ev1.update(xNew, self.cobra, self.p2, self.p2.currentMu)
 
             # calcPEffect (SACOBRA) for onlinePLOG
-            Surrogator.calcPEffect(self.p2, self.p2.ev1.xNew, self.p2.ev1.xNewEval)
+            if s_opts.ISA.pEffectLogic == P_LOGIC.XNEW:
+                if s_opts.ISA.pEff_DBG:
+                    A = self.cobra.for_rbf['A']
+                    xpeffect = (A[0, :] + A[1, :]) / 2
+                    xPeEval = self.cobra.sac_res['fn'](xpeffect)
+                    Surrogator.calcPEffect(self.p2, xpeffect, xPeEval)
+                else:
+                    Surrogator.calcPEffect(self.p2, self.p2.ev1.xNew, self.p2.ev1.xNewEval)
 
             # update cobra information (A, Fres, Gres and others)
             pf2.updateInfoAndCounters(self.cobra, self.p2)
@@ -125,7 +146,8 @@ class CobraPhaseII:
             # update and save cobra: data frames df, df2, keys xbest, fbest, ibest in sac_res
             updateSaveCobra(self.cobra, self.p2, self.p2.EPS, pf2.fitFuncPenalRBF, pf2.distRequirement)
 
-            # adjust margin self.p2.EPS, self.p2.currentMu, cobra.sac_opts.RBF.rho and adjust counters (self.p2.Cfeas, self.p2.Cinfeas):
+            # adjust margin self.p2.EPS, self.p2.currentMu, cobra.sac_opts.RBF.rho and adjust counters
+            # (self.p2.Cfeas, self.p2.Cinfeas):
             pf2.adjustMargins(self.cobra, self.p2)
 
             # TODO: [conditional] repairInfeasible
@@ -138,11 +160,13 @@ class CobraPhaseII:
                     final_gama = 0.0
                     # s_opts.EQU.refine = False
 
-            self.p2.time_init += self.p2.fitnessSurrogate.time_init
+            if not s_opts.ISA.pEffectLogic == P_LOGIC.MIDPTS:   # case MIDPTS needs no separate fitnessSurrogate
+                self.p2.time_init += self.p2.fitnessSurrogate.time_init
             self.p2.time_init += self.p2.fitnessSurrogate1.time_init
             self.p2.time_init += self.p2.fitnessSurrogate2.time_init
             self.p2.time_init += self.p2.constraintSurrogates.time_init
-            self.p2.time_call += self.p2.fitnessSurrogate.time_call
+            if not s_opts.ISA.pEffectLogic == P_LOGIC.MIDPTS:   # case MIDPTS needs no separate fitnessSurrogate
+                self.p2.time_call += self.p2.fitnessSurrogate.time_call
             self.p2.time_call += self.p2.fitnessSurrogate1.time_call
             self.p2.time_call += self.p2.fitnessSurrogate2.time_call
             self.p2.time_call += self.p2.constraintSurrogates.time_call
@@ -157,7 +181,7 @@ class CobraPhaseII:
         Return data frame ``cobra.df`` with the following elements, accessible with e.g. ``cobra.df['iter']``.
         Data frame ``cobra.df`` contains ``feval`` rows, one for each true function evaluation.
 
-        The contents of a specific row of ``cobra.df`` holds the results of a specific iteration, the *current* iteration:
+        The contents of a specific row of ``cobra.df`` holds the results of a specific iteration (*current* iteration):
 
         - **iter**: the iteration number
         - **y**: the objective function value at the current infill point

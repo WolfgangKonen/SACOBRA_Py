@@ -189,11 +189,11 @@ if __name__ == '__main__':
     one = OneS()
     # gnames = ["G01", "G02", "G03", "G04", "G05", "G06", "G07", "G08", "G09", "G10", "G11", "G12", "G13"]
     # dims   = [   -1,     2,     5,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1]
-    gnames = ["G03",]  #  "G08", "G09", "G10",
+    gnames = ["G09",]  #  "G08", "G09", "G10",
     dims   = [   10,]
     # gnames = ["G10", "G11", "G12", "G13"]
     # dims   = [   -1,    -1,    -1,    -1,]
-    df2 = one.one_s_multi_g_r(gnames, dims,3, 54, feval=300, conTol=0)       # conTol=0 | 1e-7
+    df2 = one.one_s_multi_g_r(gnames, dims,10, 54, feval=800, conTol=0)       # conTol=0 | 1e-7
     # init_df = one.multi_init(gnames, 54, feval=120)
     # one.df_analyze("df2_conTol0.0-fe500-G01-G13.feather", "df2_conTol1e-7-fe500-G01-G13.feather")
     # one.df_analyze("df2_conTol0.0-fe500-G01-G13.feather","df2_conTol1e-7-fe500-G01-G13.feather")

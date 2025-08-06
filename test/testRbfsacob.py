@@ -21,6 +21,9 @@ def fn(x):
 
 
 class TestRbfSacob(unittest.TestCase):
+    """
+    Test cases for class RBFsacob, the SACOBRA-internal implementation of RBF models
+    """
 
     def test_svd_inv(self):
         rng = np.random.default_rng()
@@ -50,7 +53,7 @@ class TestRbfSacob(unittest.TestCase):
         ngrid = 100
         for nobs in [10, 100]:       #
             for deg in [-1, 1, 2]:
-                self.val = 24  # setting for my_rng2
+                trm.val = 24  # setting for my_rng2
                 print(f"\n[test_func_fn] started with d = {d}, deg = {deg}, nobs = {nobs}")
                 xobs = trm.my_rng2(nobs, d)  # better than my_rng: avoids cycles
                 yobs = fn(xobs)
@@ -129,94 +132,98 @@ class TestRbfSacob(unittest.TestCase):
 
                 print("[test_func_fn passed]")
 
-    def solve_G06(self, cobraSeed, rbf_opt, feval=40, verbIter=10, conTol=0):        # conTol=0 | 1e-7
-        print(f"Starting solve_G06({cobraSeed}) ...")
-        G06 = GCOP("G06")
-
-        cobra = CobraInitializer(G06.x0, G06.fn, G06.name, G06.lower, G06.upper, G06.is_equ,
-                                 solu=G06.solu,
-                                 s_opts=SACoptions(verbose=verb, verboseIter=verbIter, feval=feval, cobraSeed=cobraSeed,
-                                                   ID=IDoptions(initDesign="RAND_REP", initDesPoints=6),
-                                                   RBF=rbf_opt,
-                                                   SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol)))
-
-        c2 = CobraPhaseII(cobra)
-        c2.start()
-
-        # show_error_plot(cobra, G06)
-
-        fin_err = np.array(cobra.get_fbest() - G06.fbest)
-        c2.p2.fin_err = fin_err
-        print(f"final err: {fin_err}")
-        # c2.p2.fe_thresh = 5e-6    # this is for s_opts.SEQ.finalEpsXiZero=False
-        c2.p2.fe_thresh = 5e-8      # this is for s_opts.SEQ.finalEpsXiZero=True and s_opts.SEQ.conTol=1e-7
-        c2.p2.dim = G06.dimension
-        c2.p2.conTol = conTol
-        return c2
-
-    def solve_G07(self, cobraSeed, rbf_opt, feval=180, verbIter=10, conTol=0):       # conTol=0 | 1e-7
-        print(f"Starting solve_G07({cobraSeed}) ...")
-        G07 = GCOP("G07")
-        idp = 11*12//2
-
-        cobra = CobraInitializer(G07.x0, G07.fn, G07.name, G07.lower, G07.upper, G07.is_equ,
-                                 solu=G07.solu,
-                                 s_opts=SACoptions(verbose=verb, verboseIter=verbIter, feval=feval, cobraSeed=cobraSeed,
-                                                   ID=IDoptions(initDesign="LHS", initDesPoints=idp),
-                                                   RBF=rbf_opt,
-                                                   SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol)))
-
-        c2 = CobraPhaseII(cobra).start()
-
-        fin_err = np.array(cobra.get_fbest() - G07.fbest)
-        c2.p2.fin_err = fin_err
-        print(f"final err: {fin_err}")
-        c2.p2.fe_thresh = 1e-9
-        c2.p2.dim = G07.dimension
-        c2.p2.conTol = conTol
-        return c2
-
-    def solve_G09(self, cobraSeed, rbf_opt, feval=500, verbIter=50, conTol=1e-7):        # conTol=0 | 1e-7
-        print(f"Starting solve_G09({cobraSeed}) ...")
-        G09 = GCOP("G09")
-        idp = 10*11//2
-        # G09.x0 = G09.solu + 0.01
-
-        cobra = CobraInitializer(G09.x0, G09.fn, G09.name, G09.lower, G09.upper, G09.is_equ,
-                                 solu=G09.solu,
-                                 s_opts=SACoptions(verbose=verb, verboseIter=verbIter, feval=feval, cobraSeed=cobraSeed,
-                                                   ID=IDoptions(initDesign="LHS", initDesPoints=idp),
-                                                   RBF=rbf_opt,
-                                                   SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol)))
-
-        c2 = CobraPhaseII(cobra).start()
-
-        fin_err = np.array(cobra.get_fbest() - G09.fbest)
-        c2.p2.fin_err = fin_err
-        print(f"final err: {fin_err}")
-        c2.p2.fe_thresh = 5e-02
-        c2.p2.dim = G09.dimension
-        print(G09.fbest)
-        print(cobra.get_fbest())
-        c2.p2.conTol = conTol
-        return c2
-
     def test_Gprob_RBF(self):
         """
         Test both RBF interpolators "scipy" and "sacobra" on different RBF problems (G06, G07 or G09) and measure mean
         error and total RBF model build (__init__) and total RBF predict (__call__) time.
         """
+
+        def solve_G06(cobraSeed, rbf_opt, feval=40, verbIter=10, conTol=0):  # conTol=0 | 1e-7
+            print(f"Starting solve_G06({cobraSeed}) ...")
+            G06 = GCOP("G06")
+
+            cobra = CobraInitializer(G06.x0, G06.fn, G06.name, G06.lower, G06.upper, G06.is_equ,
+                                     solu=G06.solu,
+                                     s_opts=SACoptions(verbose=verb, verboseIter=verbIter, feval=feval,
+                                                       cobraSeed=cobraSeed,
+                                                       ID=IDoptions(initDesign="RAND_REP", initDesPoints=6),
+                                                       RBF=rbf_opt,
+                                                       SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol)))
+
+            c2 = CobraPhaseII(cobra)
+            c2.start()
+
+            # show_error_plot(cobra, G06)
+
+            fin_err = np.array(cobra.get_fbest() - G06.fbest)
+            c2.p2.fin_err = fin_err
+            print(f"final err: {fin_err}")
+            # c2.p2.fe_thresh = 5e-6    # this is for s_opts.SEQ.finalEpsXiZero=False
+            c2.p2.fe_thresh = 5e-8  # this is for s_opts.SEQ.finalEpsXiZero=True and s_opts.SEQ.conTol=1e-7
+            c2.p2.dim = G06.dimension
+            c2.p2.conTol = conTol
+            return c2
+
+        def solve_G07(cobraSeed, rbf_opt, feval=180, verbIter=10, conTol=0):  # conTol=0 | 1e-7
+            print(f"Starting solve_G07({cobraSeed}) ...")
+            G07 = GCOP("G07")
+            idp = 11 * 12 // 2
+
+            cobra = CobraInitializer(G07.x0, G07.fn, G07.name, G07.lower, G07.upper, G07.is_equ,
+                                     solu=G07.solu,
+                                     s_opts=SACoptions(verbose=verb, verboseIter=verbIter, feval=feval,
+                                                       cobraSeed=cobraSeed,
+                                                       ID=IDoptions(initDesign="LHS", initDesPoints=idp),
+                                                       RBF=rbf_opt,
+                                                       SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol)))
+
+            c2 = CobraPhaseII(cobra).start()
+
+            fin_err = np.array(cobra.get_fbest() - G07.fbest)
+            c2.p2.fin_err = fin_err
+            print(f"final err: {fin_err}")
+            c2.p2.fe_thresh = 1e-9
+            c2.p2.dim = G07.dimension
+            c2.p2.conTol = conTol
+            return c2
+
+        def solve_G09(cobraSeed, rbf_opt, feval=500, verbIter=50, conTol=1e-7):  # conTol=0 | 1e-7
+            print(f"Starting solve_G09({cobraSeed}) ...")
+            G09 = GCOP("G09")
+            idp = 10 * 11 // 2
+            # G09.x0 = G09.solu + 0.01
+
+            cobra = CobraInitializer(G09.x0, G09.fn, G09.name, G09.lower, G09.upper, G09.is_equ,
+                                     solu=G09.solu,
+                                     s_opts=SACoptions(verbose=verb, verboseIter=verbIter, feval=feval,
+                                                       cobraSeed=cobraSeed,
+                                                       ID=IDoptions(initDesign="LHS", initDesPoints=idp),
+                                                       RBF=rbf_opt,
+                                                       SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol)))
+
+            c2 = CobraPhaseII(cobra).start()
+
+            fin_err = np.array(cobra.get_fbest() - G09.fbest)
+            c2.p2.fin_err = fin_err
+            print(f"final err: {fin_err}")
+            c2.p2.fe_thresh = 5e-02
+            c2.p2.dim = G09.dimension
+            print(G09.fbest)
+            print(cobra.get_fbest())
+            c2.p2.conTol = conTol
+            return c2
+
         cobraSeed=52
-        runs = 5
+        runs = 1
         errs = np.zeros((2,runs))
         time_init = np.zeros(2)
         time_call = np.zeros(2)
         for run in range(runs):
             for k, inter in enumerate(["scipy", "sacobra"]):
                 rbf_opt = RBFoptions(degree=2, interpolator=inter)
-                # c2 = self.solve_G06(cobraSeed+run, rbf_opt, feval=90, verbIter=100, conTol=0)
-                c2 = self.solve_G07(cobraSeed + run, rbf_opt, feval=200, verbIter=100, conTol=0)
-                # c2 = self.solve_G09(cobraSeed + run, rbf_opt, feval=200, verbIter=100, conTol=0)
+                # c2 = solve_G06(cobraSeed+run, rbf_opt, feval=90, verbIter=100, conTol=0)
+                c2 = solve_G07(cobraSeed + run, rbf_opt, feval=200, verbIter=100, conTol=0)
+                # c2 = solve_G09(cobraSeed + run, rbf_opt, feval=200, verbIter=100, conTol=0)
                 errs[k,run] = c2.p2.fin_err
                 time_init[k] += c2.p2.time_init
                 time_call[k] += c2.p2.time_call
@@ -228,6 +235,7 @@ class TestRbfSacob(unittest.TestCase):
         print(f"{time_init}    {time_init[1]/time_init[0]:.2f}")
         print("time_call [scipy, sacobra]")
         print(f"{time_call}    {time_call[1]/time_call[0]:.2f}")
+
 
 if __name__ == '__main__':
     unittest.main()

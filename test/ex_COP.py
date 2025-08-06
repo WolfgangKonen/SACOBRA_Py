@@ -283,7 +283,7 @@ class ExamCOP:
                                  s_opts=SACoptions(verbose=verb, verboseIter=verbIter, feval=feval, cobraSeed=cobraSeed,
                                                    ID=IDoptions(initDesign="LHS", initDesPoints=idp),
                                                    RBF=RBFoptions(degree=2),
-                                                   SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol)))
+                                                   SEQ=SEQoptions(finalEpsXiZero=True, trueFuncForSurrogates=False, conTol=conTol)))
 
         c2 = CobraPhaseII(cobra).start()
 

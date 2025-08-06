@@ -24,8 +24,9 @@ class RBFmodel:
           mdl = RBFmodel(xobs,yobs) # equivalent to trainCubicRBF
           yflat = mdl(xflat)        # apply the model to new observations xflat, with xflat.shape = [n,d]
 
-        It turns out that :class:`RBFsacob` is factor 20-50 slower in __init__ and factor 5-8 slower in __call__ than
-        SciPy's RBFInterpolator (see test/results_time_RBF.txt for details). But it has the extra option ``degree=1.5``.
+        It turns out that :class:`.RBFsacob` is factor 20-50 slower in ``__init__`` and factor 5-8 slower in ``__call__``
+        than `SciPy's RBFInterpolator <https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.RBFInterpolator.html>`_
+        (see ``test/results_time_RBF.txt`` for details). But it has the useful extra option ``degree=1.5``.
     """
     def __init__(self, xobs: np.ndarray, yobs: np.ndarray, interpolator="scipy",
                  kernel="cubic", degree: float = None, rho=0.0):

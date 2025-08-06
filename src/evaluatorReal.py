@@ -120,8 +120,8 @@ class EvaluatorReal:
         if self.CONSTRAINED:
             newPredC = p2.constraintSurrogates(self.xNew)
             self.predC = np.vstack((self.predC, newPredC))
-            newPredC = newPredC[0]    # why [0]? - constraintSurrogates returns a
-            # (1,nC)-matrix, but we want a (nc,)-vector here (nC = nConstraints)
+            newPredC = newPredC[0]    # why [0]? - constraintSurrogates returns a (1,nC)-matrix,
+                                      # but we want here a (nc,)-vector (nC = nConstraints)
 
         self.xNewEval = cobra.sac_res['fn'](self.xNew)
         # TODO later:
@@ -180,7 +180,7 @@ class EvaluatorReal:
 
             def myf(x, grad):
                 conR = p2.constraintSurrogates(x)[0]        # why [0]? - constraintSurrogates returns a (1,nC)-matrix,
-                                                            # but we want a (nC,)-vector here (nC = nConstraints)
+                                                            # but we want here a (nC,)-vector (nC = nConstraints)
                 return np.sum(concat(np.maximum(0, conR[self.ine_ind]) ** 2, conR[self.equ_ind] ** 2))
                 # return np.sum(conR[self.equ_ind] ** 2)     # deprecated
 

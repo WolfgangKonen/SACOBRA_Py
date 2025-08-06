@@ -114,11 +114,11 @@ def updateInfoAndCounters(cobra: CobraInitializer, p2: Phase2Vars, currentMu=0):
 # this separate module phase2Funcs.
 def adjustMargins(cobra: CobraInitializer, p2: Phase2Vars):
     """
-    Adjust margins ``p2.EPS``, :math:`\\mu =` ``p2.currentMu`` and :math:`\\rho =` ``cobra.sac_opts.RBF.rho``;
-    conditionally reset counters ``p2.Cfeas``, ``p2.Cinfeas``.
+    Adjust margins :math:`\\epsilon =` ``p2.EPS``, :math:`\\mu =` ``p2.currentMu`` and
+    :math:`\\rho =` ``cobra.sac_opts.RBF.rho``; conditionally reset counters ``p2.Cfeas``, ``p2.Cinfeas``.
 
     :param cobra:   SACOBRA settings and results
-    :param p2:      these members may be changed : EPS, currentMu, Cfeas, Cinfeas
+    :param p2:      these members may be changed : ``EPS``, ``currentMu``, ``Cfeas``, ``Cinfeas``
     """
     Tfeas = cobra.sac_opts.Tfeas
     Tinfeas = cobra.sac_opts.Tinfeas

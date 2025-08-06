@@ -1,4 +1,15 @@
 import numpy as np
+from enum import Enum
+
+
+class RSTYPE(Enum):
+    SIGMOID = 1
+    CONSTANT = 2
+
+
+class P_LOGIC(Enum):
+    XNEW = 1
+    MIDPTS = 2
 
 
 class ISAoptions:
@@ -12,7 +23,8 @@ class ISAoptions:
 
         :param isa_ver: ISA version number (was ``DOSAC`` in R)
         :param RS: flag to enable/disable random start algorithm
-        :param RStype: type of function to calculate probability to start the internal optimizer with a random start point. One out of ["CONSTANT", "SIGMOID"]
+        :param RStype: type of function to calculate probability to start the internal optimizer with a random start
+                       point. One out of [RSTYPE.CONSTANT, RSTYPE.SIGMOID]
         :param RSauto:
         :param RSmax: maximum probability of a random start
         :param RSmin: minimum probability of a random start
@@ -22,21 +34,27 @@ class ISAoptions:
         :param aDRC: flag for automatic DRC adjustment
         :param aFF: flag for automatic objective function transformation
         :param aCF: flag for automatic constraint function transformation
-        :param TFRange: threshold, if the range of ``Fres`` is larger than ``TFRange``, then apply automatic objective function transformation
-        :param TGR: threshold: ``GRatio > TGR``, then apply automatic constraint function transformation. ``GRatio`` is the ratio "largest GR / smallest GR" where GR is the min-max range of a specific constraint. If ``TGR < 1``, then the transformation is always performed.
+        :param TFRange: threshold, if the range of ``Fres`` is larger than ``TFRange`` and if ``onlinePLOG=False``,
+                    then apply plog to ``Fres`` (objective function values)
+        :param TGR: threshold: If ``GRatio > TGR``, then apply automatic constraint function transformation. ``GRatio``
+                    is the ratio "largest GR / smallest GR" where GR is the min-max range of a specific constraint.
+                    If ``TGR < 1``, then the transformation is always performed.
         :param conPLOG:
         :param conFitPLOG:
-        :param adaptivePLOG: (experimental) flag for objective function transformation with ``plog``, where the parameter ``pShift`` is adapted during iterations
+        :param adaptivePLOG: (experimental) flag for objective function transformation with ``plog``, where the
+                             parameter ``pShift`` is adapted during iterations
         :param onlinePLOG: flag for online decision marking whether to use plog or not according to p-effect
         :param onlineFreqPLOG: after how many iterations the online plog check is done again
-        :param pEffectInit:
+        :param pEffectInit: the initial value for ``pEffect``, needed for first pass through cobraPhaseII while loop in
+                    case ``pEffectLogic=P_LOGIC.XNEW``. Not needed in case ``pEffectLogic=P_LOGIC.MIDPTS``
+        :param pEffectLogic: logic for pEffect calculation. One out of [P_LOGIC.XNEW, P_LOGIC.MIDPTS]
         :param minMaxNormal:
         :param onlineMinMax:
     """
     def __init__(self,
                  isa_ver=1,
                  RS=True,
-                 RStype="CONSTANT",  # "CONSTANT",  "SIGMOID"
+                 RStype=RSTYPE.CONSTANT,  # .CONSTANT or .SIGMOID
                  RSauto=False,
                  RSmax=0.3,  #
                  RSmin=0.05,  #
@@ -54,6 +72,8 @@ class ISAoptions:
                  onlinePLOG=False,
                  onlineFreqPLOG=10,
                  pEffectInit=0,
+                 pEffectLogic=P_LOGIC.XNEW,
+                 pEff_DBG=False,
                  minMaxNormal=False,
                  onlineMinMax=False
                  ):
@@ -77,6 +97,8 @@ class ISAoptions:
         self.onlinePLOG = onlinePLOG
         self.onlineFreqPLOG = onlineFreqPLOG
         self.pEffectInit = pEffectInit
+        self.pEffectLogic = pEffectLogic
+        self.pEff_DBG = pEff_DBG
         self.minMaxNormal = minMaxNormal
         self.onlineMinMax = onlineMinMax
 
@@ -90,7 +112,7 @@ class ISAoptions0(ISAoptions):
     def __init__(self,
                  isa_ver=0,
                  RS=False,
-                 RStype="SIGMOID",  # "CONSTANT",  "SIGMOID"
+                 RStype=RSTYPE.CONSTANT,  # .CONSTANT or .SIGMOID
                  RSauto=False,
                  RSmax=0.3,  # maximum probability of a random start
                  RSmin=0.05,  # minimum probability of a random start
@@ -108,6 +130,8 @@ class ISAoptions0(ISAoptions):
                  onlinePLOG=False,
                  onlineFreqPLOG=10,
                  pEffectInit=0,
+                 pEffectLogic=P_LOGIC.XNEW,
+                 pEff_DBG=False,
                  minMaxNormal=False,
                  onlineMinMax=False
                  ):
@@ -132,6 +156,8 @@ class ISAoptions0(ISAoptions):
             onlinePLOG=onlinePLOG,
             onlineFreqPLOG=onlineFreqPLOG,
             pEffectInit=pEffectInit,
+            pEffectLogic=pEffectLogic,
+            pEff_DBG=pEff_DBG,
             minMaxNormal=minMaxNormal,
             onlineMinMax=onlineMinMax
         )
@@ -146,7 +172,7 @@ class ISAoptions2(ISAoptions):
     def __init__(self,
                  isa_ver=2,
                  RS=True,
-                 RStype="CONSTANT",  # "CONSTANT",  "SIGMOID"
+                 RStype=RSTYPE.CONSTANT,  # .CONSTANT or .SIGMOID
                  RSauto=True,
                  RSmax=0.3,  # maximum probability of a random start
                  RSmin=0.05,  # minimum probability of a random start
@@ -161,9 +187,11 @@ class ISAoptions2(ISAoptions):
                  conPLOG=False,
                  conFitPLOG=False,
                  adaptivePLOG=False,
-                 onlinePLOG=True,  # TODO:  there is a bug with True
+                 onlinePLOG=True,  # TODO: there is a bug with True and ISAoptions2
                  onlineFreqPLOG=10,
                  pEffectInit=3,
+                 pEffectLogic=P_LOGIC.XNEW,
+                 pEff_DBG=False,
                  minMaxNormal=False,
                  onlineMinMax=False
                  ):
@@ -188,6 +216,8 @@ class ISAoptions2(ISAoptions):
             onlinePLOG=onlinePLOG,
             onlineFreqPLOG=onlineFreqPLOG,
             pEffectInit=pEffectInit,
+            pEffectLogic=pEffectLogic,
+            pEff_DBG=pEff_DBG,
             minMaxNormal=minMaxNormal,
             onlineMinMax=onlineMinMax
         )

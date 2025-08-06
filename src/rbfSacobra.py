@@ -66,14 +66,14 @@ class RBFsacob:
                         larger ``rho``, the more approximating)
         :param width:   optional width parameter for Gaussian or MQ RBFs
 
-.. _degree_label:
+        .. _degree_label:
 
         Parameter ``degree`` controls whether RBF models are augmented with a polynomial tail. Allowed values:
 
         - 0 or -1: no polynomial tail
         - 1: linear polynomial tail
-        - 1.5: linear plus pure squares tail (e.g. x1*x1, x2*x2) (option ``squares`` in SACOBRA R)
-        - 2: linear plus quadratic polynomial tail (all monomials of degree 1 and 2)
+        - 1.5: linear plus **pure** squares tail (e.g. x1*x1, x2*x2) (option ``squares=T`` in R's SACOBRA)
+        - 2: linear plus quadratic polynomial tail (**all** monomials of degree 1 and 2)
 
         """
         self.xp = xobs
