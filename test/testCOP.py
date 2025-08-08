@@ -4,7 +4,7 @@ import numpy as np
 from cobraInit import CobraInitializer
 from gCOP import GCOP
 from cobraPhaseII import CobraPhaseII
-from opt.isaOptions import ISAoptions, P_LOGIC
+from opt.isaOptions import ISAoptions, O_LOGIC
 from opt.sacOptions import SACoptions
 from opt.idOptions import IDoptions
 from opt.rbfOptions import RBFoptions
@@ -45,36 +45,35 @@ class TestCOP(unittest.TestCase):
             - that ``A, Fres, Gres`` are the same in SACOBRA phase II (they differ because iteration path differs)
             - (as a consequence) that the final error is exactly the same
 
-            We test also the branch **onlinePLOG=True**: It seems that the switch ``pEff_DBG=True`` gives better
-            results. This switch uses *NOT* ``xNew`` in ``calcPEffect`` but the midpoint between ``A[0,:]`` and
+            We test also the branch **onlinePLOG=O_LOGIC.XNEW**: It seems that the switch ``pEff_DBG=True`` gives
+            better results. This switch uses *NOT* ``xNew`` in ``calcPEffect`` but the midpoint between ``A[0,:]`` and
             ``A[1,:]`` (more stable behavior in pEffect). What we test and find:
 
             - that the first ten values of ``pEffect`` are the same (or at least similar) as in R.
               (In case ``pEff_DBG=False`` this holds only for the first three or seven values.)
             - that the final error is similar in Python and in R (not the same, but similar with ``atol=1e-2``). The
-              combination ``onlinePLOG=pEff_DBG=True`` has the smallest final error 4e-3. The combination
-              ``onlinePLOG=True``, ``pEff_DBG=False`` has the largest final error 2e-1.
+              combination (``onlinePLOG=O_LOGIC.XNEW``, ``pEff_DBG=True``) has the smallest final error 4e-3. The
+              combination (``onlinePLOG=O_LOGIC.XNEW``, ``pEff_DBG=False``) has the largest final error 2e-1.
         """
-        for onlinePLOG in [True]:   #False,
+        for onlinePLOG in list(O_LOGIC):   #
             for pEff_DBG in [True]:  #False,
                 TestCOP.inner_test_G06_R(onlinePLOG, pEff_DBG)
 
     def test_G06_R_no_onlinePLOG(self):
-        TestCOP.inner_test_G06_R(False, False)
+        TestCOP.inner_test_G06_R(O_LOGIC.NONE, False)
 
     def test_G06_R_new_pEffect_midp(self):
-        TestCOP.inner_test_G06_R(True, False, pel = P_LOGIC.MIDPTS)
+        TestCOP.inner_test_G06_R(O_LOGIC.MIDPTS, False)
 
     @staticmethod
-    def inner_test_G06_R(opl, pdb, pel=P_LOGIC.XNEW):
+    def inner_test_G06_R(opl, pdb):
         G06 = GCOP("G06")
 
         cobra = CobraInitializer(G06.x0, G06.fn, G06.name, G06.lower, G06.upper, G06.is_equ,
                                  s_opts=SACoptions(verbose=verb, feval=40, cobraSeed=42,
                                                    ID=IDoptions(initDesign="RAND_REP", initDesPoints=5),
-                                                   # don't, the test fails if this is activated:
                                                    ISA=ISAoptions(onlinePLOG=opl, onlineFreqPLOG=1,
-                                                                  pEff_DBG=pdb, pEffectLogic=pel),
+                                                                  pEff_DBG=pdb),  # isa_ver=2, , pEffectLogic=pel
                                                    RBF=RBFoptions(degree=1),
                                                    SEQ=SEQoptions(finalEpsXiZero=True, conTol=0)))  # 1e-7
         # cobra.sac_opts.ISA.RS = False  # temp
@@ -101,7 +100,7 @@ class TestCOP(unittest.TestCase):
 
         # fp1: fitness surrogate at 'xbest + 1' in cobraPhaseII.py, first while loop pass
         # gp1: constraint surrogates at 'xbest + 1'
-        fp1_from_R = 203058.2 if cobra.sac_opts.ISA.onlinePLOG else 13.10047615
+        fp1_from_R = 203058.2 if cobra.sac_opts.ISA.onlinePLOG is not O_LOGIC.NONE else 13.10047615
         gp1_from_R = np.array([-5797.53931915, 5698.52931915])
         assert np.allclose(c2.p2.fp1, fp1_from_R)
         assert np.allclose(c2.p2.gp1, gp1_from_R)
@@ -114,8 +113,8 @@ class TestCOP(unittest.TestCase):
         pEffect1 = np.array(cobra.df2['pEffect'])[0:10]
         pEffect2 = np.array([float(np.log10(np.nanmedian(c2.p2.errRatio[0:i]))) for i in range(1, 10+1)])
         assert np.allclose(pEffect1, pEffect2)
-        if cobra.sac_opts.ISA.pEffectLogic == P_LOGIC.XNEW:
-            if cobra.sac_opts.ISA.onlinePLOG:
+        if cobra.sac_opts.ISA.onlinePLOG is not O_LOGIC.MIDPTS:
+            if cobra.sac_opts.ISA.onlinePLOG == O_LOGIC.XNEW:
                 if cobra.sac_opts.ISA.pEff_DBG:
                     pEffect_from_R = np.array([-0.4797520, -0.6504113, -0.9350294, -0.8891745, -0.8487078,
                                                -0.8482750, -0.8478426, -0.8477724, -0.8477022, -0.8475222])
@@ -127,7 +126,7 @@ class TestCOP(unittest.TestCase):
                     # on the iteration path, so that pEffect1 and pEffect_from_R differ up to 4e-1. But the first three
                     # values are very similar (differ by less than 1e-6):
                     assert np.allclose(pEffect1[0:3], pEffect_from_R[0:3], atol=1e-6)
-            else:
+            else:   # i.e. O_LOGIC.NONE
                 if cobra.sac_opts.ISA.pEff_DBG:
                     pEffect_from_R = np.array([-0.4797520, -0.5796741, -0.7096800, -0.7607614, -0.8186618,
                                                -0.8208656, -0.8230806, -0.8555640, -0.8906749, -0.8926831])
@@ -159,17 +158,19 @@ class TestCOP(unittest.TestCase):
         # print(cobra.df2)
         final_err = np.array(cobra.df.fBest - G06.fn(G06.solu)[0])[-1]
         print(f"final err: {final_err}")
-        if cobra.sac_opts.ISA.onlinePLOG:
-            if cobra.sac_opts.ISA.pEff_DBG or cobra.sac_opts.ISA.pEffectLogic == P_LOGIC.MIDPTS:
+        if cobra.sac_opts.ISA.onlinePLOG == O_LOGIC.XNEW:
+            if cobra.sac_opts.ISA.pEff_DBG:
                 final_err_from_R = 3.617988e-03
             else:
                 final_err_from_R = 2.320659e-01
-        else:
+        elif cobra.sac_opts.ISA.onlinePLOG == O_LOGIC.MIDPTS:
+            final_err_from_R = 3.617988e-03
+        else:    # i.e. O_LOGIC.NONE
             final_err_from_R = 1.391763e-02
-        print(f"final_err_from_R={final_err_from_R} (onlinePLOG={opl}, pEff_DBG={pdb}, degree=1, seed=42)")
+        print(f"final_err_from_R={final_err_from_R} (onlinePLOG={opl.name}, pEff_DBG={pdb}, degree=1, seed=42)")
         # the iteration path is different in R and Python --> final_err is only approximately the same:
         assert np.allclose(final_err, final_err_from_R, atol=1e-2)
-        print(f"[test_G06_R] all assertions passed (onlinePLOG={opl}, pEff_DBG={pdb}, degree=1, seed=42)")
+        print(f"[test_G06_R] all assertions passed (onlinePLOG={opl.name}, pEff_DBG={pdb}, degree=1, seed=42)")
         dummy = 0
 
     def test_G06(self):

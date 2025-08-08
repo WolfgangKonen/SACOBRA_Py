@@ -6,14 +6,14 @@ from seqOptimizer import SeqFuncFactory
 from cobraPhaseII import CobraPhaseII
 from innerFuncs import plog, plogReverse
 from rescaleWrapper import RescaleWrapper
-from surrogator import Surrogator
+from surrogator1 import Surrogator1
 # from trainSurrogates import trainSurrogates, calcPEffect
 from opt.sacOptions import SACoptions
 from opt.idOptions import IDoptions
-from opt.isaOptions import ISAoptions, RSTYPE
+from opt.isaOptions import ISAoptions, RSTYPE, O_LOGIC
 from opt.seqOptions import SEQoptions
 
-verb = 1
+verb = 2
 
 
 def fn(x):
@@ -35,7 +35,7 @@ class TestPhaseII(unittest.TestCase):
         print("[test_plog passed]")
 
     def test_train_surr(self):
-        """ Test whether ``Surrogator.trainSurrogates`` works as expected:
+        """ Test whether ``Surrogator1.trainSurrogates`` works as expected:
 
             - whether results from ``adFit`` are numerically equivalent to R (see ``demo-trainSurr.R``) for three
               different fitness function ranges (``fnfac = [1, 10, 100]``)
@@ -62,11 +62,11 @@ class TestPhaseII(unittest.TestCase):
             cobra = CobraInitializer(x0, fn, "fName", lower, upper, is_equ,
                                      s_opts=SACoptions(verbose=verb, feval=2*nobs,
                                                        ID=IDoptions(initDesign="RAND_R", initDesPoints=idp),
-                                                       ISA=ISAoptions(TFRange=500)))
+                                                       ISA=ISAoptions(TFRange=500)))    # , onlinePLOG=O_LOGIC.MIDPTS
             c2 = CobraPhaseII(cobra)
             p2 = c2.get_p2()
 
-            Surrogator.trainSurrogates(cobra, p2)
+            Surrogator1.trainSurrogates(cobra, p2)
 
             fr_bef = p2.adFit.get_FRange_before()
             fr_aft = p2.adFit.get_FRange_after()
@@ -107,7 +107,7 @@ class TestPhaseII(unittest.TestCase):
                 xNew = xflat[i, :]
                 xNewEval = fn(xNew)
                 # print(i, p2.fitnessSurrogate1(xNew), p2.fitnessSurrogate2(xNew))
-                Surrogator.calcPEffect(p2, xNew, xNewEval)
+                Surrogator1.calcPEffect(p2, xNew, xNewEval)
                 dummy = 0
             # print(p2.errRatio)
             assert np.allclose(p2.errRatio, errRatio_from_R, rtol=1e-5), \
@@ -193,7 +193,7 @@ class TestPhaseII(unittest.TestCase):
         c2 = CobraPhaseII(cobra)
         p2 = c2.get_p2()
 
-        Surrogator.trainSurrogates(cobra, p2)
+        Surrogator1.trainSurrogates(cobra, p2)
 
         for ro in [0.5, 1]:
             p2.ro = ro

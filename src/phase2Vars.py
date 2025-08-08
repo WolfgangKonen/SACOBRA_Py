@@ -39,7 +39,7 @@ class Phase2Vars:
         self.err2 = np.array([], dtype=np.float64)
         self.errRatio = None
         self.noProgressCount = 0
-        self.adFit = None       # class object, will be set in surrogator.py
+        self.adFit = None       # class object, will be set in surrogator1.py
         self.printP = True
         self.write_XI = True
         self.rs_done = None     # bool to indicate whether random_start was done (randomStarter.py)

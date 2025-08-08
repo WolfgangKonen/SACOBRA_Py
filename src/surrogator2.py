@@ -3,7 +3,7 @@ import numpy as np
 from typing import Union
 # need to specify SACOBRA_Py.src as source folder in File - Settings - Project Structure,
 # then the following import statements will work:
-from surrogator import Surrogator   # for AdFitter
+from surrogator1 import Surrogator1   # for AdFitter
 from cobraInit import CobraInitializer
 from cobraPhaseII import Phase2Vars
 from innerFuncs import verboseprint, plog, plogReverse
@@ -14,18 +14,29 @@ from rbfModel import RBFmodel
 class Surrogator2:
 
     @staticmethod
-    def comp_midpoints(A: np.ndarray, idp: Union[int, None]) -> np.ndarray:
+    def comp_midpoints(A: np.ndarray, pts: Union[int, None]) -> np.ndarray:
+        """
+            Take the first ``pts`` points from initial design matrix ``A`` and calculate the midpoints of all pairs
+
+            :param A: initial design matrix
+            :param pts: will be clipped  if larger than ``ID.initDesPoints``. If ``None`` use this value as well.
+            :return: the midpoint matrix ``midp``
+        """
         assert A.ndim == 2
-        nrow = A.shape[0]
-        if idp is None:
-            idp = nrow
-        kmax = idp*(idp-1)//2
+        idp = A.shape[0]       # ID.initDesPoints
+        if pts is None:
+            pts = idp
+        pts = min(pts, idp)    # clip pts if it demands more points than ID.initDesPoints
+        # a sanity check, should not happen:
+        assert pts > 1, f"[comp_midpoints] pts={pts} is not > 1 --> cannot form any pair"
+        kmax = pts*(pts-1)//2
         midp = np.zeros((kmax, A.shape[1]))
         k = 0
-        for i in range(nrow):
-            for j in range(i+1,nrow):
+        for i in range(pts):
+            for j in range(i+1,pts):
                 assert k < kmax
                 midp[k, :] = (A[i, :] + A[j, :])/2.0
+                k = k + 1
         return midp
 
     @staticmethod
@@ -39,14 +50,15 @@ class Surrogator2:
     @staticmethod
     def calcPEffectNew(p2: Phase2Vars, midp: np.ndarray, midpEval: np.ndarray):
         """
-            Calculates the :ref:`p-effect <pEffect-label>` in variable ``p2.pEffect``.
+            Calculates the :ref:`p-effect <pEffect-label>` in variable ``p2.pEffect`` with method described in
+            :ref:`Details for onlinePLOG <detail_onlinePLOG-label>`, case **O_LOGIC.MIDPTS**.
 
             Let ``opl = s_opts.ISA.onlinePLOG``.
 
-            In case ``opl=True``, class :class:`.AdFitter` will
+            In case ``opl != NONE``, class :class:`.AdFitter` will
             apply plog to ``Fres`` if ``p2.pEffect`` > 0, else ``Fres`` is used directly.
 
-            In case ``opl=False``, ``p2.pEffect`` is irrelevant.
+            In case ``opl == NONE``, ``p2.pEffect`` is irrelevant.
 
             :param p2:      needs  ``p2.fitnessSurrogate1`` and  ``p2.fitnessSurrogate2`` on input and
                             changes ``p2.err1``, ``p2.err2``, ``p2.errRatio`` and ``p2.pEffect`` on output
@@ -82,14 +94,14 @@ class Surrogator2:
         p2.pEffect = np.log10(z)
 
     @staticmethod
-    def trainSurrogatesNew(cobra: CobraInitializer, p2: Phase2Vars):
+    def trainSurrogates(cobra: CobraInitializer, p2: Phase2Vars) -> Phase2Vars:
         """
-        Train surrogate models  ``p2.fitnessSurrogate``, ``p2.constraintSurrogates``.
+            Train surrogate models  ``p2.fitnessSurrogate``, ``p2.constraintSurrogates``, ``p2.fitnessSurrogate1``, ``p2.fitnessSurrogate2``.
 
-        :param cobra:
-        :param p2:
-        :return: p2
-        :rtype: Phase2Vars
+            :param cobra:
+            :param p2:
+            :return: p2
+            :rtype: Phase2Vars
         """
         s_opts = cobra.get_sac_opts()
         s_res = cobra.get_sac_res()
@@ -104,7 +116,7 @@ class Surrogator2:
 
         recalc_fit12 = True
         if recalc_fit12:
-            # two models are built after every onlineFreqPLOG iterations:
+            # two models are built in every iteration:
             Fres1 = cobra.for_rbf['Fres']
             Fres2 = plog(cobra.for_rbf['Fres'])
             p2.fitnessSurrogate1 = RBFmodel(A, Fres1, interpolator=s_opts.RBF.interpolator,
@@ -114,14 +126,15 @@ class Surrogator2:
                                             kernel=s_opts.RBF.model,
                                             degree=s_opts.RBF.degree, rho=s_opts.RBF.rho)
 
-        if p2.midpts is None:   # i.e. on first pass through cobraPhaseII while loop
-            npts = 3
-            p2.midpts = Surrogator2.comp_midpoints(cobra.for_rbf['A'], npts)
+        if p2.midpts is None:   # i.e. on first pass through cobraPhaseII while loop:
+            # calculate the midpoints for pEffect
+            p2.midpts = Surrogator2.comp_midpoints(cobra.for_rbf['A'],
+                                                   s_opts.ISA.pEff_npts)
             p2.midptsEval = Surrogator2.comp_midp_eval(cobra, p2.midpts)
 
         Surrogator2.calcPEffectNew(p2, p2.midpts, p2.midptsEval)    # calculates p2.pEffect
 
-        p2.adFit = Surrogator.AdFitter(cobra, p2, cobra.for_rbf['Fres'].copy())     # appends to p2.PLOG
+        p2.adFit = Surrogator1.AdFitter(cobra, p2, cobra.for_rbf['Fres'].copy())     # appends to p2.PLOG
         Fres = p2.adFit()   # the __call__ method returns p2.adfit.surrogateInput, a potentially plog-transformed Fres
 
         #   if(cobra$TFlag){

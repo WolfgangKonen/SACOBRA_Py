@@ -7,7 +7,8 @@ class RSTYPE(Enum):
     CONSTANT = 2
 
 
-class P_LOGIC(Enum):
+class O_LOGIC(Enum):
+    NONE = 0
     XNEW = 1
     MIDPTS = 2
 
@@ -34,7 +35,7 @@ class ISAoptions:
         :param aDRC: flag for automatic DRC adjustment
         :param aFF: flag for automatic objective function transformation
         :param aCF: flag for automatic constraint function transformation
-        :param TFRange: threshold, if the range of ``Fres`` is larger than ``TFRange`` and if ``onlinePLOG=False``,
+        :param TFRange: threshold, if the range of ``Fres`` is larger than ``TFRange`` and if ``onlinePLOG=NONE``,
                     then apply plog to ``Fres`` (objective function values)
         :param TGR: threshold: If ``GRatio > TGR``, then apply automatic constraint function transformation. ``GRatio``
                     is the ratio "largest GR / smallest GR" where GR is the min-max range of a specific constraint.
@@ -43,14 +44,19 @@ class ISAoptions:
         :param conFitPLOG:
         :param adaptivePLOG: (experimental) flag for objective function transformation with ``plog``, where the
                              parameter ``pShift`` is adapted during iterations
-        :param onlinePLOG: flag for online decision marking whether to use plog or not according to p-effect
+        :param onlinePLOG: three-valued logic for online decision-making: O_LOGIC.NONE (no online, only fixed initial
+                    decision whether to use plog); O_LOGIC.XNEW (online plog decision according to pEffect and
+                    pEffect-calculation is based on new infill point ``xNew``); O_LOGIC.MIDPTS (online plog decision
+                    according to pEffect and pEffect-calculation is based on midpoints)
         :param onlineFreqPLOG: after how many iterations the online plog check is done again
         :param pEffectInit: the initial value for ``pEffect``, needed for first pass through cobraPhaseII while loop in
-                    case ``pEffectLogic=P_LOGIC.XNEW``. Not needed in case ``pEffectLogic=P_LOGIC.MIDPTS``
-        :param pEffectLogic: logic for pEffect calculation. One out of [P_LOGIC.XNEW, P_LOGIC.MIDPTS]
+                    case ``O_LOGIC.XNEW``. Not needed in cases  ``O_LOGIC.NONE`` or ``O_LOGIC.MIDPTS``
+        :param pEff_npts: the number p of initial design points to take from initial design matrix ``A`` to form
+                    p*(p-1)/2 pairs and calculate pair midpoints for case ``O_LOGIC.MIDPTS``
         :param minMaxNormal:
         :param onlineMinMax:
     """
+    # obsolete:   :param pEffectLogic: logic for pEffect calculation. One out of [O_LOGIC.XNEW, O_LOGIC.MIDPTS]
     def __init__(self,
                  isa_ver=1,
                  RS=True,
@@ -69,10 +75,10 @@ class ISAoptions:
                  conPLOG=False,
                  conFitPLOG=False,
                  adaptivePLOG=False,
-                 onlinePLOG=False,
+                 onlinePLOG=O_LOGIC.NONE,
                  onlineFreqPLOG=10,
                  pEffectInit=0,
-                 pEffectLogic=P_LOGIC.XNEW,
+                 pEff_npts=3,
                  pEff_DBG=False,
                  minMaxNormal=False,
                  onlineMinMax=False
@@ -97,7 +103,7 @@ class ISAoptions:
         self.onlinePLOG = onlinePLOG
         self.onlineFreqPLOG = onlineFreqPLOG
         self.pEffectInit = pEffectInit
-        self.pEffectLogic = pEffectLogic
+        self.pEff_npts = pEff_npts
         self.pEff_DBG = pEff_DBG
         self.minMaxNormal = minMaxNormal
         self.onlineMinMax = onlineMinMax
@@ -127,10 +133,10 @@ class ISAoptions0(ISAoptions):
                  conPLOG=False,
                  conFitPLOG=False,
                  adaptivePLOG=False,
-                 onlinePLOG=False,
+                 onlinePLOG=O_LOGIC.NONE,
                  onlineFreqPLOG=10,
                  pEffectInit=0,
-                 pEffectLogic=P_LOGIC.XNEW,
+                 pEff_npts=3,
                  pEff_DBG=False,
                  minMaxNormal=False,
                  onlineMinMax=False
@@ -156,7 +162,7 @@ class ISAoptions0(ISAoptions):
             onlinePLOG=onlinePLOG,
             onlineFreqPLOG=onlineFreqPLOG,
             pEffectInit=pEffectInit,
-            pEffectLogic=pEffectLogic,
+            pEff_npts=pEff_npts,
             pEff_DBG=pEff_DBG,
             minMaxNormal=minMaxNormal,
             onlineMinMax=onlineMinMax
@@ -187,10 +193,10 @@ class ISAoptions2(ISAoptions):
                  conPLOG=False,
                  conFitPLOG=False,
                  adaptivePLOG=False,
-                 onlinePLOG=True,  # TODO: there is a bug with True and ISAoptions2
+                 onlinePLOG=O_LOGIC.NONE,  # TODO: there is a bug with onlinePLOG and ISAoptions2
                  onlineFreqPLOG=10,
                  pEffectInit=3,
-                 pEffectLogic=P_LOGIC.XNEW,
+                 pEff_npts=3,
                  pEff_DBG=False,
                  minMaxNormal=False,
                  onlineMinMax=False
@@ -216,7 +222,7 @@ class ISAoptions2(ISAoptions):
             onlinePLOG=onlinePLOG,
             onlineFreqPLOG=onlineFreqPLOG,
             pEffectInit=pEffectInit,
-            pEffectLogic=pEffectLogic,
+            pEff_npts=pEff_npts,
             pEff_DBG=pEff_DBG,
             minMaxNormal=minMaxNormal,
             onlineMinMax=onlineMinMax

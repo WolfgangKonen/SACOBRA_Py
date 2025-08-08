@@ -2,11 +2,12 @@ import pandas as pd
 # need to specify SACOBRA_Py.src as source folder in File - Settings - Project Structure,
 # then the following import statements will work:
 from cobraInit import CobraInitializer
-from opt.isaOptions import P_LOGIC
+from opt.isaOptions import O_LOGIC
 from phase2Vars import Phase2Vars
 import phase2Funcs as pf2
 from randomStarter import RandomStarter
 from surrogator import Surrogator
+from surrogator1 import Surrogator1
 from seqOptimizer import SeqOptimizer, check_if_cobra_optimizable
 from evaluatorReal import EvaluatorReal
 from surrogator2 import Surrogator2
@@ -54,14 +55,14 @@ class CobraPhaseII:
 
            - select cyclically an element ``p2.ro`` from :ref:`DRC <DRC-label>` ``XI``. Add the appropriate
              DRC-constraint as extra constraint to the set of constraints
-           - train RBF surrogate models on the current set of infill points (see :class:`.Surrogator.AdFitter`,
-             :class:`.Surrogator`, :class:`.RBFmodel`)
+           - train RBF surrogate models on the current set of infill points (see :class:`.Surrogator1.AdFitter`,
+             :class:`.Surrogator1`, :class:`.Surrogator2`, :class:`.RBFmodel`)
            - select start point ``xStart``: either current-best ``xbest`` or random start (see :class:`.RandomStarter`)
            - perform sequential optimization, starting from ``xStart``, subject to the ``nConstraint + 1`` constraints.
              Result is ``xNew = p2.opt_res['x']``
            - evaluate ``xNew`` on the real functions +  (if ``EQU.active``) do :ref:`refine step <refineStep-label>`.
              Result is the updated :class:`.EvaluatorReal` object ``p2.ev1``
-           - calculate :ref:`p-effect <pEffect-label>` for ``onlinePLOG`` (see :meth:`.Surrogator.calcPEffect`)
+           - calculate :ref:`p-effect <pEffect-label>` for ``onlinePLOG`` (see :meth:`.Surrogator1.calcPEffect`)
            - update cobra information: The new infill point ``xNew`` and its evaluation on the real functions is added
              to the ``cobra``'s arrays  ``A``, ``Fres``, ``Gres``
            - update and save ``cobra``: data frames :ref:`df <df-label>`, :ref:`df2 <df2-label>`, elements
@@ -90,10 +91,7 @@ class CobraPhaseII:
             # TODO: MS (model-selection) part
 
             # train RBF surrogate models:
-            if s_opts.ISA.pEffectLogic == P_LOGIC.XNEW:
-                self.p2 = Surrogator.trainSurrogates(self.cobra, self.p2)
-            elif s_opts.ISA.pEffectLogic == P_LOGIC.MIDPTS:
-                self.p2 = Surrogator2.trainSurrogatesNew(self.cobra, self.p2)
+            self.p2 = Surrogator.trainSurrogates(self.cobra, self.p2)
 
             if first_pass:
                 # needed just for assertion check in testCOP.test_G06_R:
@@ -130,14 +128,14 @@ class CobraPhaseII:
             self.p2.ev1.update(xNew, self.cobra, self.p2, self.p2.currentMu)
 
             # calcPEffect (SACOBRA) for onlinePLOG
-            if s_opts.ISA.pEffectLogic == P_LOGIC.XNEW:
-                if s_opts.ISA.pEff_DBG:
+            if s_opts.ISA.onlinePLOG is not O_LOGIC.MIDPTS:
+                if s_opts.ISA.pEff_DBG:    # temporary debug: replace xNew with a single midpoint
                     A = self.cobra.for_rbf['A']
                     xpeffect = (A[0, :] + A[1, :]) / 2
                     xPeEval = self.cobra.sac_res['fn'](xpeffect)
-                    Surrogator.calcPEffect(self.p2, xpeffect, xPeEval)
+                    Surrogator1.calcPEffect(self.p2, xpeffect, xPeEval)
                 else:
-                    Surrogator.calcPEffect(self.p2, self.p2.ev1.xNew, self.p2.ev1.xNewEval)
+                    Surrogator1.calcPEffect(self.p2, self.p2.ev1.xNew, self.p2.ev1.xNewEval)
 
             # update cobra information (A, Fres, Gres and others)
             pf2.updateInfoAndCounters(self.cobra, self.p2)
@@ -160,12 +158,12 @@ class CobraPhaseII:
                     final_gama = 0.0
                     # s_opts.EQU.refine = False
 
-            if not s_opts.ISA.pEffectLogic == P_LOGIC.MIDPTS:   # case MIDPTS needs no separate fitnessSurrogate
+            if not s_opts.ISA.onlinePLOG == O_LOGIC.MIDPTS:   # case MIDPTS needs no separate fitnessSurrogate
                 self.p2.time_init += self.p2.fitnessSurrogate.time_init
             self.p2.time_init += self.p2.fitnessSurrogate1.time_init
             self.p2.time_init += self.p2.fitnessSurrogate2.time_init
             self.p2.time_init += self.p2.constraintSurrogates.time_init
-            if not s_opts.ISA.pEffectLogic == P_LOGIC.MIDPTS:   # case MIDPTS needs no separate fitnessSurrogate
+            if not s_opts.ISA.onlinePLOG == O_LOGIC.MIDPTS:   # case MIDPTS needs no separate fitnessSurrogate
                 self.p2.time_call += self.p2.fitnessSurrogate.time_call
             self.p2.time_call += self.p2.fitnessSurrogate1.time_call
             self.p2.time_call += self.p2.fitnessSurrogate2.time_call
