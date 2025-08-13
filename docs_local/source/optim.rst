@@ -2,7 +2,8 @@
 Optimization
 ------------
 
-This chapter gives an overview over the optimization process.
+This chapter gives an overview over the optimization process. SACOBRA's optimization process consists of two phases
+Phase I and Phase II, where Phase I is optional.
 
 Phase I
 -------
@@ -89,19 +90,25 @@ new decision number
 
 .. raw:: latex html
 
-    \[ p_k =      \left\{ \frac{\sum_{\ell=1}^P{\left\| M_f(\vec{m}_{\ell})-f(\vec{x}_{\ell})\right\|} }
+    \[ p_k =      \left\{ \frac{\sum_{\ell=1}^P{\left\| M_f(\vec{m}_{\ell})-f(\vec{m}_{\ell})\right\|} }
                                {\sum_{\ell=1}^P{\left\| plog^{-1}\left(M_p(\vec{m}_{\ell})\right)-f(\vec{m}_{\ell})\right\|} }
                   \right\}	\]`
 
-is more robust because it is based on many points, the midpoints are usually not close to trained points and if a
-single midpoint :math:`\vec{m}_{\ell}` happens to be close to trained points (and has small errors), then this will not
-change the new error ratio :math:`p_k` very much, because numerator and denominator are now **sums** of errors.
+is more robust because it is based on many points :math:`\vec{m}_{\ell}`. These midpoints are usually not close to
+trained points and if a single midpoint :math:`\vec{m}_{\ell}` happens to be close to trained points (and has small
+errors), then this will not change the new error ratio :math:`p_k` very much, because numerator and denominator are
+now **sums** of errors. The calculation of :math:`p_\text{eff}` from  :math:`p_k` proceeds in the same way as described
+in :ref:`The p-Effect <pEffect-label>`.
+
+
+The calculation of the new ratio :math:`p_k` and the emerging  :math:`p_\text{eff}` is done in :meth:`.Surrogator2.calcPEffectNew`.
 
 A third option is ``ISA.onlinePLOG =`` **O_LOGIC.NONE** (no online plog).
 In this case we do **not** decide online about :math:`plog()` but instead make a decision once after initial design and keep this decision for all iterations. The
-decision is based on the min-max range of ``Fres``, the objective values after initial design, which is compared with
+decision is based on the min-max range of ``Fres`` after initial design, which is compared with
 threshold ``ISA.TFRange``. If larger than threshold, apply :math:`plog()` to :math:`f()`; if smaller than threshold, use
 the unsquashed :math:`f()`.
+
 
 
 .. _refineStep-label:

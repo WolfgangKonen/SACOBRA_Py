@@ -16,7 +16,7 @@ class RBFoptions:
         :param interpolator: "scipy" or "sacobra", which interpolation method to use. In case of "scipy", use
          `SciPy's RBFInterpolator <https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.RBFInterpolator.html>`_
          (faster and simpler in code). In case of  "sacobra", use an object of class :class:`.RBFsacob`, which is
-         SACOBRA's own implementation of RBF models (allows with `degree=1.5`` the option equivalent to ``squares=T``
+         SACOBRA's own implementation of RBF models (allows with `degree=1.5` the option equivalent to ``squares=T``
          in SACOBRA R, which means only pure squares in the polynomial tail).
     """
     def __init__(self,

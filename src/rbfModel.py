@@ -34,7 +34,7 @@ class RBFmodel:
         Create RBF model(s) from observations ``(xobs,yobs)``. Shape m of ``yobs`` controls whether one RBF
         model (m=1) or several RBF models (m>1) are formed.
 
-        :param xobs:    (n x d)-matrix of n d-dimensional vectors :math:`\\vec{x}_i,\, i=0,...,n-1`
+        :param xobs:    (n x d)-matrix of n d-dimensional vectors :math:`\\vec{x}_i,\\, i=0,...,n-1`
         :param yobs:    vector of shape (n,) with observations :math:`f(\\vec{x}_i)` - or -
                         matrix of shape (n,m) with observations :math:`f_j(\\vec{x}_i)` for :math:`m` functions :math:`f_j,\, j=0,...,m-1`
         :param interpolator: "scipy" or "sacobra", which interpolation method to use. See :class:`.RBFoptions`.
@@ -61,6 +61,7 @@ class RBFmodel:
             # where a new infill point is added in updateInfoAndCounters ONLY if min(xNewDist), the minimum distance
             # of the new infill points to all rows of cobra.for_rbf['A'] is greater than 0.
             print("[RBFmodel] LinAlgError --> probably identical points in rows of xobs")
+            dummy = 1
         self.time_init = time.perf_counter() - start
         self.time_call = 0.0
 

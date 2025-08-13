@@ -12,6 +12,9 @@ from rbfModel import RBFmodel
 
 # Note: this class with three static elements is here just to bundle these elements for the documentation
 class Surrogator1:
+    """
+        This class calculates the surrogate models in case ``ISA.onlinePLOG =`` **O_LOGIC.XNEW**.
+    """
 
     @staticmethod
     class AdFitter:

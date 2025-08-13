@@ -12,6 +12,9 @@ from rbfModel import RBFmodel
 
 # Note: this class with three static elements is here just to bundle these elements for the documentation
 class Surrogator2:
+    """
+        This class calculates the surrogate models in case ``ISA.onlinePLOG =`` **O_LOGIC.MIDPTS**.
+    """
 
     @staticmethod
     def comp_midpoints(A: np.ndarray, pts: Union[int, None]) -> np.ndarray:
@@ -86,8 +89,8 @@ class Surrogator2:
 
         # due to regularization with nu, the following three assertions should never fire. They are in here only
         # as sanity check:
-        assert not np.isinf(newErr2), f"[calcPEffect] newErr2={newErr2} is infinity"
         assert not np.isinf(newErr1), f"[calcPEffect] newErr1={newErr1} is infinity"
+        assert not np.isinf(newErr2), f"[calcPEffect] newErr2={newErr2} is infinity"
 
         z = np.nanmedian(p2.errRatio)       # nanmedian: compute median while ignoring NaNs
         assert z > 0, f"[calcPEffect] z={z} is <= 0"

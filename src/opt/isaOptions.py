@@ -35,8 +35,8 @@ class ISAoptions:
         :param aDRC: flag for automatic DRC adjustment
         :param aFF: flag for automatic objective function transformation
         :param aCF: flag for automatic constraint function transformation
-        :param TFRange: threshold, if the range of ``Fres`` is larger than ``TFRange`` and if ``onlinePLOG=NONE``,
-                    then apply plog to ``Fres`` (objective function values)
+        :param TFRange: threshold, if the min-max-range of ``Fres[0:idp]`` is larger than ``TFRange`` and if
+                    ``onlinePLOG=NONE``, then apply plog to ``Fres`` (objective function values)
         :param TGR: threshold: If ``GRatio > TGR``, then apply automatic constraint function transformation. ``GRatio``
                     is the ratio "largest GR / smallest GR" where GR is the min-max range of a specific constraint.
                     If ``TGR < 1``, then the transformation is always performed.

@@ -54,9 +54,12 @@ def plogReverse(y, pShift=0.0):
     :param pShift:  optional shift
     :return:    np.sign(y) * (np.exp(|y|) - 1) + pShift
     """
-    if isinstance(y, float):   # bug fix 2025/06/24:
-        if y > 709:            # avoid 'RuntimeWarning: overflow encountered in exp' (G02 with dim=10)
-            return np.sign(y) * np.inf + pShift
+    if True:    # isinstance(y, float):
+                                        # bug fix 2025/06/24:
+        if np.abs(y) > 709:             # avoid 'RuntimeWarning: overflow encountered in exp' (G02 with dim=10)
+            # print(f"[plogReverse] Warning: clipping too large y={y} to np.sign(y)*(np.exp(700) - 1)")
+            return np.sign(y) * (np.exp(700) - 1) + pShift
+            # return np.sign(y) * np.inf + pShift
     return np.sign(y) * (np.exp(np.abs(y)) - 1) + pShift
     # /WK/2025/03/06: bug fix for negative y
 

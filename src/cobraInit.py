@@ -353,7 +353,7 @@ class CobraInitializer:
             print(f"FR={FRange} is large, XI is set to Short DRC")
         else:
             DRC = DRCL
-            print(f"FR={FRange} is large, XI is set to Long DRC")
+            print(f"FR={FRange} is small, XI is set to Long DRC")
         return DRC
 
     def adCon(self):

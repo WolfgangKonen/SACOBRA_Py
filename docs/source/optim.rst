@@ -2,7 +2,8 @@
 Optimization
 ------------
 
-This chapter gives an overview over the optimization process.
+This chapter gives an overview over the optimization process. SACOBRA's optimization process consists of two phases
+Phase I and Phase II, where Phase I is optional.
 
 Phase I
 -------
@@ -45,11 +46,11 @@ is a strictly monotonic squashing function, where
 
 Given the set :math:`S` of already evaluated points in input space and given :math:`M_f, M_p` as the surrogate models
 for :math:`f(), plog(f())` when using all points in :math:`S`,  we calculate
-for a new infill point :math:`\vec{x}_{k}` the ratio
+for a new infill point :math:`\vec{x}_{new}` the ratio
 
 .. raw:: latex html
 
-    \[ p_k =      \left\{ \frac{\left\| M_f(\vec{x}_{k})-f(\vec{x}_{k})\right\| }{\left\| plog^{-1}\left(M_p(\vec{x}_{k})\right)-f(\vec{x}_{k})\right\|}
+    \[ p_k =      \left\{ \frac{\left\| M_f(\vec{x}_{new})-f(\vec{x}_{new})\right\| }{\left\| plog^{-1}\left(M_p(\vec{x}_{new})\right)-f(\vec{x}_{new})\right\|}
                   \right\}	\]`
 
 If :math:`p_k>1`, then :math:`M_p` has the smaller error. If :math:`p_k<1`, then :math:`M_f` has the smaller error.
@@ -62,8 +63,53 @@ For a more stable decision we define the *p-effect* number as
 
 and decide to build :math:`M_p` if :math:`p_\text{eff}>0` and to build :math:`M_f` else.
 
-The calculation of :math:`p_\text{eff}` is done in :meth:`.Surrogator.calcPEffect`.
-The conditional application of :math:`plog()` is done in :class:`.Surrogator.AdFitter`.
+The calculation of :math:`p_\text{eff}` is done in :meth:`.Surrogator1.calcPEffect`.
+The conditional application of :math:`plog()` is done in :class:`.Surrogator1.AdFitter`.
+
+.. _detail_onlinePLOG-label:
+
+Details for onlinePLOG
+______________________
+
+The above p-effect recipe is realized in case ``ISA.onlinePLOG =`` **O_LOGIC.XNEW**. It tracks online (in each
+iteration) which of the two objective surrogate models is better. It uses the new infill point :math:`\vec{x}_{new}`
+(found after sequential optimization), which is usually different from all earlier points.
+But a closer look reveals that there are two drawbacks:
+
+- The p-effect can only be calculated **after** the sequential optimization of the current iteration and so it can be
+  only used for the model decision in the **next** iteration, which might be confusing.
+- It is not guaranteed that the new infill point :math:`\vec{x}_{new}` is different from all earlier points. Especially
+  if the distance requirement is 0, :math:`\vec{x}_{new}` may be very close or identical to earlier points. Then both
+  approximation errors will be very small or even 0, which causes the error ratio to be unreliable.
+
+An alternative (better) p-effect recipe is the case ``ISA.onlinePLOG =`` **O_LOGIC.MIDPTS**. In this case we replace
+:math:`\vec{x}_{new}` with a set of points, namely all :math:`P=p(p-1)/2` midpoints :math:`\vec{m}_{\ell}` between the :math:`p =`
+``ISA.pEff_npts`` first points of initial design matrix ``A``. This has the advantage that the p-effect can be calulated
+directly after training the surrogate models :math:`M_f, M_p` (because the midpoints are known in advance) and that the
+new decision number
+
+.. raw:: latex html
+
+    \[ p_k =      \left\{ \frac{\sum_{\ell=1}^P{\left\| M_f(\vec{m}_{\ell})-f(\vec{m}_{\ell})\right\|} }
+                               {\sum_{\ell=1}^P{\left\| plog^{-1}\left(M_p(\vec{m}_{\ell})\right)-f(\vec{m}_{\ell})\right\|} }
+                  \right\}	\]`
+
+is more robust because it is based on many points :math:`\vec{m}_{\ell}`. These midpoints are usually not close to
+trained points and if a single midpoint :math:`\vec{m}_{\ell}` happens to be close to trained points (and has small
+errors), then this will not change the new error ratio :math:`p_k` very much, because numerator and denominator are
+now **sums** of errors. The calculation of :math:`p_\text{eff}` from  :math:`p_k` proceeds in the same way as described
+in :ref:`The p-Effect <pEffect-label>`.
+
+
+The calculation of the new ratio :math:`p_k` and the emerging  :math:`p_\text{eff}` is done in :meth:`.Surrogator2.calcPEffectNew`.
+
+A third option is ``ISA.onlinePLOG =`` **O_LOGIC.NONE** (no online plog).
+In this case we do **not** decide online about :math:`plog()` but instead make a decision once after initial design and keep this decision for all iterations. The
+decision is based on the min-max range of ``Fres`` after initial design, which is compared with
+threshold ``ISA.TFRange``. If larger than threshold, apply :math:`plog()` to :math:`f()`; if smaller than threshold, use
+the unsquashed :math:`f()`.
+
+
 
 .. _refineStep-label:
 
@@ -97,11 +143,14 @@ Details Phase II
 
 .. _AdFitter-label:
 
-.. autoclass:: surrogator.Surrogator.AdFitter
+.. autoclass:: surrogator1.Surrogator1.AdFitter
    :members: __init__, __call__
 
-.. autoclass:: surrogator.Surrogator
+.. autoclass:: surrogator1.Surrogator1
    :members: calcPEffect, trainSurrogates
+
+.. autoclass:: surrogator2.Surrogator2
+   :members: calcPEffectNew, trainSurrogates
 
 .. autoclass:: rbfModel.RBFmodel
    :members: __init__, __call__

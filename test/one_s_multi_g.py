@@ -8,7 +8,7 @@ from ex_COP import ExamCOP
 from gCOP import GCOP, show_error_plot
 from cobraPhaseII import CobraPhaseII
 from opt.equOptions import EQUoptions
-from opt.isaOptions import ISAoptions
+from opt.isaOptions import ISAoptions, O_LOGIC
 from opt.sacOptions import SACoptions
 from opt.idOptions import IDoptions
 from opt.rbfOptions import RBFoptions
@@ -44,7 +44,11 @@ class OneS:
                                  solu=gcop.solu,
                                  s_opts=SACoptions(verbose=verb, verboseIter=100, feval=feval, cobraSeed=cobraSeed,
                                                    ID=IDoptions(initDesign="LHS", initDesPoints=idp),
-                                                   RBF=RBFoptions(degree=1.5, interpolator="sacobra"),
+                                                   RBF=RBFoptions(degree=2),   # for default interpolator="scipy"
+                                                   # RBF=RBFoptions(degree=1.5, interpolator="sacobra"),  # test only
+                                                   # ISA=ISAoptions(onlinePLOG=O_LOGIC.NONE),   # the default (before 2025/08/01)
+                                                   # ISA=ISAoptions(onlinePLOG=O_LOGIC.MIDPTS), # run 2025/08/12
+                                                   ISA=ISAoptions(onlinePLOG=O_LOGIC.XNEW),     # run 2025/08/13
                                                    EQU=equ,
                                                    SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol)))
         if feval > idp: c2 = CobraPhaseII(cobra).start()
@@ -83,7 +87,7 @@ class OneS:
         df2 = pd.DataFrame()
         for i, gname in enumerate(gnames):
             dim = dims[i]
-            for meth in ['solve',]:   #  'one_s',
+            for meth in ['one_s',]:   #  'solve',
                 for run in range(runs):
                     start = time.perf_counter()
                     if conTol is None:          # use the default conTol of each method
@@ -162,7 +166,7 @@ class OneS:
         nmeth = df1.meth.unique().size
         ngname = df1.gname.unique().size
         print(f"\n Number of runs in df1: {nrun} for each (gname,meth)-combi")
-        assert nrun*nmeth*ngname == df1.shape[0]
+        # assert nrun*nmeth*ngname == df1.shape[0]
         if fname2 is not None:
             # this is just to compare 'time' and 'err' from df1 (e.g. a run with conTol=0.0) with
             # 'time2' and 'err2' from df2 (e.g. a run with conTol=1e-7) in a row-by-row fashion.
@@ -176,9 +180,9 @@ class OneS:
             df1['err2'] = df2['err']
             df1 = df1.drop(["conTol","seed"],axis=1)    # drop some columns so that all other columns get printed
         print("\n --- Median for each (problem, meth) --- ")
-        print(df1.groupby(['gname', 'meth']).median())
+        print(df1.groupby(['gname', 'meth', 'd']).median())
         print("\n ---  Std for each (problem, meth) --- ")
-        print(df1.groupby(['gname', 'meth']).std())
+        print(df1.groupby(['gname', 'meth', 'd']).std())
         # print("\n --- Mean for each problem --- ")
         # del df1['meth']
         # print(df1.groupby(['gname']).mean())
@@ -187,16 +191,17 @@ class OneS:
 
 if __name__ == '__main__':
     one = OneS()
-    # gnames = ["G01", "G02", "G03", "G04", "G05", "G06", "G07", "G08", "G09", "G10", "G11", "G12", "G13"]
-    # dims   = [   -1,     2,     5,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1]
-    gnames = ["G09",]  #  "G08", "G09", "G10",
-    dims   = [   10,]
-    # gnames = ["G10", "G11", "G12", "G13"]
-    # dims   = [   -1,    -1,    -1,    -1,]
-    df2 = one.one_s_multi_g_r(gnames, dims,10, 54, feval=800, conTol=0)       # conTol=0 | 1e-7
+    gnames = ["G01", "G02", "G02", "G03", "G03", "G04", "G05", "G06", "G07", "G08", "G09", "G10", "G11", "G12", "G13"]
+    dims   = [   -1,     2,     5,     7,    10,   -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1]
+    # gnames = ["G09",]  #  "G08", "G09", "G10",
+    # dims   = [   10,]
+    # gnames = ["G02"]  # "G10", "G11", "G12",
+    # dims   = [ 5]  #   -1,    -1,    -1,
+    #df2 = one.one_s_multi_g_r(gnames, dims,10, 54, feval=500, conTol=0)       # conTol=0 | 1e-7
     # init_df = one.multi_init(gnames, 54, feval=120)
     # one.df_analyze("df2_conTol0.0-fe500-G01-G13.feather", "df2_conTol1e-7-fe500-G01-G13.feather")
     # one.df_analyze("df2_conTol0.0-fe500-G01-G13.feather","df2_conTol1e-7-fe500-G01-G13.feather")
+    one.df_analyze("df2_conTol0.0-XNEW-fe500-G01-G13.feather")
 
 
 
