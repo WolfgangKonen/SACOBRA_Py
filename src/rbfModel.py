@@ -1,7 +1,9 @@
 import time
 
 import numpy as np
-from opt.rbfOptions import RBFoptions
+from sklearn.metrics import euclidean_distances
+
+from opt.rbfOptions import RBFoptions, W_RULE
 from scipy.interpolate import RBFInterpolator
 
 from rbfSacobra import RBFsacob
@@ -28,33 +30,51 @@ class RBFmodel:
         than `SciPy's RBFInterpolator <https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.RBFInterpolator.html>`_
         (see ``test/results_time_RBF.txt`` for details). But it has the useful extra option ``degree=1.5``.
     """
-    def __init__(self, xobs: np.ndarray, yobs: np.ndarray, interpolator="scipy",
-                 kernel="cubic", degree: float = None, rho=0.0):
+    def __init__(self, xobs: np.ndarray, yobs: np.ndarray, rbf_opts = RBFoptions()):
         """
-        Create RBF model(s) from observations ``(xobs,yobs)``. Shape m of ``yobs`` controls whether one RBF
+        Create RBF model(s) from observations ``(xobs,yobs)`` according to the RBF specification in
+        :class:`.RBFoptions` ``rbf_opts``. Shape m of ``yobs`` controls whether one RBF
         model (m=1) or several RBF models (m>1) are formed.
 
         :param xobs:    (n x d)-matrix of n d-dimensional vectors :math:`\\vec{x}_i,\\, i=0,...,n-1`
         :param yobs:    vector of shape (n,) with observations :math:`f(\\vec{x}_i)` - or -
-                        matrix of shape (n,m) with observations :math:`f_j(\\vec{x}_i)` for :math:`m` functions :math:`f_j,\, j=0,...,m-1`
-        :param interpolator: "scipy" or "sacobra", which interpolation method to use. See :class:`.RBFoptions`.
-        :param kernel:  the allowed kernels of `SciPy's RBFInterpolator <https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.RBFInterpolator.html>`_
-        :param degree:  the default None means, that the kernel-specific defaults specified in
-                        `RBFInterpolator <https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.RBFInterpolator.html>`_
-                        are taken (e.g. degree=1 for "cubic")
-        :param rho:     set `RBFInterpolator <https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.RBFInterpolator.html>`_'s
-                        parameter ``smoothing`` to ``N*rho`` where ``N=xobs.shape[0]`` - or - pass on to class
+                        matrix of shape (n,m) with observations :math:`f_j(\\vec{x}_i)` for :math:`m` functions :math:`f_j,\\, j=0,...,m-1`
                         :class:`.RBFsacob`'s parameter ``rho``.
+        :param rbf_opts: see :class:`.RBFoptions` for details
         """
         start = time.perf_counter()
         self.d = xobs.shape[1]
         self.nmodels = 1 if yobs.ndim == 1 else yobs.shape[1]
         N = xobs.shape[0]
+        kernel = rbf_opts.kernel
+        degree = rbf_opts.degree
+        rho = rbf_opts.rho
+        avail_kernel = ["cubic", "gaussian", "multiquadric"]
+        assert kernel in avail_kernel, f"[RBFmodel] kernel = {kernel} not in list of available kernels: {avail_kernel}"
+
+        # based on elements width, widthRule, widthFactor of RBFoptions, calculate the effective width:
+        width = rbf_opts.width
+        if width is None:
+            if rbf_opts.kernel == "cubic":
+                width = 1
+            else:  # i.e. one of the scale-variant kernel types
+                if rbf_opts.widthRule == W_RULE.ONE:
+                    edist = euclidean_distances(xobs, xobs)  # distance between rows of xp
+                    width = np.max(edist)/np.sqrt(2*xobs.shape[0])
+                else:  # i.e. widthRule == W_RULE.THREE
+                    width = np.inf
+                    for i in range(xobs.shape[1]):
+                        interval = np.max(xobs[:,i])-min(xobs[:,i])
+                        width = min(width,interval)
+        width = width * rbf_opts.widthFactor
+
         try:
-            if interpolator == "scipy":
-                self.model = RBFInterpolator(xobs, yobs, kernel=kernel, degree=degree, smoothing=N*rho)
+            if rbf_opts.interpolator == "scipy":
+                eps = 1/np.sqrt(2*width) if kernel != "cubic" else 1.0
+                self.model = RBFInterpolator(xobs, yobs, kernel=kernel, degree=degree, epsilon=eps, smoothing=N*rho)
             else:   # i.e. interpolator == "sacobra"
-                self.model = RBFsacob(xobs, yobs, kernel=kernel, degree=degree, rho=rho)
+                self.model = RBFsacob(xobs, yobs, kernel=kernel, degree=degree, width=width, rho=rho,
+                                      test_pmat=rbf_opts.test_pmat)
         except np.linalg.LinAlgError:
             # LinAlgError ('Singular Matrix') is raised by RBFInterpolator if xobs contains identical rows
             # (identical infill points). We avoid this with cobra.for_rbf['A'] (instead of cobra.sac_res['A']),
@@ -87,7 +107,3 @@ class RBFmodel:
 
     # with signature __call__(self, *args, **kwargs)), we would use xflat = args[0]
 
-# # probably obsolete:
-# class RBFmodelCubic(RBFmodel):
-#     def __init__(self, xobs, yobs):
-#         super().__init__(xobs, yobs, kernel="cubic")

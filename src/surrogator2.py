@@ -51,7 +51,7 @@ class Surrogator2:
         return midpEval
 
     @staticmethod
-    def calcPEffectNew(p2: Phase2Vars, midp: np.ndarray, midpEval: np.ndarray):
+    def calcPEffect(p2: Phase2Vars, midp: np.ndarray, midpEval: np.ndarray, verbose=False):
         """
             Calculates the :ref:`p-effect <pEffect-label>` in variable ``p2.pEffect`` with method described in
             :ref:`Details for onlinePLOG <detail_onlinePLOG-label>`, case **O_LOGIC.MIDPTS**.
@@ -67,6 +67,7 @@ class Surrogator2:
                             changes ``p2.err1``, ``p2.err2``, ``p2.errRatio`` and ``p2.pEffect`` on output
             :param midp:    the midpoints
             :param midpEval: ``fn(midp)[0]``
+            :param verbose: if True, print a warning message if any clipping occurs
             :return: None
         """
         assert p2.fitnessSurrogate1.__class__.__name__ == 'RBFmodel', \
@@ -76,19 +77,23 @@ class Surrogator2:
         nrow = midp.shape[0]
         assert midpEval.size == nrow
         newErr1 = newErr2 = 0
+        clip_done = False
         for k in range(nrow):
             x = midp[k, :]
             newPredY1 = p2.fitnessSurrogate1(x)
             newPredY2 = p2.fitnessSurrogate2(x)
+            if np.abs(newPredY2) > 705: clip_done = True
             newErr1 += abs(newPredY1 - midpEval[k])
-            newErr2 += abs(plogReverse(newPredY2) - midpEval[k])
+            newErr2 += abs(plogReverse(newPredY2, verbose=verbose) - midpEval[k])
         p2.err1 = np.concat((p2.err1, newErr1/nrow))
         p2.err2 = np.concat((p2.err2, newErr2/nrow))
         nu = 1e-20   # regularizing constant to avoid 0/0-situation in p2.errRatio
         p2.errRatio = (p2.err1 + nu) / (p2.err2 + nu)
+        if verbose and clip_done > 705:
+            print(f"[calcPEffect] Warning: clipping done --> last p2.errRatio = {p2.errRatio[-1]}")
 
-        # due to regularization with nu, the following three assertions should never fire. They are in here only
-        # as sanity check:
+        # Thanks to the regularization with nu (and thanks to the clipping on large values in plogReverse), the
+        # following three assertions should never fire. They are in here only as sanity check:
         assert not np.isinf(newErr1), f"[calcPEffect] newErr1={newErr1} is infinity"
         assert not np.isinf(newErr2), f"[calcPEffect] newErr2={newErr2} is infinity"
 
@@ -109,7 +114,7 @@ class Surrogator2:
         s_opts = cobra.get_sac_opts()
         s_res = cobra.get_sac_res()
         CONSTRAINED = s_res['nConstraints'] > 0
-        verboseprint(s_opts.verbose, False, f"[trainSurrogates] Training {s_opts.RBF.model} surrogates ...")
+        verboseprint(s_opts.verbose, False, f"[trainSurrogates] Training {s_opts.RBF.kernel} surrogates ...")
         start = time.perf_counter()
 
         # A = s_res['A']
@@ -122,12 +127,8 @@ class Surrogator2:
             # two models are built in every iteration:
             Fres1 = cobra.for_rbf['Fres']
             Fres2 = plog(cobra.for_rbf['Fres'])
-            p2.fitnessSurrogate1 = RBFmodel(A, Fres1, interpolator=s_opts.RBF.interpolator,
-                                            kernel=s_opts.RBF.model,
-                                            degree=s_opts.RBF.degree, rho=s_opts.RBF.rho)
-            p2.fitnessSurrogate2 = RBFmodel(A, Fres2, interpolator=s_opts.RBF.interpolator,
-                                            kernel=s_opts.RBF.model,
-                                            degree=s_opts.RBF.degree, rho=s_opts.RBF.rho)
+            p2.fitnessSurrogate1 = RBFmodel(A, Fres1, s_opts.RBF)
+            p2.fitnessSurrogate2 = RBFmodel(A, Fres2, s_opts.RBF)
 
         if p2.midpts is None:   # i.e. on first pass through cobraPhaseII while loop:
             # calculate the midpoints for pEffect
@@ -135,15 +136,10 @@ class Surrogator2:
                                                    s_opts.ISA.pEff_npts)
             p2.midptsEval = Surrogator2.comp_midp_eval(cobra, p2.midpts)
 
-        Surrogator2.calcPEffectNew(p2, p2.midpts, p2.midptsEval)    # calculates p2.pEffect
+        Surrogator2.calcPEffect(p2, p2.midpts, p2.midptsEval, verbose=True)    # calculates p2.pEffect
 
         p2.adFit = Surrogator1.AdFitter(cobra, p2, cobra.for_rbf['Fres'].copy())     # appends to p2.PLOG
         Fres = p2.adFit()   # the __call__ method returns p2.adfit.surrogateInput, a potentially plog-transformed Fres
-
-        #   if(cobra$TFlag){
-        #   Fres<-cobra$TFres
-        #   A<-cobra$TA
-        #   }
 
         if s_opts.ISA.isa_ver > 0:
             if p2.PLOG[-1] and p2.printP:
@@ -156,9 +152,7 @@ class Surrogator2:
             # important: use here the Gres from cobra.for_rbf (!), avoids LinAlgError
             if not s_opts.MS.apply or not s_opts.MS.active:
                 p2.fitnessSurrogate = p2.fitnessSurrogate2 if p2.PLOG[-1] else p2.fitnessSurrogate1
-                p2.constraintSurrogates = RBFmodel(A, Gres, interpolator=s_opts.RBF.interpolator,
-                                                   kernel=s_opts.RBF.model,
-                                                   degree=s_opts.RBF.degree, rho=s_opts.RBF.rho)
+                p2.constraintSurrogates = RBFmodel(A, Gres, s_opts.RBF)
             else:
                 # TODO: the model selection (MS) part
                 raise NotImplementedError("[trainSurrogates] MS-part in branch 'if CONSTRAINED' not yet implemented! ")
@@ -166,7 +160,7 @@ class Surrogator2:
         else:  # i.e. if not CONSTRAINED
 
             if not s_opts.MS.apply or not s_opts.MS.active:
-                kernel = s_opts.RBF.model
+                kernel = s_opts.RBF.kernel
             else:
                 # TODO: the model selection (MS) part
                 raise NotImplementedError("[trainSurrogates] MS-part in branch 'if not CONSTRAINED' not yet implemented! ")

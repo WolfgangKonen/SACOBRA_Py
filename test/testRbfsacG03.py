@@ -101,9 +101,7 @@ class TestRbfSacG03(unittest.TestCase):
             xNew = np.minimum(+0.9,xNew)
             xNew = np.repeat(-0.2,dimension)  # dim=7, all values a \in [-0.99,0.05] find the minimum, but a=-1.0 or a>0.05 does not, they all go to the wrong min [-1,-1,...]
 
-            con_mdl = RBFmodel(s_res['A'], s_res['Gres'], interpolator=s_opts.RBF.interpolator,
-                            kernel=s_opts.RBF.model,
-                            degree=s_opts.RBF.degree, rho=s_opts.RBF.rho)
+            con_mdl = RBFmodel(s_res['A'], s_res['Gres'], s_opts.RBF)
 
             def myf(x, grad):
                 # conR = s_res['fn'](x)[1:]

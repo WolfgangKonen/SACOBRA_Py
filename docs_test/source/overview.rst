@@ -12,6 +12,10 @@ SACOBRA_Py Testing
    :members: test_rbf_model, test_linear_func
 
 
+.. autoclass:: testRbfsacob.TestRbfSacob
+   :members: test_svd_inv, test_func_fn, test_gprob_rbf
+
+
 .. autoclass:: testCobraInit.TestCobraInit
    :members: test_fn_rescale1, test_fn_rescale2, test_init_design, test_init_design_R, test_adCon_R, test_phaseII
 

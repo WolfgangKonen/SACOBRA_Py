@@ -22,6 +22,9 @@ class ISAoptions:
         - ``isa_ver=0`` (:class:`.ISAoptions0`, COBRA-R settings = turn off SACOBRA), and
         - ``isa_ver=2`` (:class:`.ISAoptions2`, SACOBRA settings with fewer parameters and more online adjustments).
 
+        The choice is made by choosing the appropriate class object :class:`.ISAoptions`, :class:`.ISAoptions0` or
+        :class:`.ISAoptions2` for ``cobra.sac_opts.ISA``.
+
         :param isa_ver: ISA version number (was ``DOSAC`` in R)
         :param RS: flag to enable/disable random start algorithm
         :param RStype: type of function to calculate probability to start the internal optimizer with a random start
@@ -44,11 +47,12 @@ class ISAoptions:
         :param conFitPLOG:
         :param adaptivePLOG: (experimental) flag for objective function transformation with ``plog``, where the
                              parameter ``pShift`` is adapted during iterations
-        :param onlinePLOG: three-valued logic for online decision-making: O_LOGIC.NONE (no online, only fixed initial
-                    decision whether to use plog); O_LOGIC.XNEW (online plog decision according to pEffect and
-                    pEffect-calculation is based on new infill point ``xNew``); O_LOGIC.MIDPTS (online plog decision
-                    according to pEffect and pEffect-calculation is based on midpoints)
-        :param onlineFreqPLOG: after how many iterations the online plog check is done again
+        :param onlinePLOG: three-valued logic for online decision-making: ``O_LOGIC.NONE`` (no online, only fixed
+                    initialdecision whether to use plog); ``O_LOGIC.XNEW`` (online plog decision according to pEffect
+                    and pEffect-calculation is based on new infill point ``xNew``); ``O_LOGIC.MIDPTS`` (online plog
+                    decision according to pEffect and pEffect-calculation is based on midpoints)
+        :param onlineFreqPLOG: after how many iterations the surrogates for online plog check are calculated again
+                    (only relevant for case ``O_LOGIC.XNEW``)
         :param pEffectInit: the initial value for ``pEffect``, needed for first pass through cobraPhaseII while loop in
                     case ``O_LOGIC.XNEW``. Not needed in cases  ``O_LOGIC.NONE`` or ``O_LOGIC.MIDPTS``
         :param pEff_npts: the number p of initial design points to take from initial design matrix ``A`` to form

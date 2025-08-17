@@ -19,8 +19,9 @@ class CobraPhaseII:
     """
         SACOBRA phase II executor.
 
-        Information is communicated via object :class:`.CobraInitializer` ``cobra`` (with elements sac_opts and sac_res)
-        and via object :class:`.Phase2Vars` ``p2`` (internal variables needed in phase II).
+        Information is communicated via object :class:`.CobraInitializer` ``cobra`` (with elements :class:`.SACoptions`
+        ``sac_opts`` and dictionary ``sac_res``) and via object :class:`.Phase2Vars` ``p2`` (internal variables
+        needed in phase II).
     """
     def __init__(self, cobra: CobraInitializer):
         # initial settings of all phase-II-related variables:
@@ -133,9 +134,9 @@ class CobraPhaseII:
                     A = self.cobra.for_rbf['A']
                     xpeffect = (A[0, :] + A[1, :]) / 2
                     xPeEval = self.cobra.sac_res['fn'](xpeffect)
-                    Surrogator1.calcPEffect(self.p2, xpeffect, xPeEval)
+                    Surrogator1.calcPEffect(self.p2, xpeffect, xPeEval, verbose=True)
                 else:
-                    Surrogator1.calcPEffect(self.p2, self.p2.ev1.xNew, self.p2.ev1.xNewEval)
+                    Surrogator1.calcPEffect(self.p2, self.p2.ev1.xNew, self.p2.ev1.xNewEval, verbose=True)
 
             # update cobra information (A, Fres, Gres and others)
             pf2.updateInfoAndCounters(self.cobra, self.p2)

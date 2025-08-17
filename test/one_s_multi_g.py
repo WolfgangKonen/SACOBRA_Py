@@ -46,11 +46,11 @@ class OneS:
                                                    ID=IDoptions(initDesign="LHS", initDesPoints=idp),
                                                    RBF=RBFoptions(degree=2),   # for default interpolator="scipy"
                                                    # RBF=RBFoptions(degree=1.5, interpolator="sacobra"),  # test only
-                                                   # ISA=ISAoptions(onlinePLOG=O_LOGIC.NONE),   # the default (before 2025/08/01)
+                                                   ISA=ISAoptions(onlinePLOG=O_LOGIC.NONE),   # the default (before 2025/08/01)
                                                    # ISA=ISAoptions(onlinePLOG=O_LOGIC.MIDPTS), # run 2025/08/12
-                                                   ISA=ISAoptions(onlinePLOG=O_LOGIC.XNEW),     # run 2025/08/13
+                                                   # ISA=ISAoptions(onlinePLOG=O_LOGIC.XNEW),     # run 2025/08/13
                                                    EQU=equ,
-                                                   SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol)))
+                                                   SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol)))  # , trueFuncForSurrogates=True
         if feval > idp: c2 = CobraPhaseII(cobra).start()
 
         fin_err = np.array(cobra.get_fbest() - gcop.fbest)
@@ -186,7 +186,18 @@ class OneS:
         # print("\n --- Mean for each problem --- ")
         # del df1['meth']
         # print(df1.groupby(['gname']).mean())
-        dummy = 0
+
+        print(f"\nThe (G02, d=2)-errors for {fname1}:")
+        G02_2_errs = np.array(df1[(df1["gname"]=="G02") &
+                                  (df1["d"]==2) &
+                                  (df1["meth"]=="one_s")]["err"])
+        print(np.sort(G02_2_errs))
+        print(f"median = {np.median(G02_2_errs)}")
+
+        print(f"\nThe (G03, d=10)-errors for {fname1}:")
+        G03_10_errs = np.array(df1[(df1["gname"]=="G03") & (df1["d"]==10)]["err"])
+        print(np.sort(G03_10_errs))
+        print(f"median = {np.median(G03_10_errs)}")
 
 
 if __name__ == '__main__':
@@ -195,13 +206,13 @@ if __name__ == '__main__':
     dims   = [   -1,     2,     5,     7,    10,   -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1]
     # gnames = ["G09",]  #  "G08", "G09", "G10",
     # dims   = [   10,]
-    # gnames = ["G02"]  # "G10", "G11", "G12",
-    # dims   = [ 5]  #   -1,    -1,    -1,
-    #df2 = one.one_s_multi_g_r(gnames, dims,10, 54, feval=500, conTol=0)       # conTol=0 | 1e-7
+    # gnames = ["G09"]  # "G10", "G11", "G12",
+    # dims   = [ -1]  #   -1,    -1,    -1,
+    # df2 = one.one_s_multi_g_r(gnames, dims,10, 54, feval=500, conTol=0)       # conTol=0 | 1e-7
     # init_df = one.multi_init(gnames, 54, feval=120)
     # one.df_analyze("df2_conTol0.0-fe500-G01-G13.feather", "df2_conTol1e-7-fe500-G01-G13.feather")
-    # one.df_analyze("df2_conTol0.0-fe500-G01-G13.feather","df2_conTol1e-7-fe500-G01-G13.feather")
-    one.df_analyze("df2_conTol0.0-XNEW-fe500-G01-G13.feather")
+    # one.df_analyze("df2_conTol0.0-fe500-G02-d02.feather")
+    one.df_analyze("df2_conTol0.0-NONE-fe500-G01-G13.feather")   # NONE | XNEW | MIDPTS
 
 
 

@@ -1,6 +1,7 @@
 import unittest
 import numpy as np
 from cobraInit import CobraInitializer
+from opt.rbfOptions import RBFoptions
 from rbfModel import RBFmodel
 from opt.idOptions import IDoptions
 from opt.sacOptions import SACoptions
@@ -55,7 +56,8 @@ class TestRbfModel(unittest.TestCase):
         # yobs = sac_res['Fres']
         # observations for two output models, arranged in columns [i.e. yobs.shape = (100,2)]:
         yobs = np.hstack((sac_res['Fres'].reshape(-1, 1), sac_res['Gres']))
-        rbf_model = RBFmodel(xobs, yobs, kernel="cubic", degree=None)
+        rbf_opts = RBFoptions(kernel="cubic", degree=None)
+        rbf_model = RBFmodel(xobs, yobs, rbf_opts)
 
         xr = 0.8    # test only the inner region of input space [-1,1]^2
                     # (because the approximation error is too large at the outer rim)

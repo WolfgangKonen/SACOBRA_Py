@@ -21,7 +21,7 @@ class TestCOP(unittest.TestCase):
     """
     def test_G06_R(self):
         """ Test whether COP G06 has numerical equivalent results to the R side with ``squares=False``, if we choose on
-            the Python side {``RBF.model="cubic"``, ``RBF.degree=1``, ``cobraSeed=42`` and ``ID.initDesignPoints=5``}
+            the Python side {``RBF.kernel="cubic"``, ``RBF.degree=1``, ``cobraSeed=42`` and ``ID.initDesignPoints=5``}
             and use ``solve_G06_R`` in ``ex_COP.R`` on the R side.
 
             Both sides have larger errors (1e-3...1e-2) in this case ``squares=False``, but the RBF models are exactly
@@ -73,7 +73,7 @@ class TestCOP(unittest.TestCase):
                                  s_opts=SACoptions(verbose=verb, feval=40, cobraSeed=42,
                                                    ID=IDoptions(initDesign="RAND_REP", initDesPoints=5),
                                                    ISA=ISAoptions(onlinePLOG=opl, onlineFreqPLOG=1,
-                                                                  pEff_DBG=pdb),  # isa_ver=2, , pEffectLogic=pel
+                                                                  pEff_DBG=pdb),  #  pEffectLogic=pel
                                                    RBF=RBFoptions(degree=1),
                                                    SEQ=SEQoptions(finalEpsXiZero=True, conTol=0)))  # 1e-7
         # cobra.sac_opts.ISA.RS = False  # temp

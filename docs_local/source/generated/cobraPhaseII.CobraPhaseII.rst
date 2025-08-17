@@ -3,6 +3,8 @@
 
 .. currentmodule:: cobraPhaseII
 
+:no-index:
+
 .. autoclass:: CobraPhaseII
 
    
@@ -14,8 +16,6 @@
    .. autosummary::
    
       ~CobraPhaseII.__init__
-      ~CobraPhaseII.create_df
-      ~CobraPhaseII.create_df2
       ~CobraPhaseII.get_cobra
       ~CobraPhaseII.get_p2
       ~CobraPhaseII.start

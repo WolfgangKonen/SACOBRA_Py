@@ -19,7 +19,7 @@ class InitDesigner:
     :class:`.CobraPhaseII` uses the evaluated sets to train the initial fitness and constraint surrogate models.
 
     In detail, the constructor of ``InitDesigner`` does the following: Create the **initial design** in matrix
-    ``**self.A**`` with shape ``(P, d)`` of sample points in (potentially rescaled) input space
+    **self.A** with shape ``(P, d)`` of sample points in (potentially rescaled) input space
     ``[lower, upper]`` :math:`\\subset \\mathbb{R}^d`, where ``P = s_opts.ID.initDesPoints`` and ``d =`` input space dimension.
     The recipe how to select the sample points is prescribed by the :ref:`type of initial design <initDesign-label>`
     ``s_opts.ID.initDesign``.

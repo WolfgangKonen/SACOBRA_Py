@@ -26,6 +26,9 @@ class TestRbfSacob(unittest.TestCase):
     """
 
     def test_svd_inv(self):
+        """
+            Test that the SVD inverse of a random (3,3) matrix M always fulfills M * invM = One.
+        """
         rng = np.random.default_rng()
         # M = np.array([1, 1, 2, 3, 4, 5, 6, 7, 9]).reshape(3,3).T      # rank 3
         # M = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8]).reshape(3, 3).T     # rank 2
@@ -43,99 +46,136 @@ class TestRbfSacob(unittest.TestCase):
         assert np.allclose(z, np.array([0, 2.82842712]))
         print(z)
 
+    def inner_test_func_fn(self, d, ngrid, nobs, deg, kernel, EQUIV_R):
+        trm = TestRbfModel()
+        trm.val = 24*2  # setting for my_rng2
+        print(f"\n[inner_test_func_fn] started with d = {d}, deg = {deg}, nobs = {nobs}, kernel = {kernel}")
+        xobs = trm.my_rng2(nobs, d)  # better than my_rng: avoids cycles
+        yobs = fn(xobs)
+        xgrid = np.mgrid[-1:1:ngrid * 1j, -1:1:ngrid * 1j]
+        xflat = xgrid.reshape(d, -1).T
+        # print(xflat.shape)  # (ngrid**d, d)
+        start = time.perf_counter_ns()
+        tpmat = (deg == 1 or deg == 1.5)
+        rbf_opts = RBFoptions(interpolator="sacobra", kernel=kernel, degree=deg, rho=0, test_pmat=tpmat)
+
+        rbf_model = RBFmodel(xobs, yobs, rbf_opts)
+
+        t1 = time.perf_counter_ns()
+        time_sacob_mod = t1 - start
+        yflat = rbf_model(xflat)  # most time (1 sec) is spent here (!)
+        t2 = time.perf_counter_ns()
+        time_sacob_prd = t2 - t1
+        ygrid = yflat.reshape(ngrid, ngrid)
+        print(f"degree = {deg}: time_sacob (mod/prd)= ({time_sacob_mod * 1e-6:.6f},{time_sacob_prd * 1e-6:.6f}) [ms]")
+
+        ytrue = fn(xflat).reshape(ngrid, ngrid)
+        delta = ytrue - ygrid
+        print(f"avg abs |ytrue - ygrid| = {np.mean(np.abs(delta)):.4e}")
+
+        L = ngrid // 2
+        ytest = ygrid[50:60, L - 1]
+
+        np.set_printoptions(7)
+        # print(ytest)
+
+        if deg != 1.5:
+            # Test numerical equivalence with SciPy implementation.
+            #
+            start = time.perf_counter_ns()
+            rbf_opts = RBFoptions(interpolator="scipy", kernel=kernel, degree=deg, rho=0)
+
+            sci_model = RBFmodel(xobs, yobs, rbf_opts)
+
+            t1 = time.perf_counter_ns()
+            time_scipy_mod = t1 - start
+
+            EQUIV_COEF = (nobs == 10)
+            if EQUIV_COEF:
+                delta = sci_model.model._coeffs.T - rbf_model.model.coef
+                print(f"max |s_coef - r_coef| = {np.max(np.abs(delta)):.4e}")
+                # print(f"max rel.delta = {np.max(np.abs(delta)/np.abs(rbf_model.model.coef)):.4e}")
+                print(delta)
+                atol = 1e-3 if deg < 1 else 1e-5
+                if kernel == "multiquadric": atol *= 10
+                coef_close = np.allclose(sci_model.model._coeffs.T, rbf_model.model.coef, atol=atol)
+                # print(coef_close)
+                assert coef_close
+                if not coef_close: print(rbf_model.model.coef)
+
+            sflat = sci_model(xflat)
+            t2 = time.perf_counter_ns()
+            time_scipy_prd = t2 - t1
+            sgrid = sflat.reshape(ngrid, ngrid)
+            delta = ytrue - sgrid
+            print(f"avg abs |ytrue - sgrid| = {np.mean(np.abs(delta)):.4e}")
+            stest = sgrid[50:60, L - 1]
+            print(f"degree = {deg}: time_scipy (mod/prd)= ({time_scipy_mod * 1e-6:.6f},{time_scipy_prd * 1e-6:.6f}) [ms]")
+            delta = ytest - stest
+            print(f"avg |ytest - stest| = {np.mean(np.abs(delta)):.4e}")
+            assert np.allclose(ytest, stest, atol=9e-3)
+
+        # If EQUIV_R and deg <= 1: Test numerical equivalence with R implementation.
+        # (We can only do it for deg <= 1, because deg==2 is different from squares=T. We have only the values from
+        #  R for the "cubic" case.)
+        # Requires fn(x) to return    x[:, 0] * 2 + x[:, 1] * 3.
+        # These are the values generated with demo-rbf3.R and my_rng2 (avoid cycles!) on the R-side:
+        if EQUIV_R and nobs == 10 and deg <= 1 and kernel == "cubic":
+            if nobs == 10:
+                if deg == -1:   # ptail=F in R
+                    ytest_from_R = np.array([0.0354658, 0.0771876, 0.1187900, 0.1602633, 0.2015979,
+                                             0.2427840, 0.2838119, 0.3246720, 0.3653547, 0.4058505])
+                elif deg == 1:  # ptail=T in R
+                    ytest_from_R = np.array([-0.0101010, 0.0303030, 0.0707071, 0.1111111, 0.1515152,
+                                             0.1919192, 0.2323232, 0.2727273, 0.3131313, 0.3535354])
+                else:
+                    raise NotImplementedError(f"No data from the R side for nobs={nobs} and deg={deg}")
+            elif nobs == 100:
+                if deg == -1:   # ptail=F in R
+                    ytest_from_R = np.array([-0.0100817, 0.0303251, 0.0707322, 0.1111393, 0.1515466,
+                                             0.1919538, 0.2323607, 0.2727671, 0.3131729, 0.3535776])
+                elif deg == 1:  # ptail=T in R
+                    ytest_from_R = np.array([-0.0101010, 0.0303030, 0.0707071, 0.1111111, 0.1515152,
+                                             0.1919192, 0.2323232, 0.2727273, 0.3131313, 0.3535354])
+                else:
+                    raise NotImplementedError(f"No data from the R side for nobs={nobs} and deg={deg}")
+            else:
+                raise NotImplementedError(f"No data from the R side for nobs={nobs}")
+
+            delta = ytest - ytest_from_R
+            print(f"avg |ytest - ytest_from_R| = {np.mean(np.abs(delta)):.4e}")
+            # assert np.allclose(ytest, ytest_from_R, rtol=1e-4)
+
+        print("[inner_test_func_fn passed]")
+
     def test_func_fn(self):
         """
-            test whether function fn is RBF-modeled (cubic, 10/100 observations, with/without polynomial tail)
-            the same way in RBFsacob and in SciPy's RBFInterpolator. Uses RNG my_rng2 from testRbfModel (avoid cycles!)
+            Test whether function fn is RBF-modeled (3 kernels, 10|100 observations, degree -1|1|2 for  polynomial tail)
+            the same way in RBFsacob and in SciPy's RBFInterpolator. Use RNG ``my_rng2`` from testRbfModel
+            (avoid cycles!)
+
+            Test -- only for ``kernel="cubic"`` and degree ``deg <= 1`` -- that results are the same in Python and in R.
+
+            Test -- only for ``nobs=10`` -- that RBF coefficients are the same in RBFsacob and in SciPy's RBFInterpolator
+            (up to absolute tolerance ``atol = 1e-5 ... 1e-2``, depending on kernel and degree).
+
+            Test -- only for degree ``deg=1`` or ``deg=1.5`` -- that the elements of polynomial matrix ``pMat`` in
+            RBFsacob are in the new implementation (monomial powers) the same as in the old implementation (that is
+            wrong for ``deg=2``).
         """
-        trm = TestRbfModel()
         d = 2
         ngrid = 100
-        for nobs in [10, 100]:       #
-            for deg in [-1, 1, 2]:
-                trm.val = 24  # setting for my_rng2
-                print(f"\n[test_func_fn] started with d = {d}, deg = {deg}, nobs = {nobs}")
-                xobs = trm.my_rng2(nobs, d)  # better than my_rng: avoids cycles
-                yobs = fn(xobs)
-                xgrid = np.mgrid[-1:1:ngrid * 1j, -1:1:ngrid * 1j]
-                xflat = xgrid.reshape(d, -1).T
-                # print(xflat.shape)  # (ngrid**d, d)
-                start = time.perf_counter_ns()
-                rbf_model = RBFmodel(xobs, yobs,  interpolator="sacobra", kernel="cubic", degree=deg,
-                                     rho=0)
-                t1 = time.perf_counter_ns()
-                time_sacob_mod = t1 - start
-                yflat = rbf_model(xflat)            # most time (1 sec) is spent here (!)
-                t2 = time.perf_counter_ns()
-                time_sacob_prd = t2 - t1
-                ygrid = yflat.reshape(ngrid, ngrid)
-                print(f"degree = {deg}: time_sacob (mod/prd)= ({time_sacob_mod*1e-6:.6f},{time_sacob_prd*1e-6:.6f}) [ms]")
+        EQUIV_R = True
+        for nobs in [10]:       # , 100
+            for deg in [-1, 1, 1.5, 2]:  #
+                for kernel in ["cubic", "gaussian", "multiquadric"]:    # "cubic", "gaussian", "multiquadric"
+                    self.inner_test_func_fn(d, ngrid, nobs, deg, kernel, EQUIV_R)
+        print("[all tests in test_func_fn passed]")
 
-                ytrue = fn(xflat).reshape(ngrid, ngrid)
-                delta = ytrue - ygrid
-                print(f"avg abs |ytrue - ygrid| = {np.mean(np.abs(delta)):.4e}")
-
-                L = ngrid // 2
-                ytest = ygrid[50:60, L - 1]
-
-                np.set_printoptions(7)
-                #print(ytest)
-
-                # Test numerical equivalence with SciPy implementation.
-                #
-                start = time.perf_counter_ns()
-                sci_model = RBFmodel(xobs, yobs,  interpolator="scipy", kernel="cubic", degree=deg,
-                                     rho=0)
-                t1 = time.perf_counter_ns()
-                time_scipy_mod = t1 - start
-                sflat = sci_model(xflat)
-                t2 = time.perf_counter_ns()
-                time_scipy_prd = t2 - t1
-                sgrid = sflat.reshape(ngrid, ngrid)
-                delta = ytrue - sgrid
-                print(f"avg abs |ytrue - sgrid| = {np.mean(np.abs(delta)):.4e}")
-                stest = sgrid[50:60, L - 1]
-                print(f"degree = {deg}: time_scipy (mod/prd)= ({time_scipy_mod*1e-6:.6f},{time_scipy_prd*1e-6:.6f}) [ms]")
-                delta = ytest - stest
-                print(f"avg |ytest - stest| = {np.mean(np.abs(delta)):.4e}")
-                assert np.allclose(ytest, stest, rtol=9e-4)
-
-                # Test numerical equivalence with R implementation.
-                # Requires fn(x) to return    x[:, 0] * 2 + x[:, 1] * 3.
-                # These are the values generated with demo-rbf3.R and my_rng2 (avoid cycles!) on the R-side:
-                EQUIV_R = True
-                if EQUIV_R and deg <= 1:
-                    if nobs == 10:
-                        if deg == -1:    # ptail=F in R
-                            ytest_from_R = np.array([ 0.0354658,  0.0771876,  0.1187900,  0.1602633,  0.2015979,
-                                                      0.2427840,  0.2838119,  0.3246720,  0.3653547,  0.4058505])
-                        elif deg == 1:  # ptail=T in R
-                            ytest_from_R = np.array([-0.0101010,  0.0303030,  0.0707071,  0.1111111,  0.1515152,
-                                                      0.1919192,  0.2323232,  0.2727273,  0.3131313,  0.3535354])
-                        else:
-                            raise NotImplementedError(f"No data from the R side for nobs={nobs} and deg={deg}")
-                    elif nobs == 100:
-                        if deg == -1:    # ptail=F in R
-                            ytest_from_R = np.array([-0.0100817,  0.0303251,  0.0707322,  0.1111393,  0.1515466,
-                                                      0.1919538,  0.2323607,  0.2727671,  0.3131729,  0.3535776])
-                        elif deg == 1:  # ptail=T in R
-                            ytest_from_R = np.array([-0.0101010,  0.0303030,  0.0707071,  0.1111111,  0.1515152,
-                                                      0.1919192,  0.2323232,  0.2727273,  0.3131313,  0.3535354])
-                        else:
-                            raise NotImplementedError(f"No data from the R side for nobs={nobs} and deg={deg}")
-                    else:
-                        raise NotImplementedError(f"No data from the R side for nobs={nobs}")
-
-                    delta = ytest - ytest_from_R
-                    print(f"avg |ytest - ytest_from_R| = {np.mean(np.abs(delta)):.4e}")
-                    # assert np.allclose(ytest, ytest_from_R, rtol=1e-4)
-
-                print("[test_func_fn passed]")
-
-    def test_Gprob_RBF(self):
+    def test_gprob_rbf(self):
         """
-        Test both RBF interpolators "scipy" and "sacobra" on different RBF problems (G06, G07 or G09) and measure mean
-        error and total RBF model build (__init__) and total RBF predict (__call__) time.
+        Test both RBF interpolators ``"scipy"`` and ``"sacobra"`` on different COPs (G06, G07 or G09) and measure mean
+        error, total RBF model build (``__init__``) time and total RBF predict (``__call__``) time.
         """
 
         def solve_G06(cobraSeed, rbf_opt, feval=40, verbIter=10, conTol=0):  # conTol=0 | 1e-7
@@ -214,13 +254,13 @@ class TestRbfSacob(unittest.TestCase):
             return c2
 
         cobraSeed=52
-        runs = 1
+        runs = 2
         errs = np.zeros((2,runs))
         time_init = np.zeros(2)
         time_call = np.zeros(2)
         for run in range(runs):
             for k, inter in enumerate(["scipy", "sacobra"]):
-                rbf_opt = RBFoptions(degree=2, interpolator=inter)
+                rbf_opt = RBFoptions(kernel="cubic", degree=1, interpolator=inter)
                 # c2 = solve_G06(cobraSeed+run, rbf_opt, feval=90, verbIter=100, conTol=0)
                 c2 = solve_G07(cobraSeed + run, rbf_opt, feval=200, verbIter=100, conTol=0)
                 # c2 = solve_G09(cobraSeed + run, rbf_opt, feval=200, verbIter=100, conTol=0)
