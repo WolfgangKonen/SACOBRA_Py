@@ -35,7 +35,7 @@ fin_err = np.array(cobra.get_fbest() - G06.fbest)
 print(f"final error: {fin_err}")
 ```
 
-First we construct the constraint optimization problem (COP) ``G06`` from the G-problem benchmark suite.  SACOBRA contains several such benchmark problems in [gCOP.py](./src/gCOP.py). Next we construct with ``CobraInitializer`` the object ``cobra`` with all optimization settings. The optimization is then started with ``CobraPhaseII`` where 40 iterations on surrogate models are carried out. (There is also a ``CobraPhaseI``, but it is optional and can be left out.) We show with ``show_error_plot`` the error on a logarithmic scale, i.e. the distance between the objective found by the solver in each iteration and the true objective ``G06.fbest``:
+First we construct the constraint optimization problem (COP) ``G06`` from the G-problem benchmark suite.  SACOBRA contains several such benchmark problems in [gCOP.py](./src/gCOP.py). Next we construct with ``CobraInitializer`` the object ``cobra`` with all optimization settings. The optimization is then started with ``CobraPhaseII`` where ``feval=40`` iterations with surrogate models are carried out. (There is also a ``CobraPhaseI``, but it is optional and can be left out.) We show with ``show_error_plot`` the error on a logarithmic scale, i.e. the distance between the objective found by the solver in each iteration and the true objective ``G06.fbest``:
 
 <img src="demo/error_plot_G06.png" alt="Error Plot G06" title="Error curve obtained by SACOBRA" width=600 />
 
@@ -49,8 +49,8 @@ cobra = CobraInitializer(G13.x0, G13.fn, G13.name, G13.lower, G13.upper, G13.is_
                          s_opts=SACoptions(verbose=verb, feval=300, cobraSeed=cobraSeed,
                                            ID=IDoptions(initDesign="LHS", initDesPoints= 6 * 7 // 2),
                                            RBF=RBFoptions(degree=2, rho=2.5, rhoDec=2.0), 
-                                           EQU=EQUoptions(muGrow=100, dec=1.6, equEpsFinal=1e-7,
-                                                          refineAlgo="COBYLA")  # "L-BFGS-B COBYLA",
+                                           EQU=EQUoptions(muGrow=100, muDec=1.6, muFinal=1e-7,
+                                                          refineAlgo="COBYLA")  # "L-BFGS-B | COBYLA",
                                            SEQ=SEQoptions(conTol=1e-7)))     
 c2 = CobraPhaseII(cobra).start()
 
