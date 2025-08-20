@@ -34,5 +34,5 @@ plt.plot([-2,3],[1+2,1-3], 'r-')
 plt.plot([0,0],[-3,3],'k-',linewidth=0.5)
 plt.plot([-3,3],[0,0],'k-',linewidth=0.5)
 
-plt.savefig('../demo/contour_plot.png')
+plt.savefig('../demo/contour_plot.png_file')
 plt.show()

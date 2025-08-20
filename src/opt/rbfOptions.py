@@ -10,8 +10,7 @@ class RBFoptions:
     """
         Options for the RBF surrogate models
 
-        :param kernel: RBF kernel type (one out of ``"cubic"``, ``"gaussian"``, ``"multiquadric"``). ``"cubic"`` is
-                **scale-invariant**, while ``"gaussian"`` and ``"multiquadric"`` are **scale-variant** kernel types.
+        :param kernel: RBF kernel type, see :ref:`below <kernel_label>`
         :param degree: degree of polynomial tail for RBF kernel. If None, then
                 `SciPy's RBFInterpolator <https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.RBFInterpolator.html>`_'
                 will set it depending on kernel type. See SciPy's RBFInterpolator documentation for details.
@@ -31,10 +30,18 @@ class RBFoptions:
          (faster and simpler in code). In case of  "sacobra", use an object of class :class:`.RBFsacob`, which is
          SACOBRA's own implementation of RBF models (allows with ``degree=1.5`` the option equivalent to ``squares=T``
          in SACOBRA R, which means only pure squares in the polynomial tail).
-        :param test_pmat: only for testing RBFsacob implementation (degree=1, 1.5)
+        :param test_pmat: only for testing the RBFsacob implementation (degree=1, 1.5)
+
+        .. _kernel_label:
+
+        Parameter ``kernel`` specifies the kernel type and is one out of ``"cubic"``, ``"quintic"``,
+        ``"thin_plate_spline"``, ``"gaussian"``, ``"multiquadric"``.
+
+        - **scale-invariant** kernel types: ``"cubic"``, ``"quintic"``, ``"thin_plate_spline"``
+        - **scale-variant** kernel types: ``"gaussian"``, ``"multiquadric"``
     """
     def __init__(self,
-                 kernel="cubic",    # "cubic" | "gaussian" | "multiquadric"
+                 kernel="cubic",    # "cubic" | "quintic" | "thin_plate_spline" | "gaussian" | "multiquadric"
                  degree= None,
                  rho=0.0,
                  rhoDec=2.0,        # exponential decay factor for rho

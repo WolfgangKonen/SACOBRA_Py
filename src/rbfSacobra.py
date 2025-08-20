@@ -52,7 +52,9 @@ def _monomial_powers(ndim, degree) -> np.ndarray:
     """
     Return the powers for each monomial in a polynomial.
 
-    Borrowed from `SciPy's RBFInterpolator <https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.RBFInterpolator.html>`_
+    Borrowed from
+    `SciPy's RBFInterpolator <https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.RBFInterpolator.html>`_
+    and extended with special case degree=1.5.
 
     Parameters
     ----------
@@ -113,8 +115,8 @@ def polynomial_vector(x, powers):
 
 class RBFsacob:
     """
-    RBF model implemented in SACOBRA. In contrast to SciPy's RBFInterpolator implementation, it allows degree==1.5
-    which means linear polynomial tail plus pure square terms x1**2, x2**2, ...
+    RBF model implemented in SACOBRA. In contrast to SciPy's RBFInterpolator implementation, it allows ``degree=1.5``
+    which means linear polynomial tail plus **pure** square terms ``x1**2, x2**2, ...``
     """
 
     def __init__(self, xobs, yobs, kernel="cubic", degree=1.5, rho=0, width=-1, test_pmat=False):
@@ -132,6 +134,7 @@ class RBFsacob:
         :param rho:     smoothing parameter. If = 0, we have interpolating RBFs, if > 0, we have approximating RBFs (the
                         larger ``rho``, the more approximating)
         :param width:   optional width parameter for Gaussian or MQ RBFs, see :class:`.RBFoptions` for details
+        :param test_pmat: only for testing the RBFsacob implementation (degree=1, 1.5)
 
         .. _degree_label:
 
@@ -160,7 +163,9 @@ class RBFsacob:
         switcher = {
             "cubic": self.trainCubicRBF,
             "gaussian": self.trainGaussianRBF,
-            "multiquadric": self.trainMQRBF
+            "multiquadric": self.trainMQRBF,
+            "quintic": self.trainQuinticRBF,
+            "thin_plate_spline": self.trainThinRBF,
         }
         mdl_func = switcher.get(kernel, lambda xobs, yobs, degree, rho, width: "not implemented")
         mdl = mdl_func(xobs, yobs, degree, rho, width)
@@ -188,6 +193,21 @@ class RBFsacob:
 
         self.trainRBF(phi, U, degree, xp, rho)
         return "multiquadric"
+
+    def trainQuinticRBF(self, xp, U, degree, rho, width):
+        edist = euclidean_distances(xp, xp)     # distance between rows of xp
+        phi = edist ** 5                # quintic RBF (npts x npts matrix)
+
+        self.trainRBF(phi, U, degree, xp, rho)
+        return "quintic"
+
+    def trainThinRBF(self, xp, U, degree, rho, width):
+        edist = euclidean_distances(xp, xp)     # distance between rows of xp
+        nu = 1e-10
+        phi = edist * edist * np.log(edist + nu)           # thin-plate-spline RBF (npts x npts matrix)
+
+        self.trainRBF(phi, U, degree, xp, rho)
+        return "thin_plate"
 
     def trainRBF(self, phi, U, degree: float, xp, rho=0):
         """
@@ -248,7 +268,8 @@ class RBFsacob:
             self.powers = _monomial_powers(p_x.shape[1], degree)      # save powers to self for later use in interpRBF
             pMat = polynomial_matrix(p_x, self.powers)
 
-            if self.test_pmat:
+            if self.test_pmat:      # this is just a test that degree=1 and =1.5 is the same as with the
+                                    # old version (which was buggy for degree=2)
                 pMat_old = np.hstack((np.ones(npts).reshape(npts, 1), p_x))   # linear tail LH(1,x1,x2,...)
                 if degree == 1.5:
                     pMat_old = np.hstack((pMat_old, p_x*p_x))         # ... plus direct squares x1^2, x2^2, ...
@@ -277,12 +298,12 @@ class RBFsacob:
         # The following equivalent call would be 6 - 10 times (!!) slower:
         # ed = euclidean_distances(x.reshape(1,self.d),self.xp)
 
-        x = (x - self.shift) / self.scale
+        p_x = (x - self.shift) / self.scale
         ptail = np.array([])
         if self.degree >= 1:
             # --- Bug fix 2025/08/16: the new version (borrowed from SciPy's RBFInterpolator) works correctly for
             # --- all degrees
-            ptail = polynomial_vector(x, self.powers)
+            ptail = polynomial_vector(p_x, self.powers)
 
             # --- Bug before 2025/08/16: this old version was wrong for degree >= 2, because mixed monomials like x1*x2
             # --- would appear multiple times:
@@ -302,22 +323,31 @@ class RBFsacob:
         def phi_mq(ed, width):
             return -np.sqrt(1 + 0.5 * (ed * ed) / width)
 
+        def phi_quintic(ed, width):
+            return ed ** 5
+
+        def phi_thin(ed, width):
+            return ed * ed * np.log(ed)
+
         # TODO: think about whether we need for "gaussian" for each kernel a different width (as on the R side)
         # (lhs below could become a matrix in this case)
 
         switcher = {
             "cubic": phi_cubic,
             "gaussian": phi_gauss,
-            "multiquadric": phi_mq
+            "multiquadric": phi_mq,
+            "quintic": phi_quintic,
+            "thin_plate_spline": phi_thin,
         }
         phi_func = switcher.get(self.type, lambda ed, width: "not implemented")
         phi = phi_func(ed, self.width)
         assert isinstance(phi, np.ndarray), f"[interpRBF] kernel type {self.type} is not (yet) implemented"
 
-        if ptail.size == 0:
-            lhs = phi
-        else:
-            lhs = np.append(phi, ptail)
+        # if ptail.size == 0:
+        #     lhs = phi
+        # else:
+        #     lhs = np.append(phi, ptail)
+        lhs = np.append(phi, ptail)     # this includes lhs = phi for the case ptail.size == 0
         assert lhs.size == self.coef.shape[0]
 
         return np.matmul(lhs, self.coef)

@@ -1,7 +1,8 @@
 from typing import Union
 import numpy as np
-import lhsmdu
+# import lhsmdu
 from opt.sacOptions import SACoptions
+from scipy.stats.qmc import LatinHypercube
 from opt.idOptions import IDoptions         # needed for docstring
 
 
@@ -55,10 +56,15 @@ class InitDesigner:
             # The seed is s_opts.cobraSeed (set via initial value for self.val).
             self.A = self._my_rng2(npts - 1, d)  # uniform random in [0,1)
         elif s_opts.ID.initDesign == "LHS":
-            # Latin Hypercube Sampling.
-            # The seed is s_opts.cobraSeed.
-            sam = lhsmdu.sample(d, npts - 1, randomSeed=s_opts.cobraSeed)
-            self.A = np.array(sam).T   # shape=(npts-1,d), uniform random in [0,1)
+            n = npts -1
+            # Latin Hypercube Sampling via SciPy
+            engine = LatinHypercube(d=d, rng=s_opts.cobraSeed)
+            sam = engine.random(n=n)
+            self.A = np.array(sam)   # shape=(n,d), uniform random in [0,1)
+
+            # # Latin Hypercube Sampling via lhsmdu --- now deprecated
+            # sam = lhsmdu.sample(d, n, randomSeed=s_opts.cobraSeed)
+            # A_old = np.array(sam).T   # shape=(npts-1,d), uniform random in [0,1)
         else:
             raise RuntimeError(f"[InitDesigner] Invalid value s_opts.initDesign = '{s_opts.ID.initDesign}' ")
 

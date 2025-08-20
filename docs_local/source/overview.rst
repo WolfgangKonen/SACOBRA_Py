@@ -54,9 +54,9 @@ The **SACOBRA_Py** realization relies on these other Python packages and softwar
 
 - ``scipy.RBFInterpolator`` for building the RBF surrogate models
 - ``nlopt`` for nonlinear optimization algorithms in the sequential optimization step
-- ``lhsmdu`` for latin hypercube sampling (LHS) in the initial design phase
 - ``Sphinx`` for building the package documentation from inline docstrings and .rst files
 - ``readthedocs.io`` for deploying and hosting the documentation pages
+.. ``lhsmdu`` for latin hypercube sampling (LHS) in the initial design phase
 
 We acknowledge and are grateful for all the work that goes into these great open source software tools!
 

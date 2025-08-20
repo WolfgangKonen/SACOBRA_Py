@@ -13,7 +13,7 @@ SACOBRA_Py Testing
 
 
 .. autoclass:: testRbfsacob.TestRbfSacob
-   :members: test_svd_inv, test_func_fn, test_gprob_rbf
+   :members: test_svd_inv, test_func_fn, test_gprob_rbf, test_rbf_width
 
 
 .. autoclass:: testCobraInit.TestCobraInit

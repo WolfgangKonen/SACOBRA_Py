@@ -1,23 +1,114 @@
 import time
 import unittest
 import numpy as np
+import pandas as pd
+from sklearn.model_selection import KFold
+
 from cobraInit import CobraInitializer
 from cobraPhaseII import CobraPhaseII
 from gCOP import GCOP
-from opt.equOptions import EQUoptions
 from opt.rbfOptions import RBFoptions
 from opt.seqOptions import SEQoptions
 from opt.idOptions import IDoptions
 from opt.sacOptions import SACoptions
 from rbfModel import RBFmodel
 from rbfSacobra import svd_inv, dist_line
+from read_dfw import read_dfw
 from testRbfModel import TestRbfModel       # for my_rng2
 
 verb = 1
 
+
 def fn(x):
     # return ((x[:, 0] - 10) ** 3) + ((x[:, 1] - 20) ** 3)
     return x[:, 0] * 2 + x[:, 1] * 3
+
+
+def fn1(x):
+    return np.array([x[0] * 2 + x[1] * 3, x[0] + x[1], x[0] - x[1]])
+
+
+def solve_G06(cobraSeed, rbf_opt, feval=40, verbIter=10, init_only=False, conTol=0):  # conTol=0 | 1e-7
+    print(f"Starting solve_G06({cobraSeed}) ...")
+    G06 = GCOP("G06")
+
+    cobra = CobraInitializer(G06.x0, G06.fn, G06.name, G06.lower, G06.upper, G06.is_equ,
+                             solu=G06.solu,
+                             s_opts=SACoptions(verbose=verb, verboseIter=verbIter, feval=feval,
+                                               cobraSeed=cobraSeed,
+                                               ID=IDoptions(initDesign="LHS", initDesPoints=6),
+                                               RBF=rbf_opt,
+                                               SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol)))
+
+    c2 = CobraPhaseII(cobra)
+    if init_only:
+        return c2
+    c2.start()
+
+    # show_error_plot(cobra, G06)
+
+    fin_err = np.array(cobra.get_fbest() - G06.fbest)
+    c2.p2.fin_err = fin_err
+    print(f"final err: {fin_err}")
+    c2.p2.fe_thresh = 5e-8
+    c2.p2.dim = G06.dimension
+    c2.p2.conTol = conTol
+    return c2
+
+
+def solve_G07(cobraSeed, rbf_opt, feval=180, verbIter=10, init_only=False, conTol=0):  # conTol=0 | 1e-7
+    print(f"Starting solve_G07({cobraSeed}) ...")
+    G07 = GCOP("G07")
+    idp = 11 * 12 // 2
+
+    cobra = CobraInitializer(G07.x0, G07.fn, G07.name, G07.lower, G07.upper, G07.is_equ,
+                             solu=G07.solu,
+                             s_opts=SACoptions(verbose=verb, verboseIter=verbIter, feval=feval,
+                                               cobraSeed=cobraSeed,
+                                               ID=IDoptions(initDesign="LHS", initDesPoints=idp),
+                                               RBF=rbf_opt,
+                                               SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol)))
+
+    c2 = CobraPhaseII(cobra)
+    if init_only:
+        return c2
+    c2.start()
+
+    fin_err = np.array(cobra.get_fbest() - G07.fbest)
+    c2.p2.fin_err = fin_err
+    print(f"final err: {fin_err}")
+    c2.p2.fe_thresh = 1e-9
+    c2.p2.dim = G07.dimension
+    c2.p2.conTol = conTol
+    return c2
+
+
+def solve_G09(cobraSeed, rbf_opt, feval=500, verbIter=50, init_only=False, conTol=1e-7):  # conTol=0 | 1e-7
+    print(f"Starting solve_G09({cobraSeed}) ...")
+    G09 = GCOP("G09")
+    idp = 10 * 11 // 2
+    # G09.x0 = G09.solu + 0.01
+
+    cobra = CobraInitializer(G09.x0, G09.fn, G09.name, G09.lower, G09.upper, G09.is_equ,
+                             solu=G09.solu,
+                             s_opts=SACoptions(verbose=verb, verboseIter=verbIter, feval=feval,
+                                               cobraSeed=cobraSeed,
+                                               ID=IDoptions(initDesign="LHS", initDesPoints=idp),
+                                               RBF=rbf_opt,
+                                               SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol)))
+
+    c2 = CobraPhaseII(cobra)
+    if init_only:
+        return c2
+    c2.start()
+
+    fin_err = np.array(cobra.get_fbest() - G09.fbest)
+    c2.p2.fin_err = fin_err
+    print(f"final err: {fin_err}")
+    c2.p2.fe_thresh = 5e-02
+    c2.p2.dim = G09.dimension
+    c2.p2.conTol = conTol
+    return c2
 
 
 class TestRbfSacob(unittest.TestCase):
@@ -146,6 +237,7 @@ class TestRbfSacob(unittest.TestCase):
             print(f"avg |ytest - ytest_from_R| = {np.mean(np.abs(delta)):.4e}")
             # assert np.allclose(ytest, ytest_from_R, rtol=1e-4)
 
+
         print("[inner_test_func_fn passed]")
 
     def test_func_fn(self):
@@ -156,8 +248,8 @@ class TestRbfSacob(unittest.TestCase):
 
             Test -- only for ``kernel="cubic"`` and degree ``deg <= 1`` -- that results are the same in Python and in R.
 
-            Test -- only for ``nobs=10`` -- that RBF coefficients are the same in RBFsacob and in SciPy's RBFInterpolator
-            (up to absolute tolerance ``atol = 1e-5 ... 1e-2``, depending on kernel and degree).
+            Test -- only for ``nobs=10`` -- that RBF coefficients are the same in RBFsacob and in SciPy's
+            RBFInterpolator (up to absolute tolerance ``atol = 1e-5 ... 1e-2``, depending on kernel and degree).
 
             Test -- only for degree ``deg=1`` or ``deg=1.5`` -- that the elements of polynomial matrix ``pMat`` in
             RBFsacob are in the new implementation (monomial powers) the same as in the old implementation (that is
@@ -174,99 +266,54 @@ class TestRbfSacob(unittest.TestCase):
 
     def test_gprob_rbf(self):
         """
-        Test both RBF interpolators ``"scipy"`` and ``"sacobra"`` on different COPs (G06, G07 or G09) and measure mean
-        error, total RBF model build (``__init__``) time and total RBF predict (``__call__``) time.
+        Test both cubic RBF interpolators ``"scipy"`` and ``"sacobra"`` on different COPs (G06, G07) and measure
+        mean error, total RBF model build (``__init__``) time and total RBF predict (``__call__``) time.
+
+        Results for ``degree=2``: good, both interpolators have similar and small errors < 1e-6.
+
+        Results for ``degree=1``: only mediocre, error < 2e-2 for G06, < 7e-1 for G07, ``"sacobra"`` sometimes worse
+        than ``"scipy"``.
         """
-
-        def solve_G06(cobraSeed, rbf_opt, feval=40, verbIter=10, conTol=0):  # conTol=0 | 1e-7
-            print(f"Starting solve_G06({cobraSeed}) ...")
-            G06 = GCOP("G06")
-
-            cobra = CobraInitializer(G06.x0, G06.fn, G06.name, G06.lower, G06.upper, G06.is_equ,
-                                     solu=G06.solu,
-                                     s_opts=SACoptions(verbose=verb, verboseIter=verbIter, feval=feval,
-                                                       cobraSeed=cobraSeed,
-                                                       ID=IDoptions(initDesign="RAND_REP", initDesPoints=6),
-                                                       RBF=rbf_opt,
-                                                       SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol)))
-
-            c2 = CobraPhaseII(cobra)
-            c2.start()
-
-            # show_error_plot(cobra, G06)
-
-            fin_err = np.array(cobra.get_fbest() - G06.fbest)
-            c2.p2.fin_err = fin_err
-            print(f"final err: {fin_err}")
-            # c2.p2.fe_thresh = 5e-6    # this is for s_opts.SEQ.finalEpsXiZero=False
-            c2.p2.fe_thresh = 5e-8  # this is for s_opts.SEQ.finalEpsXiZero=True and s_opts.SEQ.conTol=1e-7
-            c2.p2.dim = G06.dimension
-            c2.p2.conTol = conTol
-            return c2
-
-        def solve_G07(cobraSeed, rbf_opt, feval=180, verbIter=10, conTol=0):  # conTol=0 | 1e-7
-            print(f"Starting solve_G07({cobraSeed}) ...")
-            G07 = GCOP("G07")
-            idp = 11 * 12 // 2
-
-            cobra = CobraInitializer(G07.x0, G07.fn, G07.name, G07.lower, G07.upper, G07.is_equ,
-                                     solu=G07.solu,
-                                     s_opts=SACoptions(verbose=verb, verboseIter=verbIter, feval=feval,
-                                                       cobraSeed=cobraSeed,
-                                                       ID=IDoptions(initDesign="LHS", initDesPoints=idp),
-                                                       RBF=rbf_opt,
-                                                       SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol)))
-
-            c2 = CobraPhaseII(cobra).start()
-
-            fin_err = np.array(cobra.get_fbest() - G07.fbest)
-            c2.p2.fin_err = fin_err
-            print(f"final err: {fin_err}")
-            c2.p2.fe_thresh = 1e-9
-            c2.p2.dim = G07.dimension
-            c2.p2.conTol = conTol
-            return c2
-
-        def solve_G09(cobraSeed, rbf_opt, feval=500, verbIter=50, conTol=1e-7):  # conTol=0 | 1e-7
-            print(f"Starting solve_G09({cobraSeed}) ...")
-            G09 = GCOP("G09")
-            idp = 10 * 11 // 2
-            # G09.x0 = G09.solu + 0.01
-
-            cobra = CobraInitializer(G09.x0, G09.fn, G09.name, G09.lower, G09.upper, G09.is_equ,
-                                     solu=G09.solu,
-                                     s_opts=SACoptions(verbose=verb, verboseIter=verbIter, feval=feval,
-                                                       cobraSeed=cobraSeed,
-                                                       ID=IDoptions(initDesign="LHS", initDesPoints=idp),
-                                                       RBF=rbf_opt,
-                                                       SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol)))
-
-            c2 = CobraPhaseII(cobra).start()
-
-            fin_err = np.array(cobra.get_fbest() - G09.fbest)
-            c2.p2.fin_err = fin_err
-            print(f"final err: {fin_err}")
-            c2.p2.fe_thresh = 5e-02
-            c2.p2.dim = G09.dimension
-            print(G09.fbest)
-            print(cobra.get_fbest())
-            c2.p2.conTol = conTol
-            return c2
-
-        cobraSeed=52
+        cobraSeed = 52
         runs = 2
-        errs = np.zeros((2,runs))
+        errs = np.zeros((2, runs))
         time_init = np.zeros(2)
         time_call = np.zeros(2)
-        for run in range(runs):
-            for k, inter in enumerate(["scipy", "sacobra"]):
-                rbf_opt = RBFoptions(kernel="cubic", degree=1, interpolator=inter)
-                # c2 = solve_G06(cobraSeed+run, rbf_opt, feval=90, verbIter=100, conTol=0)
-                c2 = solve_G07(cobraSeed + run, rbf_opt, feval=200, verbIter=100, conTol=0)
-                # c2 = solve_G09(cobraSeed + run, rbf_opt, feval=200, verbIter=100, conTol=0)
-                errs[k,run] = c2.p2.fin_err
-                time_init[k] += c2.p2.time_init
-                time_call[k] += c2.p2.time_call
+        # gprob = "G06"
+        # deg = 1
+        kernel = "cubic"
+        dft = pd.DataFrame()
+        for gprob in ["G06", "G07"]:
+            for run in range(runs):
+                for deg in [1, 2]:
+                    for k, inter in enumerate(["scipy", "sacobra"]):
+                        rbf_opt = RBFoptions(kernel=kernel, degree=deg, interpolator=inter)
+                        if gprob == "G06":
+                            c2 = solve_G06(cobraSeed+run, rbf_opt, feval=90, verbIter=100, conTol=0)
+                        elif gprob == "G07":
+                            c2 = solve_G07(cobraSeed + run, rbf_opt, feval=200, verbIter=100, conTol=0)
+                        else:   # i.e. "G09"
+                            c2 = solve_G09(cobraSeed + run, rbf_opt, feval=200, verbIter=100, conTol=0)
+                        errs[k, run] = c2.p2.fin_err
+                        time_init[k] += c2.p2.time_init
+                        time_call[k] += c2.p2.time_call
+
+                        new_row_dft = pd.DataFrame(
+                            {'gprob': gprob,
+                             'kernel': kernel,
+                             'degree': deg,
+                             'seed': cobraSeed+run,
+                             'inter': inter,  # interpolator
+                             'feval': c2.cobra.sac_opts.feval,
+                             'err': c2.p2.fin_err,
+                             'fbest': c2.cobra.get_fbest(),
+                             't_init': c2.p2.time_init,
+                             't_call': c2.p2.time_call
+                             }, index=[0])
+                        dft = pd.concat([dft, new_row_dft], axis=0)
+
+        err2 = np.array(dft.loc[dft['degree'] == 2, ['err']])
+        assert np.allclose(err2, 0, atol=1e-6)
 
         print(errs)
         print("mean err [scipy, sacobra]")
@@ -275,6 +322,99 @@ class TestRbfSacob(unittest.TestCase):
         print(f"{time_init}    {time_init[1]/time_init[0]:.2f}")
         print("time_call [scipy, sacobra]")
         print(f"{time_call}    {time_call[1]/time_call[0]:.2f}")
+        print(dft)
+        dft.to_feather("feather/dft.feather")
+
+    def inner_width_fit(self, idp, n_splits, cobraSeed, kernel, width, deg, inter, dfw1):
+        print(f"Starting fit_G06({cobraSeed}) ...")
+        G06 = GCOP("G06")
+
+        rbf_opt = RBFoptions(kernel=kernel, width=width, degree=deg, interpolator=inter)
+        cobra = CobraInitializer(G06.x0, G06.fn, G06.name, G06.lower, G06.upper, G06.is_equ,  # G06.fn | fn1
+                                 solu=G06.solu,
+                                 s_opts=SACoptions(verbose=verb, verboseIter=verb, feval=2*idp, cobraSeed=cobraSeed,
+                                                   ID=IDoptions(initDesign="LHS", initDesPoints=idp),
+                                                   RBF=rbf_opt))
+
+        A = cobra.sac_res['A']
+        Fres = cobra.sac_res['Fres']
+        print(A.shape)
+        kf = KFold(n_splits=n_splits)
+        err_vector = np.ndarray(n_splits, dtype=float)
+        for k, (train_index, test_index) in enumerate(kf.split(A)):
+            # print("TRAIN:", train_index, "TEST:", test_index)
+            A_train, A_test = A[train_index], A[test_index]
+            F_train, F_test = Fres[train_index], Fres[test_index]
+            fit_model = RBFmodel(A_train, F_train, rbf_opt)
+            fit_test = fit_model(A_test)
+            err_test = np.mean(np.abs(fit_test-F_test))
+            err_vector[k] = err_test
+            dummy = 0
+
+        new_row_dfw = pd.DataFrame(
+            {'width': width,
+             'kernel': kernel,
+             'degree': deg,
+             'seed': cobraSeed,
+             'inter': inter,  # interpolator
+             'err': np.mean(err_vector),
+             'fbest': cobra.get_fbest(),
+             }, index=[0])
+        dfw1 = pd.concat([dfw1, new_row_dfw], axis=0)
+        return dfw1
+
+    def inner_width_solve(self, gprob, runs, cobraSeed, kernel, width, deg, inter, dfw2):
+        for run in range(runs):
+            seed = cobraSeed + run
+            rbf_opt = RBFoptions(kernel=kernel, width=width, degree=deg, interpolator=inter)
+
+            if gprob == "G06":
+                c2 = solve_G06(seed, rbf_opt, feval=90, verbIter=100, conTol=0)
+            elif gprob == "G07":
+                c2 = solve_G07(seed, rbf_opt, feval=200, verbIter=100, conTol=0)
+
+            new_row_dfw = pd.DataFrame(
+                {'width': width,
+                 'kernel': kernel,
+                 'degree': deg,
+                 'seed': seed,
+                 'inter': inter,  # interpolator
+                 'feval': c2.cobra.sac_opts.feval,
+                 'err': c2.p2.fin_err,
+                 'fbest': c2.cobra.get_fbest(),
+                 }, index=[0])
+            dfw2 = pd.concat([dfw2, new_row_dfw], axis=0)
+
+    def test_rbf_width(self):
+        """
+        Test for scale-variant kernels (e.g. "gaussian") how accuracy varies with kernel width.
+
+        1. How does the RBF approximation error in cross-validation vary with width?
+        2. How does the COP optimization error vary with width?
+        3. Are similar width values optimal in 1. and 2.?
+        """
+        cobraSeed = 52
+        gprob = "G06"
+        runs = 2
+        idp = 12
+        n_splits = 2
+        kernel = "multiquadric"   # "cubic"  | "gaussian" | "multiquadric" | "thin_plate_spline" | "quintic"
+        dfw1 = pd.DataFrame()
+        dfw2 = pd.DataFrame()
+        # for width in np.arange(0.1,3.0,0.2):
+        for width in [0.02, 0.05, 0.1, 0.2, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 50.0]:
+            for deg in [1, 2]:
+                for k, inter in enumerate(["scipy", "sacobra"]):  #
+                    dfw1 = self.inner_width_fit(idp, n_splits, cobraSeed, kernel, width, deg, inter, dfw1)
+                    # dfw2 = self.inner_width_solve(gprob, runs, cobraSeed, kernel, width, deg, inter, dfw2)
+
+        print(dfw1)
+        print(dfw2)
+        dfw1.to_feather("feather/dfw1.feather")
+        dfw2.to_feather("feather/dfw2.feather")
+
+        png_file = f"plots/{kernel}_idp{idp:03d}_{n_splits}.png"
+        read_dfw(idp, n_splits, png_file)      # re-read the data frames and create some plots
 
 
 if __name__ == '__main__':
