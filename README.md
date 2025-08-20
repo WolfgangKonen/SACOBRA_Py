@@ -46,12 +46,12 @@ Another example [sacobra_equ.py](./demo/sacobra_equ.py) with equality constraint
 G13 = GCOP("G13")
 
 cobra = CobraInitializer(G13.x0, G13.fn, G13.name, G13.lower, G13.upper, G13.is_equ, solu=G13.solu,
-                         s_opts=SACoptions(verbose=verb, feval=300, cobraSeed=cobraSeed,
+                         s_opts=SACoptions(verbose=1, feval=300, cobraSeed=42,
                                            ID=IDoptions(initDesign="LHS", initDesPoints= 6 * 7 // 2),
                                            RBF=RBFoptions(degree=2, rho=2.5, rhoDec=2.0), 
                                            EQU=EQUoptions(muGrow=100, muDec=1.6, muFinal=1e-7,
                                                           refineAlgo="COBYLA")  # "L-BFGS-B | COBYLA",
-                                           SEQ=SEQoptions(conTol=1e-7)))     
+                                           SEQ=SEQoptions(conTol=0)))       # 0 | 1e-7
 c2 = CobraPhaseII(cobra).start()
 
 fin_err = np.array(cobra.get_fbest() - G13.fbest)
