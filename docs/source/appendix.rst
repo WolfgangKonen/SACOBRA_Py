@@ -15,6 +15,12 @@ With
 we generate the main data structure ``cobra`` of **SACOBRA_Py** (see :class:`.CobraInitializer`).
 Some of its data frame and dictionary elements are described below.
 
+cobra.sac_opts
+--------------
+
+:class:`.SACoptions` ``cobra.sac_opts`` holds the collection of all parameters (options) for **SACOBRA_Py**.
+
+
 .. _sacres-label:
 
 cobra.sac_res
