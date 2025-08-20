@@ -58,7 +58,7 @@ fin_err = np.array(cobra.get_fbest() - G13.fbest)
 print(f"final err: {fin_err}")
 ```
 
-Problem G13 has 3 equality constraints and dimension 5. It requires with ``feval=300`` a few more function evaluations. The solver works in the beginning with approximating RBFs (``rho=2.5``) which become later interpolating RBF since ``rho`` is decaying with factor ``rhoDec=2.0``. In addition, a margin ``mu`` is placed around each equality in order to artificially create a feasible band. Parameter ``mu`` decays with the factor ``dec=1.6`` and increases periodically  every 100 iterations (``muGrow=100``). SACOBRA solves also this problem nicely, the error to the true solution drops below 1e-8 at iteration 225:
+Problem G13 has 3 equality constraints and dimension 5. It requires with ``feval=300`` a few more function evaluations. The solver works in the beginning with approximating RBFs (``rho=2.5``) which become later interpolating RBF since ``rho`` is decaying with factor ``rhoDec=2.0``. In addition, a margin ``mu`` is placed around each equality in order to artificially create a feasible band. Parameter ``mu`` decays with the factor ``dec=1.6`` and increases periodically  every 100 iterations (``muGrow=100``). SACOBRA solves also this problem nicely, the error to the true solution drops below 1e-8 near iteration 150:
 
 <img src="demo/error_plot_G13.png" alt="Error Plot G13" title="Error curve obtained by SACOBRA" width=600 />
 
