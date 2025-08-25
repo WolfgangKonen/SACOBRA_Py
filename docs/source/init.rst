@@ -25,7 +25,7 @@ The initialization in **SACOBRA_Py** is done by creating an object of class :cla
 
 
 .. autoclass:: cobraInit.CobraInitializer 
-   :members: adCon, adDRC, get_fbest, get_xbest, get_xbest_cobra
+   :members: adCon, adDRC, get_fbest, get_xbest, get_xbest_cobra, is_feasible
 
 .. autoclass:: initDesigner.InitDesigner
    :members: __call__
@@ -36,8 +36,15 @@ The initialization in **SACOBRA_Py** is done by creating an object of class :cla
 Types of Initial Design
 =======================
 
-TODO: LHS, Random, ...
+The initial design creates a matrix **self.A** with shape ``(P, d)`` of sample points in (potentially rescaled)
+input space ``[lower, upper]`` :math:`\subset \mathbb{R}^d`,
+where ``P = s_opts.ID.initDesPoints`` and ``d =`` input space dimension.
 
+The recipe how to select the sample points is prescribed by  ``s_opts.ID.initDesign``:
+
+- **"RANDOM"**: uniform random
+- **"RAND_R"**: uniform random with reproducible random numbers (both in R and in Python)
+- **"LHS"**: Latin Hypercube Sampling, see `SciPy's LatinHyperCube <https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.qmc.LatinHypercube.html>`_
 
 
 .. _DRC-label:
