@@ -219,10 +219,16 @@ class Surrogator1:
             # might need adjustment due to rescale /WK/
             fnEval = np.apply_along_axis(s_res['fn'], axis=1, arr=A)    # fnEval.shape = (initDesPoints, nConstraints+1)
             Gres = fnEval[:, 1:]
-            assert np.allclose(Gres, s_res['Gres']), "Gres-assertion failed"
+            # print(np.max(np.abs(Gres - s_res['Gres'])))
+            assert np.allclose(Gres, s_res['Gres']), "Gres-assertion 1 failed"
 
             Gres = p2.constraintSurrogates(A)
             # Gres = np.apply_along_axis(s_res['constraintSurrogates'], axis=1, arr=A)
+            if not np.allclose(Gres, s_res['Gres'], rtol=1e-3):
+                delta = np.abs(Gres - s_res['Gres'])
+                print(Gres.shape[0], np.max(delta), np.max(delta/np.abs(Gres)))
+                dummy = 0
+            # assert np.allclose(Gres, s_res['Gres']), "Gres-assertion 2 failed"
             for i in range(Gres.shape[1]):
                 gi = Gres[:, i]
                 z = (gi - s_res['Gres'][:, i]) / (np.max(gi) - np.min(gi))

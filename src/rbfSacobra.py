@@ -329,8 +329,8 @@ class RBFsacob:
         def phi_thin(ed, width):
             return ed * ed * np.log(ed)
 
-        # TODO: think about whether we need for "gaussian" for each kernel a different width (as on the R side)
-        # (lhs below could become a matrix in this case)
+        # think about whether we need for "gaussian" for each kernel a different width (as on the R side)
+        # (lhs below could become a matrix in this case) --> we decided AGAINST it and do not use rule TWO for width
 
         switcher = {
             "cubic": phi_cubic,

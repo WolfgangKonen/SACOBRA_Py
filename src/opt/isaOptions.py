@@ -197,7 +197,7 @@ class ISAoptions2(ISAoptions):
                  conPLOG=False,
                  conFitPLOG=False,
                  adaptivePLOG=False,
-                 onlinePLOG=O_LOGIC.NONE,  # TODO: there is a bug with onlinePLOG and ISAoptions2
+                 onlinePLOG=O_LOGIC.NONE,
                  onlineFreqPLOG=10,
                  pEffectInit=3,
                  pEff_npts=3,

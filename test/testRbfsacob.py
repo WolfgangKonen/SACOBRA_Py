@@ -7,13 +7,14 @@ from sklearn.model_selection import KFold
 from cobraInit import CobraInitializer
 from cobraPhaseII import CobraPhaseII
 from gCOP import GCOP
+from opt.equOptions import EQUoptions
 from opt.rbfOptions import RBFoptions
 from opt.seqOptions import SEQoptions
 from opt.idOptions import IDoptions
 from opt.sacOptions import SACoptions
 from rbfModel import RBFmodel
 from rbfSacobra import svd_inv, dist_line
-from read_dfw import read_dfw
+from read_dfw import read_dfw1, read_dfw2
 from testRbfModel import TestRbfModel       # for my_rng2
 
 verb = 1
@@ -28,7 +29,30 @@ def fn1(x):
     return np.array([x[0] * 2 + x[1] * 3, x[0] + x[1], x[0] - x[1]])
 
 
-def solve_G06(cobraSeed, rbf_opt, feval=40, verbIter=10, init_only=False, conTol=0):  # conTol=0 | 1e-7
+def solve_G03(cobraSeed, dimension, rbf_opt, feval=150, verbIter=10, conTol=0):  # conTol=0 | 1e-7
+    print(f"Starting solve_G03({cobraSeed}, dim={dimension}, ...) ...")
+    G03 = GCOP("G03", dimension)
+
+    x0 = G03.x0  # None --> a random x0 will be set
+    equ_opt = EQUoptions(muGrow=100, muDec=1.6, muFinal=1e-12, refineAlgo="BFGS_1", refinePrint=False)
+    cobra = CobraInitializer(x0, G03.fn, G03.name, G03.lower, G03.upper, G03.is_equ,
+                             solu=G03.solu,
+                             s_opts=SACoptions(verbose=verb, verboseIter=verbIter, feval=feval, cobraSeed=cobraSeed,
+                                               ID=IDoptions(initDesign="LHS", rescale=True),
+                                               RBF=rbf_opt,
+                                               SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol)))
+    c2 = CobraPhaseII(cobra).start()
+
+    fin_err = np.array(cobra.get_feasible_best() - G03.fbest)
+    print(f"final err: {fin_err}")
+    c2.p2.fin_err = fin_err
+    c2.p2.fe_thresh = 1e-9
+    c2.p2.dim = G03.dimension
+    c2.p2.conTol = conTol
+    return c2
+
+
+def solve_G06(cobraSeed, rbf_opt, feval=40, verbIter=10, conTol=0):  # conTol=0 | 1e-7
     print(f"Starting solve_G06({cobraSeed}) ...")
     G06 = GCOP("G06")
 
@@ -41,13 +65,11 @@ def solve_G06(cobraSeed, rbf_opt, feval=40, verbIter=10, init_only=False, conTol
                                                SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol)))
 
     c2 = CobraPhaseII(cobra)
-    if init_only:
-        return c2
     c2.start()
 
     # show_error_plot(cobra, G06)
 
-    fin_err = np.array(cobra.get_fbest() - G06.fbest)
+    fin_err = np.array(cobra.get_feasible_best() - G06.fbest)
     c2.p2.fin_err = fin_err
     print(f"final err: {fin_err}")
     c2.p2.fe_thresh = 5e-8
@@ -56,7 +78,7 @@ def solve_G06(cobraSeed, rbf_opt, feval=40, verbIter=10, init_only=False, conTol
     return c2
 
 
-def solve_G07(cobraSeed, rbf_opt, feval=180, verbIter=10, init_only=False, conTol=0):  # conTol=0 | 1e-7
+def solve_G07(cobraSeed, rbf_opt, feval=180, verbIter=10, conTol=0):  # conTol=0 | 1e-7
     print(f"Starting solve_G07({cobraSeed}) ...")
     G07 = GCOP("G07")
     idp = 11 * 12 // 2
@@ -70,11 +92,9 @@ def solve_G07(cobraSeed, rbf_opt, feval=180, verbIter=10, init_only=False, conTo
                                                SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol)))
 
     c2 = CobraPhaseII(cobra)
-    if init_only:
-        return c2
     c2.start()
 
-    fin_err = np.array(cobra.get_fbest() - G07.fbest)
+    fin_err = np.array(cobra.get_feasible_best() - G07.fbest)
     c2.p2.fin_err = fin_err
     print(f"final err: {fin_err}")
     c2.p2.fe_thresh = 1e-9
@@ -83,7 +103,7 @@ def solve_G07(cobraSeed, rbf_opt, feval=180, verbIter=10, init_only=False, conTo
     return c2
 
 
-def solve_G09(cobraSeed, rbf_opt, feval=500, verbIter=50, init_only=False, conTol=1e-7):  # conTol=0 | 1e-7
+def solve_G09(cobraSeed, rbf_opt, feval=500, verbIter=50, conTol=1e-7):  # conTol=0 | 1e-7
     print(f"Starting solve_G09({cobraSeed}) ...")
     G09 = GCOP("G09")
     idp = 10 * 11 // 2
@@ -98,11 +118,9 @@ def solve_G09(cobraSeed, rbf_opt, feval=500, verbIter=50, init_only=False, conTo
                                                SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol)))
 
     c2 = CobraPhaseII(cobra)
-    if init_only:
-        return c2
     c2.start()
 
-    fin_err = np.array(cobra.get_fbest() - G09.fbest)
+    fin_err = np.array(cobra.get_feasible_best() - G09.fbest)
     c2.p2.fin_err = fin_err
     print(f"final err: {fin_err}")
     c2.p2.fe_thresh = 5e-02
@@ -351,6 +369,7 @@ class TestRbfSacob(unittest.TestCase):
             err_vector[k] = err_test
             dummy = 0
 
+        print(f"width = {width}: W_ONE = {fit_model.get_width_one():.3f}, W_THREE = {fit_model.get_width_three():.3f}")
         new_row_dfw = pd.DataFrame(
             {'width': width,
              'kernel': kernel,
@@ -363,27 +382,50 @@ class TestRbfSacob(unittest.TestCase):
         dfw1 = pd.concat([dfw1, new_row_dfw], axis=0)
         return dfw1
 
-    def inner_width_solve(self, gprob, runs, cobraSeed, kernel, width, deg, inter, dfw2):
+    def inner_width_solve(self, gprob, runs, cobraSeed, kernel, width, deg, inter, dfw2, lon2):
+        err_arr = np.zeros(runs)
+        fbest_arr = np.zeros(runs)
         for run in range(runs):
             seed = cobraSeed + run
             rbf_opt = RBFoptions(kernel=kernel, width=width, degree=deg, interpolator=inter)
 
-            if gprob == "G06":
+            if gprob == "G03":
+                c2 = solve_G03(seed, 10, rbf_opt, feval=500, verbIter=100, conTol=0)
+            elif gprob == "G06":
                 c2 = solve_G06(seed, rbf_opt, feval=90, verbIter=100, conTol=0)
             elif gprob == "G07":
                 c2 = solve_G07(seed, rbf_opt, feval=200, verbIter=100, conTol=0)
+            elif gprob == "G09":
+                c2 = solve_G09(seed, rbf_opt, feval=500, verbIter=100, conTol=0)
 
-            new_row_dfw = pd.DataFrame(
-                {'width': width,
-                 'kernel': kernel,
-                 'degree': deg,
-                 'seed': seed,
-                 'inter': inter,  # interpolator
-                 'feval': c2.cobra.sac_opts.feval,
-                 'err': c2.p2.fin_err,
-                 'fbest': c2.cobra.get_fbest(),
-                 }, index=[0])
-            dfw2 = pd.concat([dfw2, new_row_dfw], axis=0)
+            err_arr[run] = c2.p2.fin_err
+            fbest_arr[run] = c2.cobra.get_feasible_best()
+            if c2.cobra.is_feasible():          # has a feasible solution been found?
+                new_row_lon = pd.DataFrame(
+                    {'width': width,
+                     'kernel': kernel,
+                     'degree': deg,
+                     'seed': seed,
+                     'inter': inter,  # interpolator
+                     'feval': c2.cobra.sac_opts.feval,
+                     'err': c2.p2.fin_err,
+                     'fbest': c2.cobra.get_feasible_best(),
+                     }, index=[0])
+                lon2 = pd.concat([lon2, new_row_lon], axis=0)
+
+        new_row_dfw = pd.DataFrame(
+            {'width': width,
+             'kernel': kernel,
+             'degree': deg,
+             'inter': inter,  # interpolator
+             'feval': c2.cobra.sac_opts.feval,
+             'conTol': c2.cobra.sac_opts.SEQ.conTol,
+             'err': np.nanmean(err_arr),
+             'std_err': np.nanstd(err_arr),
+             'fbest': np.nanmean(fbest_arr),
+             }, index=[0])
+        dfw2 = pd.concat([dfw2, new_row_dfw], axis=0)
+        return dfw2, lon2
 
     def test_rbf_width(self):
         """
@@ -392,29 +434,38 @@ class TestRbfSacob(unittest.TestCase):
         1. How does the RBF approximation error in cross-validation vary with width?
         2. How does the COP optimization error vary with width?
         3. Are similar width values optimal in 1. and 2.?
+        4. Are they similar to the heuristic widths W_ONE, W_THREE? --> see printout in inner_width_fit
         """
         cobraSeed = 52
-        gprob = "G06"
-        runs = 2
-        idp = 12
-        n_splits = 2
-        kernel = "multiquadric"   # "cubic"  | "gaussian" | "multiquadric" | "thin_plate_spline" | "quintic"
+        gprob = "G09"
+        runs = 6
+        idp = 20
+        n_splits = 4
+        kernel = "cubic"   # "cubic"  | "gaussian" | "multiquadric" | "thin_plate_spline" | "quintic"
+
         dfw1 = pd.DataFrame()
         dfw2 = pd.DataFrame()
+        lon2 = pd.DataFrame()
         # for width in np.arange(0.1,3.0,0.2):
-        for width in [0.02, 0.05, 0.1, 0.2, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 50.0]:
-            for deg in [1, 2]:
-                for k, inter in enumerate(["scipy", "sacobra"]):  #
-                    dfw1 = self.inner_width_fit(idp, n_splits, cobraSeed, kernel, width, deg, inter, dfw1)
-                    # dfw2 = self.inner_width_solve(gprob, runs, cobraSeed, kernel, width, deg, inter, dfw2)
+        # for width in [0.02, 0.05, 0.1, 0.2, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 50.0]:
+        for width in [0.01, 0.02, 0.2, 1.0]:
+            for deg in [1, 2]:   #
+                for k, inter in enumerate(["scipy"]):  # , "sacobra"
+                    # dfw1 = self.inner_width_fit(idp, n_splits, cobraSeed, kernel, width, deg, inter, dfw1)
+                    dfw2, lon2 = self.inner_width_solve(gprob, runs, cobraSeed, kernel, width, deg, inter, dfw2, lon2)
 
         print(dfw1)
         print(dfw2)
         dfw1.to_feather("feather/dfw1.feather")
         dfw2.to_feather("feather/dfw2.feather")
+        lon2.to_feather("feather/lon2.feather")
 
-        png_file = f"plots/{kernel}_idp{idp:03d}_{n_splits}.png"
-        read_dfw(idp, n_splits, png_file)      # re-read the data frames and create some plots
+        dfw2 = pd.read_feather("feather/dfw2.feather")
+        feval = dfw2[0:1]['feval'][0]
+        png_file1 = f"plots/{kernel}_idp{idp:03d}_{n_splits}.png"
+        png_file2 = f"plots/slv_{gprob}_{kernel}_runs{runs:03d}_{feval}.png"
+        # read_dfw1(idp, n_splits, png_file1)           # re-read data frame dfw1 and create plot
+        read_dfw2(gprob, runs, png_file=png_file2)    # re-read data frame dfw2, create plot(s), do assertions
 
 
 if __name__ == '__main__':

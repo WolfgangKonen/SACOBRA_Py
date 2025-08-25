@@ -77,28 +77,28 @@ def updateInfoAndCounters(cobra: CobraInitializer, p2: Phase2Vars, currentMu=0):
     cobra.sac_res['phase'] = concat(cobra.sac_res['phase'], cobra.phase)
     cobra.sac_res['predC'] = p2.ev1.predC
 
-    num = cobra.sac_res['A'].shape[0]
-    curr_important = num % cobra.sac_opts.verboseIter == 0
+    p2.num = cobra.sac_res['A'].shape[0]
+    curr_important = p2.num % cobra.sac_opts.verboseIter == 0
     cobra.sac_opts.important =curr_important
 
     xNewIndex = cobra.sac_res['numViol'].size - 1
     DEBUGequ = (cobra.sac_opts.EQU.active and cobra.sac_opts.verbose == 2)
     verbose = cobra.sac_opts.verbose
     verboseprint(verbose, important = DEBUGequ,
-                 message = f"{cobra.phase}.[{num}]: {cobra.sac_res['A'][xNewIndex, 0]} | {cobra.sac_res['Fres'][-1]} |"
-                           f"{p2.ev1.newMaxViol} | {currentMu}")
+                 message = f"{cobra.phase}.[{p2.num}]: {cobra.sac_res['A'][xNewIndex, 0]} | "
+                           f"{cobra.sac_res['Fres'][-1]} | {p2.ev1.newMaxViol} | {currentMu}")
 
     dim = cobra.sac_res['A'].shape[1]
     realXbest = cobra.rw.inverse(cobra.sac_res['xbest'].reshape(dim,))
     if cobra.sac_opts.EQU.active:
         verboseprint(verbose, important = cobra.sac_opts.important,
-                     message = f"Best Result.[{num}]: {realXbest[0]} {realXbest[1]} | {cobra.sac_res['fbest']} | "
+                     message = f"Best Result.[{p2.num}]: {realXbest[0]} {realXbest[1]} | {cobra.sac_res['fbest']} | "
                                f"{cobra.sac_res['trueMaxViol'][cobra.sac_res['ibest']]} |  {currentMu}")
 
     else:
         # TODO: add the part with 'nrow(get("ARCHIVE",envir=intern.archive.env))' to the following message:
         verboseprint(verbose, important=cobra.sac_opts.important,
-                     message=f"Best Result.[{num}]: {realXbest[0]} {realXbest[1]} | {cobra.sac_res['fbest']} | "
+                     message=f"Best Result.[{p2.num}]: {realXbest[0]} {realXbest[1]} | {cobra.sac_res['fbest']} | "
                              f"{cobra.sac_res['trueMaxViol'][cobra.sac_res['ibest']]}")
 
     if cobra.sac_res['numViol'][-1] == 0:

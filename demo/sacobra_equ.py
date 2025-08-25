@@ -16,7 +16,7 @@ cobra = CobraInitializer(G13.x0, G13.fn, G13.name, G13.lower, G13.upper, G13.is_
                                            ID=IDoptions(initDesign="LHS", initDesPoints=6*7//2),
                                            RBF=RBFoptions(degree=2, rho=2.5, rhoDec=2.0),
                                            EQU=EQUoptions(muGrow=100, muDec=1.6, muFinal=1e-7, refineAlgo="COBYLA"),
-                                           # ISA=ISAoptions2(TGR=1000.0),
+                                           ISA=ISAoptions2(TGR=1000.0),
                                            SEQ=SEQoptions(conTol=0)))   # 1e-7 | 0
 c2 = CobraPhaseII(cobra).start()
 

@@ -16,7 +16,6 @@
       ~CobraInitializer.__init__
       ~CobraInitializer.adCon
       ~CobraInitializer.adDRC
-      ~CobraInitializer.create_sac_res
       ~CobraInitializer.get_fbest
       ~CobraInitializer.get_sac_opts
       ~CobraInitializer.get_sac_res

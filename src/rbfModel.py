@@ -55,20 +55,23 @@ class RBFmodel:
         avail_kernel = ["cubic", "quintic", "gaussian", "multiquadric", "thin_plate_spline"]
         assert kernel in avail_kernel, f"[RBFmodel] kernel = {kernel} not in list of available kernels: {avail_kernel}"
 
+        edist = euclidean_distances(xobs, xobs)  # distance between rows of xp
+        self.width1 = np.max(edist) / np.sqrt(2 * xobs.shape[0])
+        self.width3 = np.inf
+        for i in range(xobs.shape[1]):
+            interval = np.max(xobs[:, i]) - min(xobs[:, i])
+            self.width3 = min(self.width3, interval)
+
         # based on elements width, widthRule, widthFactor of RBFoptions, calculate the effective width:
         width = rbf_opts.width
         if width is None:
-            if rbf_opts.kernel == "cubic":
+            if rbf_opts.kernel in ["cubic", "quintic", "thin_plate_spline"]:    # scale-invariant kernels
                 width = 1
             else:  # i.e. one of the scale-variant kernel types
                 if rbf_opts.widthRule == W_RULE.ONE:
-                    edist = euclidean_distances(xobs, xobs)  # distance between rows of xp
-                    width = np.max(edist)/np.sqrt(2*xobs.shape[0])
+                    width = self.width1
                 else:  # i.e. widthRule == W_RULE.THREE
-                    width = np.inf
-                    for i in range(xobs.shape[1]):
-                        interval = np.max(xobs[:, i])-min(xobs[:, i])
-                        width = min(width, interval)
+                    width = self.width3
         width = width * rbf_opts.widthFactor
 
         try:
@@ -109,3 +112,9 @@ class RBFmodel:
         return y
 
     # with signature __call__(self, *args, **kwargs)), we would use xflat = args[0]
+
+    def get_width_one(self):
+        return self.width1
+
+    def get_width_three(self):
+        return self.width3

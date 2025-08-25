@@ -72,6 +72,7 @@ class SACoptions:
         self.verboseIter = verboseIter
         self.important = important
         self.cobraSeed = cobraSeed
+        self.phase1DesignPoints = None
         self.ID = ID
         self.RBF = RBF
         self.SEQ = SEQ

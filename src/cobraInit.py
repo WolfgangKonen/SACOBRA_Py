@@ -66,7 +66,7 @@ class CobraInitializer:
         dimension = lower.size
         print(f"*** Starting run with seed {s_opts.cobraSeed} ***")
         self.rng = np.random.default_rng(seed=s_opts.cobraSeed)    # moved up here (before potential x0 generation)
-        # set.seed(s_opts.cobraSeed)   # TODO: proper RNG seeding
+        # set.seed(s_opts.cobraSeed)   # obsolete now
         if s_opts.ID.initDesPoints is None:
             # s_opts.ID.initDesPoints = 2 * dimension + 1   # /WK/2025/05/06: old and wrong (from R side)
             # these are the necessary minimum initDesPoints for kernel="cubic":
@@ -133,7 +133,6 @@ class CobraInitializer:
         if s_opts.SEQ.epsilonInit is None: s_opts.SEQ.epsilonInit = 0.005 * ell
         if s_opts.SEQ.epsilonMax is None:  s_opts.SEQ.epsilonMax = 2 * 0.005 * ell
         if s_opts.ID.initDesOptP is None: s_opts.ID.initDesOptP = s_opts.ID.initDesPoints
-        s_opts.phase1DesignPoints = None
 
         #
         # STEP 3: create initial design
@@ -173,7 +172,7 @@ class CobraInitializer:
                         }
 
         # TODO: default settings DEBUG_RBF, CA, MS, RI, TR
-        self.sac_res['GRfact'] = 1  # will be later overwritten by adCon, when the TODO 'equalityConstraints' is done.
+        self.sac_res['GRfact'] = 1  # will be later overwritten by adCon
         self.sac_res['finMarginCoef'] = 1  # also set in adCon, used in equHandling.py
         self.sac_opts = s_opts
         if s_opts.ISA.aCF and nConstraints != 0:
@@ -345,6 +344,17 @@ class CobraInitializer:
         """
         return self.sac_res['originalfn'](self.get_xbest())[0]
 
+    def get_feasible_best(self):
+        """
+        Return the original objective function value at the best feasible solution.
+
+        If no feasible solution was found, return NaN.
+        """
+        if self.is_feasible():
+            return self.get_fbest()
+        else:
+            return np.nan
+
     def adDRC(self):        # , maxF, minF
         """ Adjust :ref:`DRC <DRC-label>` (distance requirement cycle), based on range of ``Fres`` """
         FRange = (max(self.sac_res['Fres']) - min(self.sac_res['Fres']))
@@ -419,6 +429,12 @@ class CobraInitializer:
         minL = np.quantile(x, 0.1)
         return (maxL - minL) / 2
 
+    def is_feasible(self) -> bool:
+        """
+        :return: True, if a feasible solution has been found
+        """
+        return np.min(self.sac_res['trueNumViol']) == 0
+
     # NOTE: the purpose of this function is just to supply a docstring (used in appendix of Sphinx docu):
     def get_sac_res(self):
         """
@@ -436,14 +452,16 @@ class CobraInitializer:
         - **dimension**: input space dimension :math:`d`
         - **nConstraints**: number of constraints
         - **is_equ**: boolean vector of size ``nConstraints``: ``True`` if ``n``'th constraint is equality constraint
-        - **A**: matrix ``(nIter, dimension)`` holding the initial design + all infill points
-        - **Fres**: vector of size ``nIter``: objective value for each point in ``A``
-        - **Gres**: matrix ``(nIter, nConstraints)``: constraint values for each point in ``A``
-        - **predC**: matrix ``(nIter, nConstraints)``: *predicted* constraint values for each point in ``A``. The prediction of the current infill point is made with the current constraint surrogates which are formed from the ``nIter - 1`` previous points.
-        - **muVec**: vector of size ``nIter``: :math:`\\mu` in the ``i``'th iteration
+        - **A**: matrix ``(p2.num, dimension)`` holding the initial design + all infill points
+        - **Fres**: vector of size ``p2.num``: objective value for each point in ``A``
+        - **Gres**: matrix ``(p2.num, nConstraints)``: constraint values for each point in ``A``
+        - **predC**: matrix ``(p2.num, nConstraints)``: *predicted* constraint values for each point in ``A``. The prediction of the current infill point is made with the current constraint surrogates which are formed from the ``p2.num - 1`` previous points.
+        - **muVec**: vector of size ``p2.num``: :math:`\\mu` in the ``i``'th iteration
         - **numViol, trueNumViol, maxViol, trueMaxViol**: same as columns *nViolations, trueNViol, maxViolation, trueMaxViol* of :ref:`cobra.df <df-label>`
-        - **fbestArray**: vector of size ``nIter``: best feasible objective value in the ``i``'th iteration
+        - **fbestArray**: vector of size ``p2.num``: best feasible objective value in the ``i``'th iteration
         - ...
+
+        ``p2.num`` counts the number of real function evaluations, see :class:`.Phase2Vars` ``p2``.
 
         :return: SACOBRA results
         :rtype: dict

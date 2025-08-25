@@ -5,6 +5,7 @@ from soluContainer import SoluContainer
 from cobraInit import CobraInitializer
 from phase2Vars import Phase2Vars
 from equHandling import updateCobraEqu
+# import phase2Funcs as p2f
 
 
 def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, EPS,
@@ -60,7 +61,7 @@ def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, EPS,
         ro = p2.gama * s_res['l']
         # s_res['l'] is set in cobraInit (length of smallest side of search space)
         # TODO: distRequirement
-        # sumViol = pf2.distRequirement(xNew, p2.fitnessSurrogate, ro)$sumViol
+        # sumViol = p2f.distRequirement(xNew, p2.fitnessSurrogate, ro)$sumViol
         if cobra.df is None:
             df_XI = concat(np.repeat(np.nan, s_opts.ID.initDesPoints), p2.gama)
             # df_XIsumViol = c(rep(NA, cobra$initDesPoints), sumViol)

@@ -4,7 +4,7 @@ import pandas as pd
 from cobraInit import CobraInitializer
 from opt.isaOptions import O_LOGIC
 from phase2Vars import Phase2Vars
-import phase2Funcs as pf2
+import phase2Funcs as p2f
 from randomStarter import RandomStarter
 from surrogator import Surrogator
 from surrogator1 import Surrogator1
@@ -138,16 +138,15 @@ class CobraPhaseII:
                 else:
                     Surrogator1.calcPEffect(self.p2, self.p2.ev1.xNew, self.p2.ev1.xNewEval, verbose=True)
 
-            # update cobra information (A, Fres, Gres and others)
-            pf2.updateInfoAndCounters(self.cobra, self.p2)
-            self.p2.num = self.cobra.sac_res['A'].shape[0]
+            # update cobra information (A, Fres, Gres, p2.num and others)
+            p2f.updateInfoAndCounters(self.cobra, self.p2)
 
             # update and save cobra: data frames df, df2, keys xbest, fbest, ibest in sac_res
-            updateSaveCobra(self.cobra, self.p2, self.p2.EPS, pf2.fitFuncPenalRBF, pf2.distRequirement)
+            updateSaveCobra(self.cobra, self.p2, self.p2.EPS, p2f.fitFuncPenalRBF, p2f.distRequirement)
 
             # adjust margin self.p2.EPS, self.p2.currentMu, cobra.sac_opts.RBF.rho and adjust counters
             # (self.p2.Cfeas, self.p2.Cinfeas):
-            pf2.adjustMargins(self.cobra, self.p2)
+            p2f.adjustMargins(self.cobra, self.p2)
 
             # TODO: [conditional] repairInfeasible
 
@@ -238,10 +237,10 @@ class CobraPhaseII:
         ``EQU.active==True``), then the following row elements are not ``None``, instead they contain these
         attributes evaluated *for the current infill point*:
 
-        - **nv_cB**: number of (artificial) constraint violations (``> conTol``) before refine on surrogates
-        - **nv_cA**: number of (artificial) constraint violations (``> conTol``) after refine on surrogates
-        - **nv_tB**: number of (artificial) constraint violations (``> conTol``) before refine on true constraints
-        - **nv_tA**: number of (artificial) constraint violations (``> conTol``) after refine on true constraints
+        - **nv_cB**: number of (artificial) constraint violations (``> conTol``) before :ref:`refine <refineStep-label>` on surrogates
+        - **nv_cA**: number of (artificial) constraint violations (``> conTol``) after :ref:`refine <refineStep-label>` on surrogates
+        - **nv_tB**: number of (artificial) constraint violations (``> conTol``) before :ref:`refine <refineStep-label>` on true constraints
+        - **nv_tA**: number of (artificial) constraint violations (``> conTol``) after :ref:`refine <refineStep-label>` on true constraints
 
         :return: SACOBRA diagnostic information
         :rtype: pd.DataFrame
