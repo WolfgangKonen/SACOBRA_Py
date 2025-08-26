@@ -82,24 +82,36 @@ see [here](https://wolfgangkonen-sacobra-py.readthedocs.io/en/latest/overview.ht
 
 ### Version History
 #### V0.8
-Beta Version, it contains
+2025/06/15 - Beta Version, it contains
 
 - LHS and random initial design
 - support for arbitrary inequality and equality constraints
-- cubic RBF surrogate models
+- cubic RBF kernel for surrogate models
 - both interpolating and approximating RBFs
 - documentation with Sphinx and readthedocs.io
 - the majority of G-problems from the G-problem benchmark suite
 
 and it was extensively tested on these G-problems.
 
-It is missing
+What is missing:
 
 - other initial designs
-- other RBF surrogate models
+- other RBF kernels
 - (surrogate) model selection
 - repair of infeasible solutions
 - the optional ``CobraPhaseI``
+
+<!--
+-->
+#### V0.9
+2025/09/01 - Beta Version, it contains
+
+- better LHS initial design
+- four other RBF kernels for surrogate models
+- approximation RBFs (smoothing)
+- RBF width rules 
+- support for multiple solutions
+- more tests
 
 ## Publications
 You can read more about SACOBRA in the following scientific publications:
