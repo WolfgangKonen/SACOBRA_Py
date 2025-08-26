@@ -108,8 +108,9 @@ What is missing:
 
 - better LHS initial design
 - four other RBF kernels for surrogate models
-- approximation RBFs (smoothing)
-- RBF width rules 
+- approximating RBFs (smoothing)
+- RBF width rules
+- extended polynomial tail for RBF (degree=1.5, RBFsacob)
 - support for multiple solutions
 - more tests
 
