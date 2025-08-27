@@ -52,8 +52,10 @@ class RBFmodel:
         nn = xobs.shape[0]
         rho = rbf_opts.rho
         smo = nn * rho
-        avail_kernel = ["cubic", "quintic", "gaussian", "multiquadric", "thin_plate_spline"]
-        assert kernel in avail_kernel, f"[RBFmodel] kernel = {kernel} not in list of available kernels: {avail_kernel}"
+        scale_invariant_kernels = ["cubic", "quintic", "thin_plate_spline"]
+        avail_kernels = ["cubic", "quintic", "gaussian", "multiquadric", "thin_plate_spline"]
+        assert kernel in avail_kernels, f"[RBFmodel] kernel = {kernel} not in list of available kernels: {avail_kernels}"
+
 
         edist = euclidean_distances(xobs, xobs)  # distance between rows of xp
         self.width1 = np.max(edist) / np.sqrt(2 * xobs.shape[0])
@@ -65,7 +67,7 @@ class RBFmodel:
         # based on elements width, widthRule, widthFactor of RBFoptions, calculate the effective width:
         width = rbf_opts.width
         if width is None:
-            if rbf_opts.kernel in ["cubic", "quintic", "thin_plate_spline"]:    # scale-invariant kernels
+            if rbf_opts.kernel in scale_invariant_kernels:
                 width = 1
             else:  # i.e. one of the scale-variant kernel types
                 if rbf_opts.widthRule == W_RULE.ONE:
@@ -76,7 +78,7 @@ class RBFmodel:
 
         try:
             if rbf_opts.interpolator == "scipy":
-                eps = 1/np.sqrt(2*width) if kernel != "cubic" else 1.0
+                eps = 1.0 if kernel in scale_invariant_kernels else 1/np.sqrt(2*width)
                 self.model = RBFInterpolator(xobs, yobs, kernel=kernel, degree=degree, epsilon=eps, smoothing=smo)
             else:   # i.e. interpolator == "sacobra"
                 self.model = RBFsacob(xobs, yobs, kernel=kernel, degree=degree, width=width, rho=rho,

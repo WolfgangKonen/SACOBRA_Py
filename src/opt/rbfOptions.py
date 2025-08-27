@@ -20,7 +20,7 @@ class RBFoptions:
         :param rhoDec: exponential decay factor for :math:`\\rho`
         :param rhoGrow: every ``rhoGrow`` (e.g. 100) iterations, re-enlarge :math:`\\rho`. If 0, then re-enlarge never
         :param width: only relevant for the scale-variant kernel types. ``width =`` :math:`\\sigma` translates to
-                shape parameter ``epsilon =`` :math:`\\epsilon = 1/\\sigma^2` in
+                shape parameter ``epsilon =`` :math:`\\epsilon = 1/\\sqrt{2\\sigma}` in
                 `SciPy's RBFInterpolator <https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.RBFInterpolator.html>`_'.
         :param widthRule: only relevant for the scale-variant kernels: If ``width=None``, calculate the appropriate
                 width from the data by heuristic rule ``W_RULE.ONE`` or ``W_RULE.THREE``

@@ -48,9 +48,9 @@ class ISAoptions:
         :param adaptivePLOG: (experimental) flag for objective function transformation with ``plog``, where the
                              parameter ``pShift`` is adapted during iterations
         :param onlinePLOG: three-valued logic for online decision-making: ``O_LOGIC.NONE`` (no online, only fixed
-                    initialdecision whether to use plog); ``O_LOGIC.XNEW`` (online plog decision according to pEffect
-                    and pEffect-calculation is based on new infill point ``xNew``); ``O_LOGIC.MIDPTS`` (online plog
-                    decision according to pEffect and pEffect-calculation is based on midpoints)
+                    initial decision whether to use plog); ``O_LOGIC.XNEW`` (online plog decision according to pEffect,
+                    where pEffect-calculation is based on new infill point ``xNew``); ``O_LOGIC.MIDPTS`` (online plog
+                    decision according to pEffect, where pEffect-calculation is based on midpoints)
         :param onlineFreqPLOG: after how many iterations the surrogates for online plog check are calculated again
                     (only relevant for case ``O_LOGIC.XNEW``)
         :param pEffectInit: the initial value for ``pEffect``, needed for first pass through cobraPhaseII while loop in

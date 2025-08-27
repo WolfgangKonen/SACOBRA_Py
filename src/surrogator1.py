@@ -8,6 +8,7 @@ from cobraPhaseII import Phase2Vars
 from innerFuncs import verboseprint, plog, plogReverse
 from opt.isaOptions import O_LOGIC
 from rbfModel import RBFmodel
+import matplotlib.pyplot as plt
 
 
 # Note: this class with three static elements is here just to bundle these elements for the documentation
@@ -139,6 +140,60 @@ class Surrogator1:
         # if z <= 0: print(f"*** Warning ***: [calcPEffect] z={z} is <= 0")
         # p2.pEffect = np.log10(z) if z > 0 else 0
 
+
+    @staticmethod
+    def assert_gres(cobra, p2, A, DO_PNG_PLOTS = False):
+        """
+            Do some assertion checks around Gres:
+
+            1) Is fn(A)[:,1:] and Gres the same?
+            2) Is Gres and constraintSurrogates(A) the same?
+
+            Results: While 1) is exactly true, 2) is only approximately valid: for pts < 50, the absolute deviation in
+            2) is < 1e-10, but for pts > 150, the absolute deviation goes up to 5e-5, where pts = number of rows in A.
+            Another assertion that holds is that (for each constraint in turn) the 0.75-percentile is always <= 1e-5.
+            This can be also visualized in boxplots, see switch DO_PNG_PLOTS below.
+        """
+        s_opts = cobra.get_sac_opts()
+        s_res = cobra.get_sac_res()
+
+        # test that at the observation points (rows of A),
+        # fn(A)[:,1:] and s_res['Gres'] have the same values
+        fnEval = np.apply_along_axis(s_res['fn'], axis=1, arr=A)  # fnEval.shape = (initDesPoints, nConstraints+1)
+        Gres = fnEval[:, 1:]
+        # print(np.max(np.abs(Gres - s_res['Gres'])))
+        assert np.allclose(Gres, s_res['Gres']), "Gres-assertion 1 failed"
+
+        # test that at the observation points (rows of A),
+        # fn(A)[:,1:] and p2.constraintSurrogates(A), have the same values.
+        #
+        # For many points, these assertions hold only approximately (atol=1e-4 or 75%-percentile)
+        Gres = cobra.for_rbf['Gres']
+        Gres2 = p2.constraintSurrogates(A)
+        # Gres2 = np.apply_along_axis(s_res['constraintSurrogates'], axis=1, arr=A)
+        delta = np.abs(Gres - Gres2)
+        if not np.allclose(Gres, Gres2, atol=1e-4):
+            print(Gres.shape[0], np.max(delta), np.max(delta / np.abs(Gres)))
+            print(np.percentile(delta, [75], axis=0))
+            dummy = 0
+        if np.max(np.percentile(delta, [75], axis=0)) >= 1e-5:
+            print(np.percentile(delta, [75], axis=0))
+        assert np.allclose(Gres, Gres2, atol=1e-4), "Gres assertion 2 (atol=1e-4) failed"
+        assert np.max(np.percentile(delta, [75], axis=0)) < 1e-5, "Gres2-percentile-75 < 1e-5 assertion failed"
+        # assert np.allclose(Gres, Gres2)       # this assertion is too strict, it fails due to rtol
+        verboseprint(s_opts.verbose, False, "[assert_gres] All assertions passed")
+
+        # plot every 20 iterations the boxplots of |Gres - Gres2| for each constraint separately. The plots are
+        # found in subdirectory plot_surr.
+        if DO_PNG_PLOTS and Gres.shape[0] % 20 == 0:
+            fig = plt.figure()
+            ax = plt.subplot(111)
+            ax.set_yscale("log")  # , nonposy='clip'
+            plt.boxplot(delta)
+            plt.title(f"iter = {Gres.shape[0]}")
+            plt.savefig(f"plot_surr/iter={Gres.shape[0]:03d}.png")
+            plt.close(fig)
+
     @staticmethod
     def trainSurrogates(cobra: CobraInitializer, p2: Phase2Vars) -> Phase2Vars:
         """
@@ -155,7 +210,7 @@ class Surrogator1:
         verboseprint(s_opts.verbose, False, f"[trainSurrogates] Training {s_opts.RBF.kernel} surrogates ...")
         start = time.perf_counter()
 
-        # A = s_res['A']
+        # A = s_res['A']        # wrong!
         A = cobra.for_rbf['A']
         # important: use here the A from cobra.for_rbf (!), this avoids the LinAlgError ("Singular Matrix") that
         # would otherwise occur in calls to RBFInterpolator (bug fix 2025/06/03)
@@ -211,32 +266,7 @@ class Surrogator1:
             p2.fitnessSurrogate1 = RBFmodel(A, Fres1, s_opts.RBF)
             p2.fitnessSurrogate2 = RBFmodel(A, Fres2, s_opts.RBF)
 
-        DO_ASSERT = False
-        if DO_ASSERT:
-            # test that at the observation points (rows of A), all three models,
-            # fn(A)[:,1:], s_res['Gres'], p2.constraintSurrogates(A), have the same values
-            #
-            # might need adjustment due to rescale /WK/
-            fnEval = np.apply_along_axis(s_res['fn'], axis=1, arr=A)    # fnEval.shape = (initDesPoints, nConstraints+1)
-            Gres = fnEval[:, 1:]
-            # print(np.max(np.abs(Gres - s_res['Gres'])))
-            assert np.allclose(Gres, s_res['Gres']), "Gres-assertion 1 failed"
-
-            Gres = p2.constraintSurrogates(A)
-            # Gres = np.apply_along_axis(s_res['constraintSurrogates'], axis=1, arr=A)
-            if not np.allclose(Gres, s_res['Gres'], rtol=1e-3):
-                delta = np.abs(Gres - s_res['Gres'])
-                print(Gres.shape[0], np.max(delta), np.max(delta/np.abs(Gres)))
-                dummy = 0
-            # assert np.allclose(Gres, s_res['Gres']), "Gres-assertion 2 failed"
-            for i in range(Gres.shape[1]):
-                gi = Gres[:, i]
-                z = (gi - s_res['Gres'][:, i]) / (np.max(gi) - np.min(gi))
-                # TODO (in such a way that assertion does not fire w/o reason):
-                # if max(abs(z)) > 5e-6:
-                #     dummy = 0
-                # assert max(abs(z)) <= 5e-6, f"s_res['constraintSurrogates'](A)-assertion failed for constraint {i}"
-            verboseprint(s_opts.verbose, False, "[trainSurrogates] All assertions passed")
+        # Surrogator1.assert_gres(cobra, p2, A)
 
         verboseprint(s_opts.verbose, False,
                      f"[trainSurrogates] ... finished ({(time.perf_counter() - start)*1000} msec)")

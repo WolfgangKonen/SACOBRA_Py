@@ -3,7 +3,7 @@ import numpy as np
 from typing import Union
 # need to specify SACOBRA_Py.src as source folder in File - Settings - Project Structure,
 # then the following import statements will work:
-from surrogator1 import Surrogator1   # for AdFitter
+from surrogator1 import Surrogator1   # for AdFitter, assert_gres
 from cobraInit import CobraInitializer
 from cobraPhaseII import Phase2Vars
 from innerFuncs import verboseprint, plog, plogReverse
@@ -117,18 +117,16 @@ class Surrogator2:
         verboseprint(s_opts.verbose, False, f"[trainSurrogates] Training {s_opts.RBF.kernel} surrogates ...")
         start = time.perf_counter()
 
-        # A = s_res['A']
+        # A = s_res['A']        # wrong!
         A = cobra.for_rbf['A']
         # important: use here the A from cobra.for_rbf (!), this avoids the LinAlgError ("Singular Matrix") that
         # would otherwise occur in calls to RBFInterpolator (bug fix 2025/06/03)
 
-        recalc_fit12 = True
-        if recalc_fit12:
-            # two models are built in every iteration:
-            Fres1 = cobra.for_rbf['Fres']
-            Fres2 = plog(cobra.for_rbf['Fres'])
-            p2.fitnessSurrogate1 = RBFmodel(A, Fres1, s_opts.RBF)
-            p2.fitnessSurrogate2 = RBFmodel(A, Fres2, s_opts.RBF)
+        # two models are built in every iteration:
+        Fres1 = cobra.for_rbf['Fres']
+        Fres2 = plog(cobra.for_rbf['Fres'])
+        p2.fitnessSurrogate1 = RBFmodel(A, Fres1, s_opts.RBF)
+        p2.fitnessSurrogate2 = RBFmodel(A, Fres2, s_opts.RBF)
 
         if p2.midpts is None:   # i.e. on first pass through cobraPhaseII while loop:
             # calculate the midpoints for pEffect
@@ -172,26 +170,7 @@ class Surrogator2:
             # cobra < - debugVisualizeRBF(cobra, cobra$fitnessSurrogate, A, Fres)  # see defaultDebugRBF.R
             # }
 
-        DO_ASSERT = False
-        if DO_ASSERT:
-            # test that at the observation points (rows of A), all three models,
-            # fn(A)[:,1:], s_res['Gres'], p2.constraintSurrogates(A), have the same values
-            #
-            # might need adjustment due to rescale /WK/
-            fnEval = np.apply_along_axis(s_res['fn'], axis=1, arr=A)    # fnEval.shape = (initDesPoints, nConstraints+1)
-            Gres = fnEval[:, 1:]
-            assert np.allclose(Gres, s_res['Gres']), "Gres-assertion failed"
-
-            Gres = p2.constraintSurrogates(A)
-            # Gres = np.apply_along_axis(s_res['constraintSurrogates'], axis=1, arr=A)
-            for i in range(Gres.shape[1]):
-                gi = Gres[:, i]
-                z = (gi - s_res['Gres'][:, i]) / (np.max(gi) - np.min(gi))
-                # TODO (in such a way that assertion does not fire w/o reason):
-                # if max(abs(z)) > 5e-6:
-                #     dummy = 0
-                # assert max(abs(z)) <= 5e-6, f"s_res['constraintSurrogates'](A)-assertion failed for constraint {i}"
-            verboseprint(s_opts.verbose, False, "[trainSurrogates] All assertions passed")
+        # Surrogator1.assert_gres(cobra, p2, A)
 
         verboseprint(s_opts.verbose, False,
                      f"[trainSurrogates] ... finished ({(time.perf_counter() - start)*1000} msec)")
