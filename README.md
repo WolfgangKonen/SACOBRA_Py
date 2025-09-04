@@ -106,13 +106,14 @@ What is missing:
 #### V0.9
 2025/09/01 - Beta Version, it contains
 
-- better LHS initial design
+- better LHS initial design (from scipy.stats.qmc import LatinHypercube)
 - four other RBF kernels for surrogate models
 - approximating RBFs (smoothing)
-- RBF width rules
 - extended polynomial tail for RBF (degree=1.5, RBFsacob)
+- heuristic RBF width rules (RBFsacob)
 - support for multiple solutions
-- more tests
+
+and it contains more tests on the G-problem benchmark suite.
 
 ## Publications
 You can read more about SACOBRA in the following scientific publications:
