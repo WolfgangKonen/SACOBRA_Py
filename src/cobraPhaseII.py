@@ -20,7 +20,7 @@ class CobraPhaseII:
         SACOBRA phase II executor.
 
         Information is communicated via object :class:`.CobraInitializer` ``cobra`` (with elements :class:`.SACoptions`
-        ``sac_opts`` and dictionary ``sac_res``) and via object :class:`.Phase2Vars` ``p2`` (internal variables
+        ``sac_opts`` and dictionary :ref:`cobra.sac_res <sacres-label>`) and via object :class:`.Phase2Vars` ``p2`` (internal variables
         needed in phase II).
     """
     def __init__(self, cobra: CobraInitializer):
@@ -36,7 +36,7 @@ class CobraPhaseII:
 
     def get_cobra(self):
         """
-        :return: COBRA variables
+        :return: object ``cobra`` with all COBRA variables
         :rtype: CobraInitializer
         """
         return self.cobra
@@ -60,7 +60,7 @@ class CobraPhaseII:
              :class:`.Surrogator1`, :class:`.Surrogator2`, :class:`.RBFmodel`)
            - select start point ``xStart``: either current-best ``xbest`` or random start (see :class:`.RandomStarter`)
            - perform sequential optimization, starting from ``xStart``, subject to the ``nConstraint + 1`` constraints.
-             Result is ``xNew = p2.opt_res['x']``
+             Result is ``xNew = p2.opt_res['x']`` (see :class:`.SeqOptimizer`)
            - evaluate ``xNew`` on the real functions +  (if ``EQU.active``) do :ref:`refine step <refineStep-label>`.
              Result is the updated :class:`.EvaluatorReal` object ``p2.ev1``
            - calculate :ref:`p-effect <pEffect-label>` for ``onlinePLOG`` (see :meth:`.Surrogator1.calcPEffect`)
@@ -73,7 +73,8 @@ class CobraPhaseII:
 
         The result is a modified object ``cobra`` (detailed results in dict :ref:`sac_res <sacres-label>` and detailed
         diagnostic info in data frames :ref:`df <df-label>`, :ref:`df2 <df2-label>`). The optimization results can be
-        retrieved from ``cobra`` with methods :meth:`.get_fbest`, :meth:`.get_xbest` and  :meth:`.get_xbest_cobra`.
+        retrieved from ``cobra`` with methods :meth:`.is_feasible`, :meth:`.get_fbest`,  :meth:`.get_feasible_best`,
+        :meth:`.get_xbest` and :meth:`.get_xbest_cobra`.
 
         :return: ``self``
         """

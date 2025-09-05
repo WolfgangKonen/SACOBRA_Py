@@ -25,7 +25,7 @@ The initialization in **SACOBRA_Py** is done by creating an object of class :cla
 
 
 .. autoclass:: cobraInit.CobraInitializer 
-   :members: adCon, adDRC, get_fbest, get_xbest, get_xbest_cobra, is_feasible
+   :members: adCon, adDRC, is_feasible, get_fbest, get_feasible_best, get_xbest, get_xbest_cobra
 
 .. autoclass:: initDesigner.InitDesigner
    :members: __call__

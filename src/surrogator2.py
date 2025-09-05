@@ -71,9 +71,9 @@ class Surrogator2:
             :return: None
         """
         assert p2.fitnessSurrogate1.__class__.__name__ == 'RBFmodel', \
-               "[calcPEffectNew] p2.fitnessSurrogate1 is not RBFmodel"
+               "[calcPEffect] p2.fitnessSurrogate1 is not RBFmodel"
         assert p2.fitnessSurrogate2.__class__.__name__ == 'RBFmodel', \
-               "[calcPEffectNew] p2.fitnessSurrogate2 is not RBFmodel"
+               "[calcPEffect] p2.fitnessSurrogate2 is not RBFmodel"
         nrow = midp.shape[0]
         assert midpEval.size == nrow
         newErr1 = newErr2 = 0

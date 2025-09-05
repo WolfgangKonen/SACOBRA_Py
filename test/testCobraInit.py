@@ -123,17 +123,17 @@ class TestCobraInit(unittest.TestCase):
         # self.assertTrue((sac_res['fn'](sac_res['x0'])==fn(x0)).all())
 
         # these are the results computed on the R side (file demo-id.R):
-        A_from_R = np.array( [  [ -0.96472247, -0.7704361],
-                                [  0.16435849,  0.2802904],
-                                [ -0.09018369,  0.1833372],
-                                [  0.24347296, -0.3384863],
-                                [  0.50000000,  0.4800000]])
-        F_from_R = np.array( [114.31958851,   7.91823088,   3.13092105,  13.03890450,  36.03000000])
-        G_from_R = np.array([   [-9.67579269],
-                                [ 1.22324437],
-                                [-0.53423260],
-                                [-1.47506675],
-                                [ 3.90000000]])
+        A_from_R = np.array( [[-0.96472247, -0.7704361],
+                              [ 0.16435849,  0.2802904],
+                              [-0.09018369,  0.1833372],
+                              [ 0.24347296, -0.3384863],
+                              [ 0.50000000,  0.4800000]])
+        F_from_R = np.array([114.31958851,   7.91823088,   3.13092105,  13.03890450,  36.03000000])
+        G_from_R = np.array([[-9.67579269],
+                             [ 1.22324437],
+                             [-0.53423260],
+                             [-1.47506675],
+                             [ 3.90000000]])
         self.assertTrue(np.allclose(A, A_from_R), "A and A_from_R are not close")
         self.assertTrue(np.allclose(Fres, F_from_R), "Fres and F_from_R are not close")
         self.assertTrue(np.allclose(Gres, G_from_R), "Gres and G_from_R are not close")
@@ -176,22 +176,22 @@ class TestCobraInit(unittest.TestCase):
         self.assertEqual(sac_res['upper'][0], 1)
 
         # these are the results computed on the R side (file demo-adCon.R):
-        A_from_R = np.array( [  [ -0.96472247, -0.7704361],
-                                [  0.16435849,  0.2802904],
-                                [ -0.09018369,  0.1833372],
-                                [  0.24347296, -0.3384863],
-                                [  0.50000000,  0.4800000]])
-        F_from_R = np.array( [114.31958851,   7.91823088,   3.13092105,  13.03890450,  36.03000000])
+        A_from_R = np.array([[ -0.96472247, -0.7704361],
+                             [  0.16435849,  0.2802904],
+                             [ -0.09018369,  0.1833372],
+                             [  0.24347296, -0.3384863],
+                             [  0.50000000,  0.4800000]])
+        F_from_R = np.array([114.31958851,   7.91823088,   3.13092105,  13.03890450,  36.03000000])
         # this is the new Gres after constraint normalization (both columns have the same max-min-range):
-        G_from_R = np.array([  [-0.71272396, 1.3756687],
-                               [0.09010482, 0.5728399],
-                               [-0.03935185, 0.7022966],
-                               [-0.10865419, 0.7715989],
-                               [0.28727604, 0.3756687]])
+        G_from_R = np.array([[-0.71272396, 1.3756687],
+                             [0.09010482, 0.5728399],
+                             [-0.03935185, 0.7022966],
+                             [-0.10865419, 0.7715989],
+                             [0.28727604, 0.3756687]])
 
-        self.assertTrue(np.allclose(A, A_from_R),"A and A_from_R are not close")
-        self.assertTrue(np.allclose(Fres, F_from_R),"Fres and F_from_R are not close")
-        self.assertTrue(np.allclose(Gres, G_from_R),"Gres and G_from_R are not close")
+        self.assertTrue(np.allclose(A, A_from_R), "A and A_from_R are not close")
+        self.assertTrue(np.allclose(Fres, F_from_R), "Fres and F_from_R are not close")
+        self.assertTrue(np.allclose(Gres, G_from_R), "Gres and G_from_R are not close")
         # test that all two columns of new Gres have the same max-min-range:
         GRL = np.apply_along_axis(self.maxMinLen, axis=0, arr=Gres)
         self.assertTrue(np.allclose(GRL[0], GRL[1]), "GRL is not the same for the (normalized) constraints")
@@ -214,7 +214,7 @@ class TestCobraInit(unittest.TestCase):
         x0 = np.array([2.5, 2.4])
         lower = np.array([-5, -5])
         upper = np.array([5, 5])
-        is_equ=np.array([False, False])
+        is_equ = np.array([False, False])
         cobra = CobraInitializer(x0, fn, "fName", lower, upper, is_equ,
                                  s_opts=SACoptions(verbose=verb, ID=IDoptions(initDesign="RAND_R")))
         print("\ntest_phaseII:")

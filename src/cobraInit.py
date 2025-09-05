@@ -1,11 +1,10 @@
 import numpy as np
 import pandas as pd
-
 # need to specify SACOBRA_Py.src as source folder in File - Settings - Project Structure,
 # then the following import statements will work:
 from rescaleWrapper import RescaleWrapper
 from initDesigner import InitDesigner
-from innerFuncs import distLine, verboseprint, plogReverse
+from innerFuncs import verboseprint, plogReverse
 from opt.sacOptions import SACoptions
 from opt.isaOptions import ISAoptions0, ISAoptions2
 
@@ -43,7 +42,7 @@ class CobraInitializer:
         - **phase**     name of the optimization phase ['init' | 'phase1' | 'phase2']
         - **rng**       random number generator
         - **rw**        RescaleWrapper
-        - **sac_opts**  the realized :class:`.SACoptions` object containing all the options
+        - **sac_opts**  object of class :class:`.SACoptions` containing all the options
         - **sac_res**   dictionary with the SACOBRA results from initialization and optimization, see :ref:`cobra.sac_res <sacres-label>` in the appendix for details
         - **df**        data frame with diagnostic information from optimization, see :ref:`cobra.df <df-label>` in the appendix for details
         - **df2**       data frame with further diagnostic information from optimization, see :ref:`cobra.df2 <df2-label>` in the appendix for details
@@ -54,9 +53,9 @@ class CobraInitializer:
 
     def __init__(self, x0, fn: object, fName: str, lower: np.ndarray, upper: np.ndarray,
                  is_equ: np.ndarray,
-                 solu = None,
+                 solu=None,
                  s_opts: SACoptions = SACoptions(),
-                 ) -> object:
+                 ):
         """
         docstring for __init__
         """
@@ -77,8 +76,8 @@ class CobraInitializer:
         if s_opts.XI is None:
             s_opts.XI = DRCL
         # The threshold parameter for the number of consecutive iterations that yield ...
-        s_opts.Tfeas = np.floor(2 * np.sqrt(dimension))  # ... feasible solutions before the margin is reduced
-        s_opts.Tinfeas = np.floor(2 * np.sqrt(dimension))  # ... infeasible solutions before the margin is increased
+        s_opts.SEQ.Tfeas = np.floor(2 * np.sqrt(dimension))  # ... feasible solutions before the margin is reduced
+        s_opts.SEQ.Tinfeas = np.floor(2 * np.sqrt(dimension))  # ... infeasible solutions before the margin is increased
 
         lower = np.array(lower)
         upper = np.array(upper)
@@ -316,32 +315,33 @@ class CobraInitializer:
     def get_sac_opts(self) -> SACoptions:
         return self.sac_opts
 
-    def get_sac_res(self) -> dict:
-        return self.sac_res
-
     def get_xbest_cobra(self):
         """
-        :return: best solution in COBRA space (maybe rescaled)
+        :return: best feasible solution in COBRA space (maybe rescaled)
         :rtype: np.ndarray
         """
         return self.sac_res['xbest']
 
     def get_xbest(self):
         """
-        :return: best solution in original space
+        :return: best feasible solution in original space
         :rtype: np.ndarray
+
+        If no feasible solution was found, return the objective value of the solution with the least maximum violation.
         """
         if self.sac_opts.ID.rescale:
             return self.rw.inverse(self.sac_res['xbest'])
-        return self.get_xbest_cobra()
+        return self.sac_res['xbest']
 
     def get_fbest(self):
         """
         Return the original objective function value at the best feasible solution.
 
-        Note: We cannot take the best function value via ``sac_res['fn']``, because this
-        may be modified by PLOG or others.
+        If no feasible solution was found, return the objective value of the solution with the least maximum violation.
+        (Note: In this case, the objective value may be seemingly 'better' than the true optimal objective.)
         """
+        # Note: We cannot take the best function value via ``sac_res['fn']``, because this
+        #       may be modified by PLOG or others.
         return self.sac_res['originalfn'](self.get_xbest())[0]
 
     def get_feasible_best(self):
@@ -370,7 +370,7 @@ class CobraInitializer:
         """
             Adjust several elements according to constraint range.
 
-            The following elements of ``self.sac_res`` may be changed: 'fn', 'Gres', 'Grange', 'GrangeEqu'
+            The following elements of ``self.sac_res`` may be changed: 'fn', 'Gres', 'Grange', 'GrangeEqu'.
         """
         s_opts = self.sac_opts
         fnold = self.sac_res['fn']

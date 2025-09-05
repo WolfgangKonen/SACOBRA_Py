@@ -117,11 +117,17 @@ def adjustMargins(cobra: CobraInitializer, p2: Phase2Vars):
     Adjust margins :math:`\\epsilon =` ``p2.EPS``, :math:`\\mu =` ``p2.currentMu`` and
     :math:`\\rho =` ``cobra.sac_opts.RBF.rho``; conditionally reset counters ``p2.Cfeas``, ``p2.Cinfeas``.
 
+    If ``p2.Cfeas >= Tfeas``, then halve :math:`\\epsilon`.
+
+    If ``p2.Cinfeas >= Tinfeas``, then double :math:`\\epsilon` and clip it at ``epsilonMax``.
+
+    ``Tfeas``, ``Tinfeas``, ``epsilonMax`` are members of  ``cobra.sac_opts.SEQ``.
+
     :param cobra:   SACOBRA settings and results
     :param p2:      these members may be changed : ``EPS``, ``currentMu``, ``Cfeas``, ``Cinfeas``
     """
-    Tfeas = cobra.sac_opts.Tfeas
-    Tinfeas = cobra.sac_opts.Tinfeas
+    Tfeas = cobra.sac_opts.SEQ.Tfeas
+    Tinfeas = cobra.sac_opts.SEQ.Tinfeas
     verbose = cobra.sac_opts.verbose
     if p2.Cfeas >= Tfeas:
         p2.EPS = p2.EPS / 2

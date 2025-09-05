@@ -1,3 +1,6 @@
+# need to specify SACOBRA_Py.src as source folder in File - Settings - Project Structure,
+# then the following import statements will work:
+# from cobraInit import CobraInitializer
 from opt.equOptions import EQUoptions
 from opt.idOptions import IDoptions
 from opt.isaOptions import ISAoptions
@@ -31,9 +34,9 @@ class SACoptions:
         :type EQU: EQUoptions
         :param ISA: nested Internal SACOBRA options
         :type ISA: ISAoptions
-        :param MS: nested options for model selection
+        :param MS: nested options for model selection (TODO)
         :type MS: MSoptions
-        :param TR: nested options for trust region
+        :param TR: nested options for trust region (TODO)
         :type TR: TRoptions
     """
     # now obsolete, we simply select the right class ISAoptions0, ISAoptions, ISAoptions2:

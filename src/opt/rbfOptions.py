@@ -12,7 +12,7 @@ class RBFoptions:
 
         :param kernel: RBF kernel type, see :ref:`below <kernel_label>`
         :param degree: degree of polynomial tail for RBF kernel. If None, then
-                `SciPy's RBFInterpolator <https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.RBFInterpolator.html>`_'
+                `SciPy's RBFInterpolator <https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.RBFInterpolator.html>`_
                 will set it depending on kernel type. See SciPy's RBFInterpolator documentation for details.
         :param rho:  Smoothing parameter :math:`\\rho`. If :math:`\\rho=0`, use **interpolating RBFs**: The surrogate
                 model surface passes exactly through the points. If :math:`\\rho>0`, use **approximating RBFs**
@@ -21,7 +21,7 @@ class RBFoptions:
         :param rhoGrow: every ``rhoGrow`` (e.g. 100) iterations, re-enlarge :math:`\\rho`. If 0, then re-enlarge never
         :param width: only relevant for the scale-variant kernel types. ``width =`` :math:`\\sigma` translates to
                 shape parameter ``epsilon =`` :math:`\\epsilon = 1/\\sqrt{2\\sigma}` in
-                `SciPy's RBFInterpolator <https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.RBFInterpolator.html>`_'.
+                `SciPy's RBFInterpolator <https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.RBFInterpolator.html>`_.
         :param widthRule: only relevant for the scale-variant kernels: If ``width=None``, calculate the appropriate
                 width from the data by heuristic rule ``W_RULE.ONE`` or ``W_RULE.THREE``
         :param widthFactor: only for scale-variant kernels. Additional constant factor applied to each width :math:`\\sigma`

@@ -10,9 +10,21 @@ from phase2Vars import Phase2Vars
 
 class SeqOptimizer:
     """
-    Sequential optimizer for phase II that optimizes on the surrogates in each sequential step
+    Sequential optimizer for phase II that optimizes on the surrogates in each sequential step.
+
+    Several optimizer algorithms from `nlopt <https://nlopt.readthedocs.io/en/latest/>`_, the nonlinear optimization
+    package **NLopt**, are available and can be selected via parameter ``cobra.sac_opts.SEQ.optimizer``, namely
+
+    - ``COBYLA``: `nlopt.LN_COBYLA <https://nlopt.readthedocs.io/en/latest/NLopt_Python_Reference/#the-nloptopt-class>`_
+    - ``ISRESN``: `nlopt.GN_ISRES <https://nlopt.readthedocs.io/en/latest/NLopt_Python_Reference/#the-nloptopt-class>`_
+
+    :param xStart: where (in input space) the optimizer starts
+    :param cobra: parameter ``cobra.sac_opts.SEQ.optimizer`` specifies the optimization algorithm
+    :param p2: dict ``p2.opt_res`` contains the optimization results
     """
-    def __init__(self, xStart, cobra, p2):
+    def __init__(self, xStart: np.ndarray, cobra: CobraInitializer, p2: Phase2Vars):
+        """
+        """
         s_opts = cobra.sac_opts
         s_res = cobra.sac_res
         start = time.perf_counter()
@@ -29,14 +41,6 @@ class SeqOptimizer:
         }
         opt = switcher.get(s_opts.SEQ.optimizer, "not implemented")
         assert opt != "not implemented", f"Optimizer {s_opts.SEQ.optimizer} is not (yet) implemented"
-        # --- OLD, can be deleted ---
-        # if s_opts.SEQ.optimizer == "COBYLA":
-        #     opt = nlopt.opt(nlopt.LN_COBYLA, xStart.size)
-        # elif s_opts.SEQ.optimizer == "ISRESN":
-        #     opt = nlopt.opt(nlopt.GN_ISRES, xStart.size)
-        # else:
-        #     raise NotImplementedError(f"Optimizer {s_opts.SEQ.optimizer} is not (yet) implemented")
-        # --- OLD, can be deleted ---
 
         # TODO: add other sequential optimizers
 
@@ -90,9 +94,9 @@ class SeqFuncFactory:
         self.ine_ind = np.flatnonzero(self.is_equ == False) + 1
         # DON'T change here to 'self.is_equ is False' as the PEP hint suggest --> strange error in NLopt (!)
         self.ine_ind = np.concatenate((0, self.ine_ind), axis=None)
-        tol = 0.0
-        self.tol_e = np.repeat(tol, self.equ_ind.size)
-        self.tol_i = np.repeat(tol, self.ine_ind.size)
+        tol = 0.0           # here we use always 0.0, the constraint tolerance conTol is used in EvaluatorReal
+        self.tol_e = np.repeat(tol, self.equ_ind.size)      # we need tol_e and tol_i
+        self.tol_i = np.repeat(tol, self.ine_ind.size)      # just to transport the sizes
 
     def subProb2(self, x, grad):
         """
@@ -149,7 +153,7 @@ class SeqFuncFactory:
     def h_vec_c(self, result, x, grad):
         """ Vector-valued equality constraints for nlopt
 
-            Note the special signature with ``result`` which has to be a vector of size self.ine_ind.size
+            Note the special signature with ``result`` which has to be a vector of size self.equ_ind.size
         """
         h = -self.gCOBRA(x, grad)  # new convention h_i <= 0.
         result[:] = h[self.equ_ind]
@@ -161,7 +165,7 @@ class SeqFuncFactory:
         return self.tol_e
 
     def get_tol_i(self):
-        """ Tolerance vector for inequality constraints, length = # ineq. constr. + 1 (dist requirement)
+        """ Tolerance vector for inequality constraints, length = # problem ineq. constr. + 1 (dist requirement)
         :return: tolerance vector
         """
         return self.tol_i

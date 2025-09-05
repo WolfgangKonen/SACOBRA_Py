@@ -15,6 +15,8 @@ from opt.rbfOptions import RBFoptions
 from opt.seqOptions import SEQoptions
 
 verb = 1
+
+
 class OneS:
     def one_s(self, gname: str, dim: int, cobraSeed: int, feval=300, conTol=0.0):
         """ One SACOBRA configuration for all G-problems.
@@ -36,7 +38,7 @@ class OneS:
 
         dim = gcop.dimension
         idp = (dim + 1) * (dim + 2) // 2
-        if feval==0: feval=idp+2
+        if feval == 0: feval = idp+2
 
         equ = EQUoptions(muGrow=100, muDec=1.6, muFinal=1e-7,
                          refinePrint=False, refineAlgo="L-BFGS-B")  # "L-BFGS-B COBYLA"
@@ -44,8 +46,9 @@ class OneS:
                                  solu=gcop.solu,
                                  s_opts=SACoptions(verbose=verb, verboseIter=100, feval=feval, cobraSeed=cobraSeed,
                                                    ID=IDoptions(initDesign="LHS", initDesPoints=idp),
-                                                   RBF=RBFoptions(degree=2),   # for default interpolator="scipy"
-                                                   # RBF=RBFoptions(degree=1.5, interpolator="sacobra"),  # test only
+                                                   RBF=RBFoptions(degree=2),   # for default interpolator="scipy" + "cubic"
+                                                   # RBF=RBFoptions(degree=1.5, interpolator="sacobra"),  # test only, "cubic"
+                                                   # RBF=RBFoptions(kernel="gaussian", degree=2),   # alternative "gaussian"
                                                    # ISA=ISAoptions(onlinePLOG=O_LOGIC.NONE),   # the default (before 2025/08/01)
                                                    ISA=ISAoptions(onlinePLOG=O_LOGIC.MIDPTS), # run 2025/08/12
                                                    # ISA=ISAoptions(onlinePLOG=O_LOGIC.XNEW),     # run 2025/08/13
@@ -204,15 +207,15 @@ if __name__ == '__main__':
     one = OneS()
     gnames = ["G01", "G02", "G02", "G03", "G03", "G04", "G05", "G06", "G07", "G08", "G09", "G10", "G11", "G12", "G13"]
     dims   = [   -1,     2,     5,     7,    10,   -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1]
-    # gnames = ["G09",]  #  "G08", "G09", "G10",
-    # dims   = [   10,]
-    gnames = ["G13"]  # "G10", "G11", "G12",
-    dims   = [ -1]  #   -1,    -1,    -1,
+    gnames = ["G03", "G09",]  #  "G08", "G09", "G10",
+    dims   = [   10,   -1]
+    # gnames = ["G13"]  # "G10", "G11", "G12",
+    # dims   = [ -1]  #   -1,    -1,    -1,
     df2 = one.one_s_multi_g_r(gnames, dims,10, 54, feval=500, conTol=0)       # conTol=0 | 1e-7
     # init_df = one.multi_init(gnames, 54, feval=120)
     # one.df_analyze("df2_conTol0.0-fe500-G01-G13.feather", "df2_conTol1e-7-fe500-G01-G13.feather")
     # one.df_analyze("df2_conTol0.0-fe500-G02-d02.feather")
-    # one.df_analyze("df2_conTol0.0-NONE-fe500-G01-G13.feather")   # NONE | XNEW | MIDPTS
+    # one.df_analyze("df2_conTol0.0-MIDPTS-gauss-fe500-G01-G13.feather")   # NONE | XNEW | MIDPTS
 
 
 

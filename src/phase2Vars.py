@@ -9,15 +9,15 @@ class Phase2Vars:
     This class is just a container for variables needed by :class:`.CobraPhaseII` (in addition to :class:`.CobraInitializer` ``cobra``).
     These variables include:
 
-    - **EPS**           number, the current safety margin EPS in constraint surrogates
+    - **EPS**           number, the current safety margin :math:`\\epsilon` in constraint surrogates, see :ref:`safety margin <safety_margin-label>`
     - **currentMu**     number, the current equality margin :math:`\\mu`, see :ref:`refine step <refineStep-label>`
     - **num**           the number of real function evaluations carried out
-    - **globalOptCounter** counter of the global optimization steps in phase II, excluding repair and trust region
-    - **Cfeas**          how many feasible infills in a row (see :meth:`phase2Funcs.adjustMargins`, ``updateInfoAndCounters``)
-    - **Cinfeas**        how many infeasible infills in a row (see :meth:`phase2Funcs.adjustMargins`, ``updateInfoAndCounters``)
-    - **fitnessSurrogate** the objective surrogate model
-    - **constraintSurrogates** the constraint surrogate models
-    - **pEffect**       number, calculated in calcPEffect in each iteration: If > 0, apply plog(Fres).
+    - **globalOptCounter**      counter of the global optimization steps in phase II, excluding repair and trust region
+    - **Cfeas**         how many feasible infills in a row (see :meth:`phase2Funcs.adjustMargins`, ``updateInfoAndCounters``)
+    - **Cinfeas**       how many infeasible infills in a row (see :meth:`phase2Funcs.adjustMargins`, ``updateInfoAndCounters``)
+    - **fitnessSurrogate**      the objective surrogate model
+    - **constraintSurrogates**  the constraint surrogate models
+    - **pEffect**       number, calculated in :meth:`.Surrogator1.calcPEffect` in each iteration: If > 0, apply plog(Fres).
     - **PLOG**          boolean vector: whether plog(Fres) was applied in iteration i
     - **pshift**        float vector: with which p-shift was plog(Fres) applied (if at all) in iteration i
 

@@ -189,7 +189,7 @@ class RBFsacob:
         edist = euclidean_distances(xp, xp)     # distance between rows of xp
         phi = -np.sqrt(1 + 0.5 * (edist * edist) / width)
         # the multiquadric function with "-" in front and factor 0.5 differs slightly from that in R,
-        # however, this way it matches exactly with SciPy's RBFinterpolator.
+        # however, this way it matches exactly with SciPy's RBFInterpolator.
 
         self.trainRBF(phi, U, degree, xp, rho)
         return "multiquadric"
@@ -242,7 +242,7 @@ class RBFsacob:
             M = phi.copy()
             d2 = 0      # size of polynomial tail
         else:    # i.e degree in {1, 1.5, 2}:
-            # for polynomial tail, scale all training points xp the same way as it is done in SciPy's RBFinterpolator:
+            # for polynomial tail, scale all training points xp the same way as it is done in SciPy's RBFInterpolator:
             # Shift and scale the polynomial domain to be between -1 and 1 (for each dimension).
             mins = np.min(xp, axis=0)
             maxs = np.max(xp, axis=0)

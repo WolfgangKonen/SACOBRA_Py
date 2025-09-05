@@ -22,6 +22,7 @@ Phase II
 .. autofunction:: phase2Funcs.adjustMargins
 
 
+
 .. _pEffect-label:
 
 The p-Effect
@@ -135,28 +136,16 @@ iteration, might get lost in the next iteration because it is then infeasible.
 
 The refine step is carried out in :meth:`.EvaluatorReal.equ_refine` which is called from :meth:`.EvaluatorReal.update`.
 
-Details Phase II
------------------
+.. _safety_margin-label:
 
-.. autoclass:: randomStarter.RandomStarter
-   :members: __init__, random_start
+Safety Margin :math:`\epsilon`
+------------------------------
 
-.. _AdFitter-label:
+:math:`\epsilon =` ``p2.EPS`` provides a safety margin to maintain feasibility in the early optimization phase
+(when the surrogate models are not yet precise): We add the term :math:`+ \epsilon^2` to each constraint prediction
+during sequential optimization. The effect is that for every
+:math:`\epsilon > 0` the infill point remains at a certain distance from the constraint boundary.
 
-.. autoclass:: surrogator1.Surrogator1.AdFitter
-   :members: __init__, __call__
+:math:`\epsilon` is initialized with parameter ``epsilonInit`` from :class:`.SEQoptions`.
+Method :meth:`phase2Funcs.adjustMargins` adjusts :math:`\epsilon` after each iteration.
 
-.. autoclass:: surrogator1.Surrogator1
-   :members: calcPEffect, trainSurrogates
-
-.. autoclass:: surrogator2.Surrogator2
-   :members: calcPEffectNew, trainSurrogates
-
-.. autoclass:: rbfModel.RBFmodel
-   :members: __init__, __call__
-
-.. autoclass:: rbfSacobra.RBFsacob
-   :members: __init__, __call__
-
-.. autoclass:: evaluatorReal.EvaluatorReal
-   :members: update, equ_refine, equ_num_max_viol, ine_num_max_viol

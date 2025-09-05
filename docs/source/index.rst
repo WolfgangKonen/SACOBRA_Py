@@ -19,6 +19,7 @@ SACOBRA_Py documentation
    cop
    init
    optim
+   optim_detail
    example
    appendix
 
