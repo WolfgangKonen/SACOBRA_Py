@@ -265,7 +265,17 @@ class RBFsacob:
 
             # --- Bug fix 2025/08/16: the new version (borrowed from SciPy's RBFInterpolator) works correctly for
             # --- degree >= 2 (and _monomial_powers is also extended for the special case degree == 1.5)
-            self.powers = _monomial_powers(p_x.shape[1], degree)      # save powers to self for later use in interpRBF
+            ndim = p_x.shape[1]
+            self.powers = _monomial_powers(ndim, degree)      # save powers to self for later use in interpRBF
+            # The polynomial matrix must have full column rank in order for the
+            # interpolant to be well-posed, which is not possible if there are
+            # fewer observations than monomials.
+            if self.powers.shape[0] > npts:
+                raise ValueError(
+                    f"At least {self.powers.shape[0]} data points are required when "
+                    f"`degree` is {degree} and the number of dimensions is {ndim}."
+                )
+
             pMat = polynomial_matrix(p_x, self.powers)
 
             if self.test_pmat:      # this is just a test that degree=1 and =1.5 is the same as with the

@@ -49,8 +49,9 @@ class ExamCOP:
         cobra = CobraInitializer(G01.x0, G01.fn, G01.name, G01.lower, G01.upper, G01.is_equ,
                                  solu=G01.solu,
                                  s_opts=SACoptions(verbose=verb, verboseIter=verbIter, feval=feval, cobraSeed=cobraSeed,
+                                                   # saveIntermediate=True,
                                                    ID=IDoptions(initDesign="RAND_REP", initDesPoints=idp),
-                                                   RBF=RBFoptions(degree=2),
+                                                   RBF=RBFoptions(degree=1),  # , kernel="gaussian"
                                                    SEQ=SEQoptions(finalEpsXiZero=False, conTol=conTol)))
         c2 = CobraPhaseII(cobra).start()
 
@@ -568,7 +569,7 @@ class ExamCOP:
 if __name__ == '__main__':
     cop = ExamCOP()
     # exec("cop.solve_G06(42)")
-    # cop.solve_G01(42)
+    cop.solve_G01(42)
     # cop.solve_G03(48, 7)
     # cop.solve_G04(53)
     # cop.solve_G05(42)
@@ -580,7 +581,7 @@ if __name__ == '__main__':
     # cop.solve_G14(62)
     # cop.solve_G17(62)
     # cop.solve_G21(63)
-    cc2 = cop.multi_gfnc(cop.solve_G05, "G05", 5, 49)
+    # cc2 = cop.multi_gfnc(cop.solve_G05, "G05", 5, 49)
     # cc2 = cop.multi_gfnc(cop.solve_G04, "G04", 15, 42)
     # cc2 = cop.multi_gfnc(cop.solve_G15, "G15", 10, 48)
     # cc2 = cop.multi_gfnc(cop.solve_G17, "G17", 10, 54)

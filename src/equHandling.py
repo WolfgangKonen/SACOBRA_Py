@@ -94,11 +94,11 @@ def modifyMu(Cfeas, Cinfeas, Tfeas, currentMu, cobra: CobraInitializer, p2: Phas
 
     switcher = {
         'expFunc':    # exponentially decaying func
-            max(currentMu / s_opts.EQU.muDec, s_opts.EQU.muFinal),
+        max(currentMu / s_opts.EQU.muDec, s_opts.EQU.muFinal),
         'SAexpFunc':  # self-adjusting expFunc
-            max(np.mean([s_res['muVec'][-1]/s_opts.EQU.muDec,
-                         s_res['trueMaxViol'][s_res['ibest']] * s_res['finMarginCoef'] ]),
-                s_opts.EQU.muFinal),
+        max(np.mean([s_res['muVec'][-1]/s_opts.EQU.muDec,
+                    s_res['trueMaxViol'][s_res['ibest']] * s_res['finMarginCoef']]),
+            s_opts.EQU.muFinal),
         'funcDim': (s_res['muVec'][0] * (1 / s_opts.EQU.muDec) ** ((p2.num - 3 * s_res['A'].shape[1]) /
                                                                    ((Tfeas ** 2) / 2 - 1))
                     ) + s_opts.EQU.muFinal,

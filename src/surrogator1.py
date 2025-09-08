@@ -1,6 +1,6 @@
 import time
 import numpy as np
-from typing import Union
+# from typing import Union
 # need to specify SACOBRA_Py.src as source folder in File - Settings - Project Structure,
 # then the following import statements will work:
 from cobraInit import CobraInitializer
@@ -20,7 +20,8 @@ class Surrogator1:
     @staticmethod
     class AdFitter:
         """
-            Adjust fitness values of ``Fres``, depending on :ref:`p-effect <pEffect-label>` (if ``onlinePLOG != O_LOGIC.NONE``)
+            Adjust fitness values of ``Fres``,
+            depending on :ref:`p-effect <pEffect-label>` (if ``onlinePLOG != O_LOGIC.NONE``)
             or depending on ``FRange``, ``ISA.TFRange`` (if ``onlinePLOG == O_LOGIC.NONE``)
         """
         def __init__(self, cobra: CobraInitializer, p2: Phase2Vars, Fres):
@@ -121,7 +122,7 @@ class Surrogator1:
         p2.errRatio = (p2.err1 + nu) / (p2.err2 + nu)
         if verbose and np.abs(newPredY2) > 705:
             print(f"[calcPEffect] Warning: clipping done --> last p2.errRatio = {p2.errRatio[-1]}")
-            dummy = 0
+            # dummy = 0
 
         # Thanks to the regularization with nu (and thanks to the clipping on large values in plogReverse), the
         # following three assertions should never fire. They are in here only as sanity check:
@@ -140,9 +141,8 @@ class Surrogator1:
         # if z <= 0: print(f"*** Warning ***: [calcPEffect] z={z} is <= 0")
         # p2.pEffect = np.log10(z) if z > 0 else 0
 
-
     @staticmethod
-    def assert_gres(cobra, p2, A, DO_PNG_PLOTS = False):
+    def assert_gres(cobra, p2, A, DO_PNG_PLOTS=False):
         """
             Do some assertion checks around Gres:
 
@@ -175,7 +175,7 @@ class Surrogator1:
         if not np.allclose(Gres, Gres2, atol=1e-4):
             print(Gres.shape[0], np.max(delta), np.max(delta / np.abs(Gres)))
             print(np.percentile(delta, [75], axis=0))
-            dummy = 0
+            # dummy = 0
         if np.max(np.percentile(delta, [75], axis=0)) >= 1e-5:
             print(np.percentile(delta, [75], axis=0))
         assert np.allclose(Gres, Gres2, atol=1e-4), "Gres assertion 2 (atol=1e-4) failed"
@@ -197,7 +197,8 @@ class Surrogator1:
     @staticmethod
     def trainSurrogates(cobra: CobraInitializer, p2: Phase2Vars) -> Phase2Vars:
         """
-            Train surrogate models  ``p2.fitnessSurrogate``, ``p2.constraintSurrogates``, ``p2.fitnessSurrogate1``, ``p2.fitnessSurrogate2``.
+            Train surrogate models  ``p2.fitnessSurrogate``, ``p2.constraintSurrogates``,
+            ``p2.fitnessSurrogate1``, ``p2.fitnessSurrogate2``.
 
             :param cobra:
             :param p2:
@@ -227,7 +228,7 @@ class Surrogator1:
         if s_opts.ISA.isa_ver > 0:
             if p2.PLOG[-1] and p2.printP:
                 verboseprint(s_opts.verbose, True, f"PLOG transformation is done ( iter={A.shape[0]} )")
-        p2.printP = False
+                p2.printP = False
 
         if CONSTRAINED:
             # Gres=s_res['Gres']
@@ -246,7 +247,7 @@ class Surrogator1:
                 kernel = s_opts.RBF.kernel
             else:
                 # TODO: the model selection (MS) part
-                raise NotImplementedError("[trainSurrogates] MS-part in branch 'if not CONSTRAINED' not yet implemented! ")
+                raise NotImplementedError("[trainSurrogates] MS-part not yet implemented! ")
 
             p2.fitnessSurrogate = RBFmodel(A, Fres, s_opts.RBF)
 

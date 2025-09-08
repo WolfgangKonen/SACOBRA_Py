@@ -39,7 +39,7 @@ class TestEqu1(unittest.TestCase):
 
             muInitVec = np.zeros(len(initTVec))
             for i, initT in enumerate(initTVec):
-                cobra = CobraInitializer(x0, fn, "fName", lower, upper,
+                cobra = CobraInitializer(x0, fn, "f_name", lower, upper,
                                          is_equ=np.array([True, True]),
                                          s_opts=SACoptions(verbose=verb, feval=2*nobs,
                                                            ID=IDoptions(initDesign="RAND_R", initDesPoints=idp),
@@ -89,7 +89,7 @@ class TestEqu1(unittest.TestCase):
 
         muMat = None
         for i, muT in enumerate(muTypes):
-            cobra = CobraInitializer(x0, fn, "fName", lower, upper, np.array([True, True]),
+            cobra = CobraInitializer(x0, fn, "f_name", lower, upper, np.array([True, True]),
                                      s_opts=SACoptions(verbose=verb, feval=15,
                                                        ID=IDoptions(initDesign="RAND_R", initDesPoints=idp),
                                                        EQU=EQUoptions(muType=muT)))
@@ -125,7 +125,7 @@ class TestEqu1(unittest.TestCase):
             def fn(x):
                 return np.array([3 * np.sum(x ** 2), np.sum(x * hnfac) - 2])
 
-            cobra = CobraInitializer(x0, fn, "fName", lower, upper, np.array([True]),
+            cobra = CobraInitializer(x0, fn, "f_name", lower, upper, np.array([True]),
                                      s_opts=SACoptions(verbose=verb, feval=30,
                                                        ID=IDoptions(initDesign="RAND_R", initDesPoints=idp),
                                                        RBF=RBFoptions(degree=1),
@@ -165,7 +165,7 @@ class TestEqu1(unittest.TestCase):
                 return np.array([3 * np.sum(x ** 2), x[0] - x[1] - 1, np.sum(x * hnfac) - 2])
 
             feval = 50 #   30 if hnfac==1 else 40
-            cobra = CobraInitializer(x0, fn, "fName", lower, upper,
+            cobra = CobraInitializer(x0, fn, "f_name", lower, upper,
                                      is_equ=np.array([True, True]),
                                      s_opts=SACoptions(verbose=verb, feval=feval,
                                                        RBF=RBFoptions(degree=1),

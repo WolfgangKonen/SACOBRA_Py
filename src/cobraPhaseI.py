@@ -1,4 +1,3 @@
-import numpy as np
 # need to specify full path here for test units to run smoothly:
 from cobraInit import CobraInitializer
 

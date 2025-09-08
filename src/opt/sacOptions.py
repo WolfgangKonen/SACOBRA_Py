@@ -16,11 +16,13 @@ class SACoptions:
         parameters defined in this class, they are hierarchically organized in nested option classes.
 
         :param feval: number of function evaluations
-        :param XI:  Distance-Requirement-Cycle (:ref:`DRC <DRC-label>`) that controls exploration: Each infill point has a forbidden-sphere of radius ``XI[c]`` around it. ``c`` loops cyclically through ``XI``'s inidices. If ``XI==None``, then CobraInitializer will set it, depending on objective range, to short DRC ``[0.001, 0.0]`` or long DRC ``[0.3, 0.05, 0.001, 0.0005, 0.0]``.
+        :param XI:  Distance-Requirement-Cycle (:ref:`DRC <DRC-label>`) that controls exploration:
+                Each infill point has a forbidden-sphere of radius ``XI[c]`` around it. ``c`` loops cyclically through
+                ``XI``'s inidices. If ``XI==None``, then CobraInitializer will set it, depending on objective range,
+                to short DRC ``[0.001, 0.0]`` or long DRC ``[0.3, 0.05, 0.001, 0.0005, 0.0]``.
         :param skipPhaseI: whether to skip **SACOBRA_Py** phase I or not
-        :param saveIntermediate: whether to save intermediate results or not (TODO)
-        :param saveSurrogates: whether to save surrogate models or not (TODO)
-        :param verbose: verbosity level: 0: print nothing. 1: print only important messages. 2: print everything
+        :param saveIntermediate: whether to save intermediate results (including surrogates) or not
+        :param verbose: verbosity level: 0: print nothing. 1: print only important messages. 2: print every message
         :param verboseIter: an integer value, after how many iterations to print summarized results.
         :param important: controls the importance level for some ``verboseprint``'s in ``updateInfoAndCounters``
         :param cobraSeed: the seed for RNGs. **SACOBRA_Py** guarantees the same results for the same seed
@@ -39,15 +41,13 @@ class SACoptions:
         :param TR: nested options for trust region (TODO)
         :type TR: TRoptions
     """
-    # now obsolete, we simply select the right class ISAoptions0, ISAoptions, ISAoptions2:
-    #        :param isa_ver: controls the default options for ``ISAoptions ISA``. 0: take plain COBRA settings, 1: full SACOBRA settings, 2: reduced SACOBRA settings
     def __init__(self,
                  feval=50,
                  XI=None,
                  skipPhaseI=True,
                  # isa_ver=1,
                  saveIntermediate=False,
-                 saveSurrogates=False,
+                 # saveSurrogates=False,        # this is now included in saveIntermediate
                  verbose=1, verboseIter=10, important=True,
                  cobraSeed=42,
                  ID=IDoptions(),
@@ -70,7 +70,7 @@ class SACoptions:
         self.skipPhaseI = skipPhaseI
         # self.isa_ver = isa_ver
         self.saveIntermediate = saveIntermediate
-        self.saveSurrogates = saveSurrogates
+        # self.saveSurrogates = saveSurrogates
         self.verbose = verbose
         self.verboseIter = verboseIter
         self.important = important

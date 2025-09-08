@@ -1,6 +1,3 @@
-import numpy as np
-
-
 class EQUoptions:
     """
         Equality handling options

@@ -47,7 +47,7 @@ class InitDesigner:
             # Create self.A with shape (npts,d) where the first npts-1 points in R^d are uniform random from
             # [lower, upper] and the last point is x0.
             self.A = rng.random(size=(npts-1, d))      # uniform random in [0,1)
-        elif s_opts.ID.initDesign == "RAND_R":
+        elif s_opts.ID.initDesign == "RAND_R":   # deprecated, better use "RAND_REP"
             # Same as "RANDOM", but with reproducible random numbers (reproducible also on the R side).
             # The seed is s_opts.cobraSeed.
             self.A = self._my_rng(npts - 1, d, s_opts.cobraSeed)  # uniform random in [0,1)
@@ -72,6 +72,7 @@ class InitDesigner:
         self.A = np.vstack((self.A, x0))
 
         # TODO: other initial designs ("BIASED", "OPTIMIZED", "OPTBIASED", ...)
+        # (Note that the MOPTA runs from 2016-2018 used initDesign = "OPTIMIZED")
 
         # Apply fn to all points (rows) in matrix self.A. A point is a row in matrix self.A (axis=1).
         fnEval = np.apply_along_axis(fn, axis=1, arr=self.A)    # fnEval.shape = (initDesPoints, nConstraints+1)

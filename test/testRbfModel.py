@@ -46,7 +46,7 @@ class TestRbfModel(unittest.TestCase):
         d = x0.size
         lower = np.array([-1, -1])
         upper = np.array([ 1,  1])
-        cobra = CobraInitializer(x0, fn_rbf, "fName", lower, upper, is_equ,
+        cobra = CobraInitializer(x0, fn_rbf, "f_name", lower, upper, is_equ,
                                  s_opts=SACoptions(verbose=verb, feval=2*nobs, cobraSeed=44,
                                                    ID=IDoptions(initDesign="RAND_REP",
                                                                 initDesPoints=nobs)))

@@ -36,7 +36,7 @@ class Surrogator2:
         midp = np.zeros((kmax, A.shape[1]))
         k = 0
         for i in range(pts):
-            for j in range(i+1,pts):
+            for j in range(i+1, pts):
                 assert k < kmax
                 midp[k, :] = (A[i, :] + A[j, :])/2.0
                 k = k + 1
@@ -104,7 +104,8 @@ class Surrogator2:
     @staticmethod
     def trainSurrogates(cobra: CobraInitializer, p2: Phase2Vars) -> Phase2Vars:
         """
-            Train surrogate models  ``p2.fitnessSurrogate``, ``p2.constraintSurrogates``, ``p2.fitnessSurrogate1``, ``p2.fitnessSurrogate2``.
+            Train surrogate models  ``p2.fitnessSurrogate``, ``p2.constraintSurrogates``,
+            ``p2.fitnessSurrogate1``, ``p2.fitnessSurrogate2``.
 
             :param cobra:
             :param p2:
@@ -137,7 +138,7 @@ class Surrogator2:
         Surrogator2.calcPEffect(p2, p2.midpts, p2.midptsEval, verbose=True)    # calculates p2.pEffect
 
         p2.adFit = Surrogator1.AdFitter(cobra, p2, cobra.for_rbf['Fres'].copy())     # appends to p2.PLOG
-        Fres = p2.adFit()   # the __call__ method returns p2.adfit.surrogateInput, a potentially plog-transformed Fres
+        p2.adFit()   # the __call__ method returns p2.adfit.surrogateInput, a potentially plog-transformed Fres
 
         if s_opts.ISA.isa_ver > 0:
             if p2.PLOG[-1] and p2.printP:
@@ -161,7 +162,7 @@ class Surrogator2:
                 kernel = s_opts.RBF.kernel
             else:
                 # TODO: the model selection (MS) part
-                raise NotImplementedError("[trainSurrogates] MS-part in branch 'if not CONSTRAINED' not yet implemented! ")
+                raise NotImplementedError("[trainSurrogates] MS-part not yet implemented! ")
 
             p2.fitnessSurrogate = p2.fitnessSurrogate2 if p2.PLOG[-1] else p2.fitnessSurrogate1
 

@@ -1,5 +1,7 @@
+import os
 import numpy as np
 import pandas as pd
+import pickle
 
 from soluContainer import SoluContainer
 from cobraInit import CobraInitializer
@@ -254,11 +256,30 @@ def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, EPS,
     else:
         assert cobra.df.shape[0] == cobra.df2.shape[0] + s_opts.phase1DesignPoints, msg
 
-    # TODO: saveIntermediate
+    if s_opts.saveIntermediate:
+        # save after each iteration the optimization result (cobra, p2) in the same pickle file (backup in case
+        # of crash), e.g. "results/cobra-G01-COBYLA-42.pkl" in current dir
+        res_dir = 'results'
+        if not os.path.exists(res_dir):
+            os.mkdir(res_dir)
+        pkl_name = f'{res_dir}/cobra-{s_res['f_name']}-{s_opts.SEQ.optimizer}-{s_opts.cobraSeed}.pkl'
+        with open(pkl_name, 'wb') as output:
+            sac_res_bckup = cobra.sac_res.copy()
+            rw_bckup = cobra.rw
+            cobra.sac_res['fn'] = ''            # function not pickle-able
+            cobra.sac_res['originalfn'] = ''    # function not pickle-able
+            cobra.rw = ''                       # function not pickle-able
+            pickle.dump((cobra, p2), output, pickle.HIGHEST_PROTOCOL)     # p2 includes all actual surrogate models
+            cobra.sac_res = sac_res_bckup
+            cobra.rw = rw_bckup
+        # re-read this via:
+        #       with open(pkl_name, 'rb') as input:
+        #           cobra_2, p2_2 = pickle.load(input)
+
     # if (cobra$saveIntermediate) {
     #     # save intermediate results
     #     # cobraResult = list(cobra=cobra, df=df, constraintSurrogates=cobra$constraintSurrogates, fn=fn)
     #     cobraResult = cobra
     #     if (is.na(file.info("results")$isdir)) dir.create("results")    # if dir "results" does not exist, create it
-    #     save(cobraResult, file=sprintf("results/cobra-%s-%s-%i.RData",cobra$fName,cobra$seqOptimizer,cobra$cobraSeed))
+    #     save(cobraResult, file=sprintf("results/cobra-%s-%s-%i.RData",cobra$f_name,cobra$seqOptimizer,cobra$cobraSeed))
     # }

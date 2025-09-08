@@ -4,9 +4,9 @@ import pandas as pd
 # then the following import statements will work:
 from rescaleWrapper import RescaleWrapper
 from initDesigner import InitDesigner
-from innerFuncs import verboseprint, plogReverse
+from innerFuncs import verboseprint
 from opt.sacOptions import SACoptions
-from opt.isaOptions import ISAoptions0, ISAoptions2
+# from opt.isaOptions import ISAoptions0, ISAoptions2
 
 # long and short DRC:
 # DRCL: Distance Requirement Cycle, long version:
@@ -27,7 +27,7 @@ class CobraInitializer:
                    on input, it is replaced by a random point from ``[lower, upper]``.
         :type x0: np.ndarray or None
         :param fn:  function returning ``(1+nConstraints)``-dim vector: [objective to minimize, constraints]
-        :param fName: function name
+        :param f_name: function name
         :param lower: lower bound, its dimension defines input space dimension
         :param upper: upper bound (same dim as lower)
         :param is_equ: boolean vector with dim ``nConstraints``: which constraints are equality constraints?
@@ -51,7 +51,7 @@ class CobraInitializer:
 
     """
 
-    def __init__(self, x0, fn: object, fName: str, lower: np.ndarray, upper: np.ndarray,
+    def __init__(self, x0, fn: object, f_name: str, lower: np.ndarray, upper: np.ndarray,
                  is_equ: np.ndarray,
                  solu=None,
                  s_opts: SACoptions = SACoptions(),
@@ -67,12 +67,7 @@ class CobraInitializer:
         self.rng = np.random.default_rng(seed=s_opts.cobraSeed)    # moved up here (before potential x0 generation)
         # set.seed(s_opts.cobraSeed)   # obsolete now
         if s_opts.ID.initDesPoints is None:
-            # s_opts.ID.initDesPoints = 2 * dimension + 1   # /WK/2025/05/06: old and wrong (from R side)
-            # these are the necessary minimum initDesPoints for kernel="cubic":
-            if s_opts.RBF.degree == 1:
-                s_opts.ID.initDesPoints = dimension + 1
-            else:   # i.e. degree==2
-                s_opts.ID.initDesPoints = (dimension + 1) * (dimension + 2) // 2
+            s_opts.ID.initDesPoints = self.set_initDesPoints(dimension, s_opts)
         if s_opts.XI is None:
             s_opts.XI = DRCL
         # The threshold parameter for the number of consecutive iterations that yield ...
@@ -147,6 +142,7 @@ class CobraInitializer:
         # STEP 4: update structures
         #
         self.sac_res = {'fn': fn,
+                        'f_name': f_name,
                         'lower': lower,
                         'upper': upper,
                         'x0': x0,
@@ -312,6 +308,16 @@ class CobraInitializer:
 
         self.sac_opts = s_opts
 
+    def set_initDesPoints(self, dimension, s_opts):
+        # called in case s_opts.initDesPoints == None:
+        if s_opts.RBF.degree <= 1:
+            initDesPoints = dimension + 1   # required minimum for degree==1, but we use it also for degree==0 or -1.
+        elif s_opts.RBF.degree == 1.5:
+            initDesPoints = 2 * dimension + 1
+        else:  # i.e. degree==2
+            initDesPoints = (dimension + 1) * (dimension + 2) // 2
+        return initDesPoints
+
     def get_sac_opts(self) -> SACoptions:
         return self.sac_opts
 
@@ -327,7 +333,7 @@ class CobraInitializer:
         :return: best feasible solution in original space
         :rtype: np.ndarray
 
-        If no feasible solution was found, return the objective value of the solution with the least maximum violation.
+        If no feasible solution was found, return the solution with the least maximum violation.
         """
         if self.sac_opts.ID.rescale:
             return self.rw.inverse(self.sac_res['xbest'])

@@ -20,8 +20,8 @@ class CobraPhaseII:
         SACOBRA phase II executor.
 
         Information is communicated via object :class:`.CobraInitializer` ``cobra`` (with elements :class:`.SACoptions`
-        ``sac_opts`` and dictionary :ref:`cobra.sac_res <sacres-label>`) and via object :class:`.Phase2Vars` ``p2`` (internal variables
-        needed in phase II).
+        ``sac_opts`` and dictionary :ref:`cobra.sac_res <sacres-label>`) and via object :class:`.Phase2Vars` ``p2``
+        (internal variables needed in phase II).
     """
     def __init__(self, cobra: CobraInitializer):
         # initial settings of all phase-II-related variables:
@@ -213,9 +213,11 @@ class CobraPhaseII:
     def get_df2(self) -> pd.DataFrame:
         """
         Return data frame ``cobra.df2`` with the following elements, accessible with e.g. ``cobra.df2['iter']``.
-        Data frame ``cobra.df2`` contains ``feval - initDesPoints`` rows, one for each true function evaluation *in phase II*.
+        Data frame ``cobra.df2`` contains ``feval - initDesPoints`` rows, one for each true function evaluation
+        *in phase II*.
 
-        The contents of a specific row of ``cobra.df2`` holds the results of a specific iteration, the *current* iteration:
+        The contents of a specific row of ``cobra.df2`` holds the results of a specific iteration,
+        the *current* iteration:
 
         - **iter**: the iteration number
         - **predY**: the fitness surrogate value at the current infill point

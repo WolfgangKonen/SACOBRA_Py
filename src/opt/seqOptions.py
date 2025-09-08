@@ -1,6 +1,3 @@
-import numpy as np
-
-
 class SEQoptions:
     """
     Options for the sequential optimization

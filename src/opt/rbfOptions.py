@@ -24,7 +24,8 @@ class RBFoptions:
                 `SciPy's RBFInterpolator <https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.RBFInterpolator.html>`_.
         :param widthRule: only relevant for the scale-variant kernels: If ``width=None``, calculate the appropriate
                 width from the data by heuristic rule ``W_RULE.ONE`` or ``W_RULE.THREE``
-        :param widthFactor: only for scale-variant kernels. Additional constant factor applied to each width :math:`\\sigma`
+        :param widthFactor: only for scale-variant kernels. Additional constant factor applied to each width
+                :math:`\\sigma`
         :param interpolator: "scipy" or "sacobra", which interpolation method to use. In case of "scipy", use
          `SciPy's RBFInterpolator <https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.RBFInterpolator.html>`_
          (faster and simpler in code). In case of  "sacobra", use an object of class :class:`.RBFsacob`, which is
@@ -42,7 +43,7 @@ class RBFoptions:
     """
     def __init__(self,
                  kernel="cubic",    # "cubic" | "quintic" | "thin_plate_spline" | "gaussian" | "multiquadric"
-                 degree= None,
+                 degree=None,
                  rho=0.0,
                  rhoDec=2.0,        # exponential decay factor for rho
                  rhoGrow=0,
@@ -63,5 +64,5 @@ class RBFoptions:
         self.width = width
         self.widthFactor = widthFactor
         self.widthRule = widthRule
-        self.interpolator=interpolator
-        self.test_pmat=test_pmat
+        self.interpolator = interpolator
+        self.test_pmat = test_pmat
