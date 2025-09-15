@@ -1,5 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
+
 from cobraInit import CobraInitializer
 
 class COP:
@@ -19,7 +21,7 @@ class GCOP(COP):
     """
     Constraint Optimization Problem Benchmark (G Function Suite)
 
-    [LiangRunar] J. Liang, T. P. Runarsson, E. Mezura-Montes, M. Clerc, P. Suganthan, C. C. Coello, and K. Deb, “Problem definitions and evaluation criteria for the CEC 2006 special session on constrained real-parameter optimization,” Journal of Applied Mechanics, vol. 41, p. 8, 2006. `http://www.lania.mx/~emezura/util/files/tr_cec06.pdf <http://www.lania.mx/~emezura/util/files/tr_cec06.pdf>`_
+    [LiangRunar06] J. Liang, T. P. Runarsson, E. Mezura-Montes, M. Clerc, P. Suganthan, C. C. Coello, and K. Deb, “Problem definitions and evaluation criteria for the CEC 2006 special session on constrained real-parameter optimization,” Journal of Applied Mechanics, vol. 41, p. 8, 2006. `http://www.lania.mx/~emezura/util/files/tr_cec06.pdf <http://www.lania.mx/~emezura/util/files/tr_cec06.pdf>`_
 
     Example: Instantiate problem G01 or G02 with
 
@@ -71,7 +73,11 @@ class GCOP(COP):
         elif name == "G17": self._call_G17()
         elif name == "G18": self._call_G18()
         elif name == "G19": self._call_G19()
+        elif name == "G20": self._call_G20()
         elif name == "G21": self._call_G21()
+        elif name == "G22": self._call_G22()
+        elif name == "G23": self._call_G23()
+        elif name == "G24": self._call_G24()
         else:
             strg = f"G-function {name} not (yet) implemented"
             raise NotImplementedError(strg)
@@ -361,9 +367,17 @@ class GCOP(COP):
                                       x[3]+2*x[4]+x[5]+x[6]-1,
                                       x[2]+x[6]+x[7]+2*x[8]+x[9]-1
                                       ])
-        self.solu = np.array([0.0406684113216282, 0.147721240492452, 0.783205732104114, 0.00141433931889084,
-                              0.485293636780388, 0.000693183051556082, 0.0274052040687766, 0.0179509660214818,
-                              0.0373268186859717, 0.0968844604336845])
+        # original solution from the R side, with maxViol = 1e-4, not fully feasible.
+        # (This is also the solution in [LiangRunar06], who states that conTol = 1e-4 is allowed for all equality
+        # constraints. But this is illogical, because the same conTol is NOT applied for G11.)
+        # self.solu = np.array([0.0406684113216282, 0.147721240492452, 0.783205732104114, 0.00141433931889084,
+        #                       0.485293636780388, 0.000693183051556082, 0.0274052040687766, 0.0179509660214818,
+        #                       0.0373268186859717, 0.0968844604336845])      # obj: -47.7648, but maxViol = 1e-4 (!)
+        # better feasible solution from SACOBRA_Py run (trueFunc=True, seed=54):
+        self.solu = np.array([4.066884708830997e-02, 1.477301540104025e-01, 7.831515123352999e-01, 1.413909017648963e-03,
+                              4.852462082530710e-01, 6.950938390205028e-04, 2.739858060390183e-02, 1.794790683952625e-02,
+                              3.731463797736691e-02, 9.687272567028200e-02])   # obj: -47.76109, maxViol = 1.4e-9
+
         # no x0 provided
 
     def _call_G15(self):
@@ -376,7 +390,15 @@ class GCOP(COP):
                                       x[0]**2+x[1]**2+x[2]**2-25,
                                       8*x[0]+14*x[1]+7*x[2]-56
                                       ])
-        self.solu = np.array([3.51212812611795133, 0.216987510429556135, 3.55217854929179921])
+        # original solution from the R side, with maxViol = 1e-4, not fully feasible:
+        # (This is also the solution in [LiangRunar06], who states that conTol = 1e-4 is allowed for all equality
+        # constraints. But this is illogical, because the same conTol is NOT applied for G11.)
+        # self.solu = np.array([3.51212812611795133, 0.216987510429556135, 3.55217854929179921])
+        #                   obj = 961.7150222899609, but maxViol = 1e-4 (!)
+        # better feasible solution from SACOBRA_Py run:
+        self.solu = np.array([3.512125634845721, 0.2169876002539184, 3.5521669311108366])
+        #                   obj = 961.7151721299532, but maxViol = 1e-10
+
         # no x0 provided
 
     def _call_G16(self):
@@ -425,7 +447,7 @@ class GCOP(COP):
             obj = ((0.000117 * y14) + 0.1365 + (0.00002358 * y13) + (0.000001502 * y16) + (0.0321 * y12) +
                    (0.004324 * y5) + (0.0001 * c15 / c16) + (37.48 * (y2 / c12)) - (0.0000005843 * y17))
             g1 =(0.28 / 0.72) * y5 - y4
-            g2 = x[3] - 1.5 * x[2]
+            g2 = x[2] - 1.5 * x[1]
             g3 = 3496 * (y2 / c12) - 21
             g4 = 110.6 + y1 - (62212 / c17)
             g5 = 213.1 - y1
@@ -492,8 +514,17 @@ class GCOP(COP):
                                       200 - (x[2] * x[3]) / 131.078 * np.sin(1.48477 - x[5]) +
                                                   (0.90798 * x[2] ** 2) / 131.078 * np.sin(1.47588)
                                     ])
+        # original solution from the R side, with maxViol = 1e-4, not fully feasible:
+        # (This is also the solution in [LiangRunar06], who states that conTol = 1e-4 is allowed for all equality
+        # constraints. But this is illogical, because the same conTol is NOT applied for G11.)
         self.solu = np.array([201.784467214523659, 99.9999999999999005, 383.071034852773266,
                               420, -10.9076584514292652, 0.0731482312084287128])
+        #                   obj = 8853.534016, but maxViol = 1e-4 (!)
+        # better feasible solution from SACOBRA_Py run (trueFuncForSurrogates=True, cobraSeed=62):
+        self.solu = np.array([2.017846653971304e+02,  9.999999784008750e+01, 3.830709791968072e+02,
+                              4.199999883655434e+02, -1.090758755746594e+01, 7.314815097092348e-02])
+        #                   obj = 8853.53990143, maxViol = 1.7e-9
+
         # no x0 provided
 
     def _call_G18(self):
@@ -517,10 +548,16 @@ class GCOP(COP):
                                       x[4] * x[8],
                                       x[5] * x[6] - x[4] * x[7]
                                       ])
+        # original solution from the R side,  also the solution in [LiangRunar06]:
         self.solu = np.array([-0.9890005492667746,0.1479118418638228,
                               -0.6242897641574451,-0.7811841737429015,
                               -0.9876159387318453,0.1504778305249072,
-                              -0.6225959783340022,-0.782543417629948, 0.0])
+                              -0.6225959783340022,-0.782543417629948, 0.0])                 # obj -0.865735
+        # better solution from SACOBRA_Py run (cobraSeed=54), better objective:
+        self.solu = np.array([-0.561735499976855, -0.803137778085205,  0.435558549949009,
+                              -0.900104854708593, -0.561734396157153, -0.827257195638561,
+                              0.435557349369873, -0.875986768550911,  0.02411866947773 ])   # obj -0.865938
+
         # no x0 provided
 
     def _call_G19(self):
@@ -563,11 +600,14 @@ class GCOP(COP):
                           - self.eVec19[j] + np.dot(self.aMat19[:,j], x[0:10]))
             return res
 
-        self.fn = lambda x: [fitFunc(x)] + conFunc(x).tolist()
+        self.fn = lambda x: np.array([fitFunc(x)] + conFunc(x).tolist())
         self.solu = np.array([
             0, 0,  3.94600628013917,  0,    3.28318162727873, 10, 0, 0, 0,0,
             0.370762125835098, 0.278454209512692, 0.523838440499861, 0.388621589976956, 0.29815843730292])
         # no x0 provided
+
+    def _call_G20(self):
+        raise NotImplementedError("Problem G20 is not yet implemented!")
 
     def _call_G21(self):
         self.dimension = 7
@@ -587,6 +627,154 @@ class GCOP(COP):
                               100.047897801386839, 6.68445185362377892, 5.99168428444264833, 6.21451648886070451])
         # no x0 provided
 
+    def _call_G22(self):
+        self.dimension = 22
+        self.lower = np.array([0, 0, 0, 0, 0, 0, 0, 100, 100,100.01, 100, 100, 0, 0, 0, 0.01, 0.01, -4.7, -4.7, -4.7, -4.7, -4.7])
+        self.upper = np.array([20000, 1e6, 1e6, 1e6, 4e7, 4e7, 4e7, 299.99, 399.99, 300, 400, 600, 500, 500, 500, 300, 400, 6.25, 6.25, 6.25, 6.25, 6.25])
+        self.nConstraints = 20
+        self.is_equ = np.append(False, np.repeat(True,19))
+        self.fn = lambda x: np.array([+x[0],  # obj
+                                      -x[0] + x[1]**0.6 + x[2]**0.6 + x[3]**0.6,  # g1
+                                      x[4] - 100000*x[7] + 1e7,  # h1
+                                      x[5] + 100000*x[7] - 100000*x[8],  # h2
+                                      x[6] + 100000*x[8] - 5e7,  # h3
+                                      x[4] + 100000*x[9] - 3.3e7,  # h4
+                                      x[5] + 100000*x[10] - 4.4e7,   # h5
+                                      x[6] + 100000*x[11] - 6.6e7,  # h6
+                                      x[4] - 120*x[1]*x[12],  # h7
+                                      x[5] - 80*x[2]*x[13],  # h8
+                                      x[6] - 40*x[3]*x[14],  # h9
+                                      x[7] - x[10] + x[15],  # h10
+                                      x[8] - x[11] + x[16],  # h11
+                                      -x[17] + np.log(x[9] - 100),   # h12
+                                      -x[18] + np.log(-x[7] + 300),  # h13
+                                      -x[19] + np.log(x[15]),  # h14
+                                      -x[20] + np.log(-x[8] + 400),  # h15
+                                      -x[21] + np.log(x[16]),  # h16
+                                      -x[7] - x[9] + x[12]*x[17] - x[12]*x[18] + 400,   # h17
+                                      x[7] - x[8] - x[10] + x[13]*x[19] - x[13]*x[20] + 400,  # h18
+                                      x[8] - x[11] - 4.60517*x[14] + x[14]*x[21] + 100   # h19
+                                      ])
+
+        # original solution from the R side, with maxViol = 1e-4, not fully feasible:
+        # (This is also the solution in [LiangRunar06], who states that conTol = 1e-4 is allowed for all equality
+        # constraints. But this is illogical, because the same conTol is NOT applied for G11.)
+        self.solu = np.array([236.430975504001054, 135.82847151732463, 204.818152544824585, 6446.54654059436416,
+                              3007540.83940215595, 4074188.65771341929, 32918270.5028952882, 130.075408394314167,
+                              170.817294970528621, 299.924591605478554, 399.258113423595205, 330.817294971142758,
+                              184.51831230897065, 248.64670239647424, 127.658546694545862, 269.182627528746707,
+                              160.000016724090955, 5.29788288102680571, 5.13529735903945728, 5.59531526444068827,
+                              5.43444479314453499, 5.07517453535834395
+                              ])        # obj = 236.430976 with maxViol = 9.592308e-05
+        # better solution (objective) from SACOBRA_Py run (trueFuncForSurrogates=True, cobraSeed=63, muFinal=1e-4):
+        self.solu = np.array([2.363409395934768e+02, 1.353221860391218e+02, 2.002122199500911e+02, 6.461437900897815e+03,
+                           2.999999999907697e+06, 3.999999999907649e+06, 3.300000000025202e+07, 1.299999999982784e+02,
+                           1.699999999965563e+02, 2.999999999999995e+02, 3.999999999999999e+02, 3.299999999982783e+02,
+                           1.847442812617403e+02, 2.497350062365088e+02, 1.276805585161892e+02, 2.699999076455799e+02,
+                           1.599999076455805e+02, 5.298237510406431e+00, 5.135850454907181e+00, 5.598341760803305e+00,
+                           5.438171665079770e+00, 5.075093381876935e+00
+                              ])        # obj = 236.3409395 with maxViol = 9.23573970e-05
+        # better feasible solution from SACOBRA_Py run (trueFuncForSurrogates=True, cobraSeed=55, muFinal=1e-6):
+        self.solu = np.array([2.363703139420792e+02, 1.354324602061974e+02, 2.004283233248416e+02, 6.462552362401230e+03,
+                            3.000000361125452e+06, 4.000000134515853e+06, 3.299999950435867e+07, 1.300000036112536e+02,
+                            1.700000049564125e+02, 2.999999963887458e+02, 3.999999986548415e+02, 3.300000049564115e+02,
+                            1.845938777994513e+02, 2.494657484132659e+02, 1.276585381975046e+02, 2.699999950435875e+02,
+                            1.599999999999986e+02, 5.298317348491786e+00, 5.135798415807584e+00, 5.598421940641257e+00,
+                            5.438079287373584e+00, 5.075173815233799e+00
+                              ])        # obj = 236.3703139 with maxViol = 3.692694e-07
+
+        # no x0 provided
+        self.info = "Please note that the provided solution is slightly infeasible"
+
+    def _call_G23(self):
+        self.dimension = 9
+        self.lower = np.append(np.repeat(0,8), 0.01)
+        self.upper = np.array([300, 300, 100, 200, 100, 300, 100, 200, 0.03])
+        self.nConstraints = 6
+        self.is_equ = np.append(np.repeat(False,2), np.repeat(True,4))
+        self.fn = lambda x: np.array([-9*x[4] - 15*x[7] + 6*x[0] + 16*x[1] + 10*(x[5] + x[6]),     # obj
+                                      x[8]*x[2] + 0.02*x[5] - 0.025*x[4],          # g1
+                                      x[8]*x[3] + 0.02*x[6] - 0.015*x[7],          # g2
+                                      x[0] + x[1] - x[2] -x[3],                    # h1
+                                      0.03*x[0] + 0.01*x[1] -x[8]*(x[2] + x[3]),   # h2
+                                      x[2] + x[5] - x[4],                          # h3
+                                      x[3] + x[6] - x[7]                           # h4
+                                      ])
+        self.solu = np.array([0,  100, 0,  100,  0,  0,   100, 200, 0.01])   # obj 400.0
+        # no x0 provided
+
+
+    def _call_G24(self):
+        self.dimension = 2
+        self.lower = np.array([0, 0])
+        self.upper = np.array([3, 4])
+        self.nConstraints = 2
+        self.is_equ = np.array([False, False])
+        self.fn = lambda x: np.array([-x[0] - x[1],                                              # obj
+                                      -2*x[0]**4 + 8*x[0]**3 - 8*x[0]**2 + x[1] - 2,             # g1
+                                      -4*x[0]**4 +32*x[0]**3 -88*x[0]**2 + 96*x[0] + x[1] - 36,  # g2
+                                      ])
+        self.solu = np.array([2.329520197477607, 3.17849307411768])
+        # no x0 provided
+
+
+def check_problems():
+    """
+    check some assertions for all G-problems and build data frame ``gdf``
+
+    :return: data frame ``gdf`` with a summary of characteristics of all G-problems
+    """
+    problems = [f'G{i:02d}' for i in range(1,25)]
+    dimension = 10      # for G02, G03
+    gdf = pd.DataFrame()
+    for problem in problems:
+        if problem != 'G20':
+            print(f'checking problem {problem}:')
+            if problem in ['G02', 'G03']:
+                newProb = GCOP(problem, dimension)
+            else:
+                newProb = GCOP(problem)
+            sDim = newProb.solu.ndim
+            if sDim== 1:
+                theSolu = newProb.solu
+            else:
+                theSolu = newProb.solu[0,:]
+            assert newProb.dimension == newProb.lower.size, "dimension should be equal lower.size"
+            assert newProb.dimension == theSolu.size, "dimension should be equal to the size of solu"
+            assert newProb.upper.size == newProb.lower.size, "lower and upper should have same size"
+            assert np.all(newProb.upper > newProb.lower), "all upper should be > lower"
+            assert np.all(newProb.upper >= theSolu), "all upper should be > solu"
+            assert np.all(theSolu >= newProb.lower), "all solu should be > lower"
+            assert newProb.fn(theSolu).size == newProb.nConstraints + 1, \
+                "fn should return a vector of size nConstraints+1"
+            print('done')
+
+            fs = newProb.fn(theSolu)
+            cs = fs[1:]
+            cs[newProb.is_equ] = np.abs(cs[newProb.is_equ])
+            maxViol = np.max((np.max(cs),0))
+            new_row_gdf = pd.DataFrame({
+                'name': problem,
+                'nc': newProb.nConstraints,
+                'nEqu': np.sum(newProb.is_equ == True),
+                'sDim': sDim,           # number of dimensions of solu object
+                'maxViol': maxViol,     # maximum constraint violation of solu
+                'fbest': fs[0]
+            }, index=[0])
+            gdf = pd.concat([gdf, new_row_gdf], axis=0)
+
+            if sDim > 1:  # if the problem has multiple solutions, i.e. G13:
+                indEqu = np.append(False, newProb.is_equ)
+                fs[indEqu] = np.abs(fs[indEqu])
+                for r in range(1,newProb.solu.shape[0]):
+                    # test that fn(solu) (with |..| for equality constraints)
+                    # is the same or nearly the same for all solutions:
+                    fs2 = newProb.fn(newProb.solu[r,:])
+                    fs2[indEqu] = np.abs(fs2[indEqu])
+                    assert np.allclose(fs, fs2), "fn of multiple solutions differs"
+
+    print(gdf)
+    return(gdf)
 
 def show_error_plot(cobra: CobraInitializer, cop: COP, ylim=None, file=None):
     err = cobra.sac_res['fbestArray'] - cop.fbest
@@ -603,13 +791,13 @@ def show_error_plot(cobra: CobraInitializer, cop: COP, ylim=None, file=None):
 
 
 if __name__ == '__main__':
-    G02 = GCOP("G02", 20)
-    G01 = GCOP("G01")
-    print(G01.solu)
-    print(G01.fn(G01.solu))
-    G02 = GCOP("G02", 10)
-    print(G02.solu)
-    print(G02.fn(G02.solu))
-    G15 = GCOP("G15")
-    print(G15.solu)
-    print(G15.fn(G15.solu))
+    # G01 = GCOP("G01")
+    # print(G01.solu)
+    # print(G01.fn(G01.solu))
+    # G02 = GCOP("G02", 10)
+    # print(G02.solu)
+    # print(G02.fn(G02.solu))
+    # G15 = GCOP("G15")
+    # print(G15.solu)
+    # print(G15.fn(G15.solu))
+    check_problems()

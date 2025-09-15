@@ -4,7 +4,7 @@ import nlopt
 from cobraInit import CobraInitializer
 from seqOptimizer import SeqFuncFactory
 from cobraPhaseII import CobraPhaseII
-from innerFuncs import plog, plogReverse
+from innerFuncs import PlogSquasher
 from rescaleWrapper import RescaleWrapper
 from surrogator1 import Surrogator1
 # from trainSurrogates import trainSurrogates, calcPEffect
@@ -29,8 +29,8 @@ class TestPhaseII(unittest.TestCase):
         """
         fxi = np.array([2, 100, -2, -1000])
         for pshift in [0, 1, 10, 50]:
-            pxi = plog(fxi, pShift=pshift)
-            fxi2 = plogReverse(pxi, pShift=pshift)
+            pxi = PlogSquasher.plog(fxi, pShift=pshift)
+            fxi2 = PlogSquasher.plogReverse(pxi, pShift=pshift)
             assert np.allclose(fxi, fxi2), f"not close: {fxi}, {fxi2} for pshift = {pshift}"
         print("[test_plog passed]")
 

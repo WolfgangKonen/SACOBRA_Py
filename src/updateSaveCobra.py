@@ -262,7 +262,7 @@ def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, EPS,
         res_dir = 'results'
         if not os.path.exists(res_dir):
             os.mkdir(res_dir)
-        pkl_name = f'{res_dir}/cobra-{s_res['f_name']}-{s_opts.SEQ.optimizer}-{s_opts.cobraSeed}.pkl'
+        pkl_name = f'{res_dir}/cobra-{s_res["f_name"]}-{s_opts.SEQ.optimizer}-{s_opts.cobraSeed}.pkl'
         with open(pkl_name, 'wb') as output:
             sac_res_bckup = cobra.sac_res.copy()
             rw_bckup = cobra.rw

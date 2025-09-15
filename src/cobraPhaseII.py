@@ -2,6 +2,7 @@ import pandas as pd
 # need to specify SACOBRA_Py.src as source folder in File - Settings - Project Structure,
 # then the following import statements will work:
 from cobraInit import CobraInitializer
+from innerFuncs import PlogSquasher
 from opt.isaOptions import O_LOGIC
 from phase2Vars import Phase2Vars
 import phase2Funcs as p2f
@@ -84,6 +85,10 @@ class CobraPhaseII:
         self.p2.currentMu = s_res['muVec'][0]
         first_pass = True
         final_gama = None
+        PlogSquasher.reset_warn_counter()
+
+        # make dummy surrogate models (for the case trueFuncForSurrogates == False):
+        self.p2 = Surrogator.trainSurrogates(self.cobra, self.p2)
 
         while self.p2.num < s_opts.feval:
             self.p2.gama = s_opts.XI[(self.p2.globalOptCounter % s_opts.XI.size)]
@@ -92,8 +97,9 @@ class CobraPhaseII:
 
             # TODO: MS (model-selection) part
 
-            # train RBF surrogate models:
-            self.p2 = Surrogator.trainSurrogates(self.cobra, self.p2)
+            # train RBF surrogate models (skipped in case trueFuncForSurrogates == False):
+            if not s_opts.SEQ.trueFuncForSurrogates == False:
+                self.p2 = Surrogator.trainSurrogates(self.cobra, self.p2)
 
             if first_pass:
                 # needed just for assertion check in testCOP.test_G06_R:
@@ -171,7 +177,11 @@ class CobraPhaseII:
             self.p2.time_call += self.p2.constraintSurrogates.time_call
         # end while self.p2.num
 
+        if PlogSquasher.get_warn_counter() > 0:
+            print(PlogSquasher.get_warn_summary())
+            PlogSquasher.reset_warn_counter()
         # TODO: some final settings to self.cobra, self.p2
+
         return self
 
     # NOTE: the purpose of this function is just to supply a docstring (used in appendix of Sphinx docu):

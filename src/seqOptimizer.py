@@ -197,7 +197,7 @@ def calcConstrPred(x, cobra: CobraInitializer, p2: Phase2Vars) -> np.ndarray:
     if s_opts.EQU.active:
         # We form here the vector
         #
-        #     ( g_i(x), h_j(x) - mu, - h_j(x) - mu ) + eps**2
+        #     ( g_i(x) + eps**2, h_j(x) - mu, - h_j(x) - mu )
         #
         # with mu = currentMu, eps=p2.EPS. This vector should be in all components <= 0
         # in order to fulfill the constraints
@@ -212,12 +212,17 @@ def calcConstrPred(x, cobra: CobraInitializer, p2: Phase2Vars) -> np.ndarray:
 
         ine_ind = np.flatnonzero(s_res['is_equ'] == False)
         equ_ind = np.flatnonzero(s_res['is_equ'])
-        constraint_pred1[ine_ind] = constraint_pred1[ine_ind] - currentMu    # g(x) - mu, new 2025/04/02
+        # constraint_pred1[ine_ind] = constraint_pred1[ine_ind] - currentMu    # g(x) - mu, new 2025/04/02
+        # constraint_pred1[equ_ind] = constraint_pred1[equ_ind] - currentMu   # this creates h(x)-mu
+        # constraint_pred2 = -constraint_pred1[equ_ind] - 2 * currentMu       # this creates -h(x)-mu
+        # # why 2*currentMu? - because we modify the already created h(x)-mu to -(h(x)-mu)-2*mu = -h(x)-mu
+        # constraint_prediction = np.concatenate((constraint_pred1, constraint_pred2), axis=None) + p2.EPS ** 2
+        # --- BUG FIX 2025/09/14: + p2.EPS**2 only for inequality constraints (and NO '- currentMu'): ---
+        constraint_pred1[ine_ind] = constraint_pred1[ine_ind] + p2.EPS ** 2    # g(x) + EPS ** 2 (!!)
         constraint_pred1[equ_ind] = constraint_pred1[equ_ind] - currentMu   # this creates h(x)-mu
         constraint_pred2 = -constraint_pred1[equ_ind] - 2 * currentMu       # this creates -h(x)-mu
         # why 2*currentMu? - because we modify the already created h(x)-mu to -(h(x)-mu)-2*mu = -h(x)-mu
-
-        constraint_prediction = np.concatenate((constraint_pred1, constraint_pred2), axis=None) + p2.EPS ** 2
+        constraint_prediction = np.concatenate((constraint_pred1, constraint_pred2), axis=None)
 
     else:  # i.e. if not s_opts.EQU.active
         if s_opts.SEQ.trueFuncForSurrogates:

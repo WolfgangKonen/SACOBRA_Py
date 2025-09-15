@@ -6,7 +6,7 @@ from scipy.optimize import minimize
 
 from cobraInit import CobraInitializer
 from phase2Vars import Phase2Vars
-from innerFuncs import plogReverse
+from innerFuncs import PlogSquasher
 
 
 def concat(a, b):
@@ -390,9 +390,9 @@ class EvaluatorReal:
         # instead of the maximum distance to the artificial constraints.
         # WK: the difference is that we do not subtract currentMu here
         temp = s_res['fn'](self.xNew)[1:].copy()
-        temp[self.equ_ind] = np.abs(temp[self.equ_ind])
+        temp[self.equ_ind] = np.abs(temp[self.equ_ind]) - s_opts.EQU.muFinal  # muFinal: bug fix 2025/09/13
         self.trueNumViol = np.flatnonzero(temp > conTol).size
-        M = max(0, max(temp * s_res['GRfact']))   # true maximum violation, weighted with GRfact
+        # ## M = max(0, max(temp * s_res['GRfact']))   # true maximum violation, weighted with GRfact
         # /WK/2025/05/04: this is the version used in R as well: GRfact (see adCon()) is a vector of length
         # nConstraints and tempG.shape = (idp,nConstraints). With the trick "... @ np.diag(GRfact)" we multiply each
         # row of tempG elementwise with GRfact. The violations are weighted with GRfact, then we take the max.
@@ -400,6 +400,10 @@ class EvaluatorReal:
         #       M = max(0, max(temp))
         # but this is not the way it is in R. (The former remark, that we do not need to multiply with GRfact because
         # it is 1.0 anyhow, is *wrong* because GRfact becomes a vector of length nConstraints in the EQU.active branch)
+        #
+        # -- /WK/2025-09-10/ we now use this simpler alternative, this is better for G22 (with constraint normalization
+        # -- in adCon):
+        M = max(0, max(temp))
 
         if M <= conTol: M = 0
         self.trueMaxViol = M
@@ -433,7 +437,7 @@ class EvaluatorReal:
 def getPredY0(xNew, fitnessSurrogate, p2: Phase2Vars):
     pred_y = fitnessSurrogate(xNew)
     if p2.PLOG[-1]:
-        pred_y = plogReverse(pred_y, p2.pshift[-1])
+        pred_y = PlogSquasher.plogReverse(pred_y, p2.pshift[-1])
     return pred_y
 
 # getPredY is nothing else than calling getPredY0 with fitnessSurrogate=p2.fitnessSurrogate

@@ -5,7 +5,7 @@ import numpy as np
 # then the following import statements will work:
 from cobraInit import CobraInitializer
 from cobraPhaseII import Phase2Vars
-from innerFuncs import verboseprint, plog, plogReverse
+from innerFuncs import verboseprint, PlogSquasher
 from opt.isaOptions import O_LOGIC
 from rbfModel import RBFmodel
 import matplotlib.pyplot as plt
@@ -48,7 +48,7 @@ class Surrogator1:
                     # if p2.pEffect > 1:  # /WK/2025/08/04: bug fix, pEffect=log10(errRatio) has to be compared with 0:
                     if p2.pEffect > 0:
                         self.PLOG = True
-                        Fres = plog(Fres, pShift=self.pshift)
+                        Fres = PlogSquasher.plog(Fres, pShift=self.pshift)
                     # else: leave Fres at its input value
 
                 else:  # i.e. if ISA.onlinePLOG == O_LOGIC.NONE
@@ -58,7 +58,7 @@ class Surrogator1:
                         # else: leave self.pshift=0
 
                         self.PLOG = True
-                        Fres = plog(Fres, pShift=self.pshift)
+                        Fres = PlogSquasher.plog(Fres, pShift=self.pshift)
                     # else: leave Fres at its input value
 
             p2.PLOG = np.concat((p2.PLOG, [self.PLOG]))
@@ -114,7 +114,7 @@ class Surrogator1:
         newPredY1 = p2.fitnessSurrogate1(xNew)
         newPredY2 = p2.fitnessSurrogate2(xNew)
         newErr1 = abs(newPredY1 - xNewEval[0])
-        newErr2 = abs(plogReverse(newPredY2, verbose=verbose) - xNewEval[0])
+        newErr2 = abs(PlogSquasher.plogReverse(newPredY2, verbose=False) - xNewEval[0])
         # newErr2 = abs(newPredY2-xNewEval[0])
         p2.err1 = np.concat((p2.err1, newErr1))
         p2.err2 = np.concat((p2.err2, newErr2))
@@ -263,7 +263,7 @@ class Surrogator1:
         if recalc_fit12:
             # build two models:
             Fres1 = cobra.for_rbf['Fres']
-            Fres2 = plog(cobra.for_rbf['Fres'])
+            Fres2 = PlogSquasher.plog(cobra.for_rbf['Fres'])
             p2.fitnessSurrogate1 = RBFmodel(A, Fres1, s_opts.RBF)
             p2.fitnessSurrogate2 = RBFmodel(A, Fres2, s_opts.RBF)
 

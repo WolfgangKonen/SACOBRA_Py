@@ -2,6 +2,7 @@ from typing import Union
 
 import numpy as np
 
+
 def verboseprint(verbose:int, important:bool, message:str):
     """
     :param verbose:     0: print nothing. 1: print only important messages. 2: print everything
@@ -28,55 +29,83 @@ def distLine(x,xp):
     return z
 
 
-def plog(f, pShift=0.0):
+class PlogSquasher:
     """
-    Monotonic transform. This  function is introduced in [Regis 2014] and extended here by a parameter
-    ``pShift``. It is used to squash a function with a large range into a smaller range.
+    A class to offer static methods ``plog`` and ``plogReverse`` together with a warn counter for
+    ``plogReverse`` overflow warnings.
 
-    Let :math:`f' =  f - p_{shift}`. Then:
-
-    :math:`plog(f) = +\\ln(1 + f'),  \\quad\\mbox{if}\\quad f' \\ge 0`
-    and
-
-    :math:`plog(f) = -\\ln(1 - f'), \\quad\\mbox{if}\\quad f'  <   0`
-
-
-    :param f:   function value(s), number or np.array
-    :param pShift:  optional shift
-    :return:    np.sign(f') * ln(1 + |f'|)
+    Call ``reset_warn_counter`` to start counting of warnings and call ``get_warn_summary`` to print
+    the warn count and the warning to string
     """
-    return np.sign(f - pShift) * np.log(1 + np.abs(f - pShift))
+
+    warn_counter = 0
+
+    @staticmethod
+    def plog(f, pShift=0.0):
+        """
+        Monotonic transform. This  function is introduced in [Regis 2014] and extended here by a parameter
+        ``pShift``. It is used to squash a function with a large range into a smaller range.
+
+        Let :math:`f' =  f - p_{shift}`. Then:
+
+        :math:`plog(f) = +\\ln(1 + f'),  \\quad\\mbox{if}\\quad f' \\ge 0`
+        and
+
+        :math:`plog(f) = -\\ln(1 - f'), \\quad\\mbox{if}\\quad f'  <   0`
 
 
-def plogReverse(y: Union[float, np.ndarray], pShift=0.0, verbose=False) -> Union[float, np.ndarray]:
-    """
-    Inverse of ``plog(f, pShift)``.
+        :param f:   function value(s), number or np.array
+        :param pShift:  optional shift
+        :return:    np.sign(f') * ln(1 + |f'|)
+        """
+        return np.sign(f - pShift) * np.log(1 + np.abs(f - pShift))
 
-    Too large values of ``np.abs(y)`` are clipped to avoid ``RuntimeError: overflow in exp``.
+    @staticmethod
+    def plogReverse(y: Union[float, np.ndarray], pShift=0.0, verbose=False) -> Union[float, np.ndarray]:
+        """
+        Inverse of ``plog(f, pShift)``.
 
-    :param y:       function argument, number or array
-    :param pShift:  optional shift
-    :param verbose: if True, print a warning message if any clipping occurs
-    :return:    np.sign(y) * (np.exp(|y|) - 1) + pShift
-    """
-    # if True:    # isinstance(y, float):
-    #                                     # bug fix 2025/06/24:
-    #     if np.abs(y) > 709:             # avoid 'RuntimeWarning: overflow encountered in exp' (G02 with dim=10)
-    #         # print(f"[plogReverse] Warning: clipping too large y={y} to np.sign(y)*(np.exp(700) - 1)")
-    #         return np.sign(y) * (np.exp(700) - 1) + pShift
-    #         # return np.sign(y) * np.inf + pShift
-    # return np.sign(y) * (np.exp(np.abs(y)) - 1) + pShift
-    # # /WK/2025/03/06: bug fix for negative y
+        Too large values of ``np.abs(y)`` are clipped to avoid ``RuntimeError: overflow in exp``.
 
-    # /WK/2025/08/13:  better version to avoid 'RuntimeWarning: overflow': The problem of the above (commented-out)
-    # approach is that 'if np.abs(y) > 709' does not work for arrays y with size > 1. Now we clip only those entries
-    # of np.abs(y) that are > 705 to 705, and this works for arrays of any size as well:
-    abs_y_clip = np.minimum(np.abs(y), 705)
-    if verbose:
+        :param y:       function argument, number or array
+        :param pShift:  optional shift
+        :param verbose: if True, print a warning message if any clipping occurs
+        :return:    np.sign(y) * (np.exp(|y|) - 1) + pShift
+        """
+        # if True:    # isinstance(y, float):
+        #                                     # bug fix 2025/06/24:
+        #     if np.abs(y) > 709:             # avoid 'RuntimeWarning: overflow encountered in exp' (G02 with dim=10)
+        #         # print(f"[plogReverse] Warning: clipping too large y={y} to np.sign(y)*(np.exp(700) - 1)")
+        #         return np.sign(y) * (np.exp(700) - 1) + pShift
+        #         # return np.sign(y) * np.inf + pShift
+        # return np.sign(y) * (np.exp(np.abs(y)) - 1) + pShift
+        # # /WK/2025/03/06: bug fix for negative y
+
+        # /WK/2025/08/13:  better version to avoid 'RuntimeWarning: overflow': The problem of the above (commented-out)
+        # approach is that 'if np.abs(y) > 709' does not work for arrays y with size > 1. Now we clip only those entries
+        # of np.abs(y) that are > 705 to 705, and this works for arrays of any size as well:
+        abs_y_clip = np.minimum(np.abs(y), 705)
         if any(abs_y_clip != np.abs(y)):
-            print(f"[plogReverse] Warning: clipping too large |y|={np.abs(y)} to np.sign(y)*(np.exp(705) - 1)")
-            dummy = 0
-    return np.sign(y) * (np.exp(abs_y_clip) - 1) + pShift
+            PlogSquasher.warn_counter += 1
+            if verbose:
+                print(f"[plogReverse] Warning: clipping too large |y|={np.abs(y)} to np.sign(y)*(np.exp(705) - 1)")
+                dummy = 0
+        return np.sign(y) * (np.exp(abs_y_clip) - 1) + pShift
+
+    @staticmethod
+    def reset_warn_counter():
+        PlogSquasher.warn_counter = 0
+
+
+    @staticmethod
+    def get_warn_counter() -> int:
+        return PlogSquasher.warn_counter
+
+
+    @staticmethod
+    def get_warn_summary() -> str:
+        return f"[plogReverse] There were {PlogSquasher.warn_counter} warnings of the type:" \
+               f"\n[plogReverse] Warning: clipping too large |y| to np.sign(y)*(np.exp(705) - 1)"
 
 # # -----------------------------------------------------------------------------------------------
 # # ----------------  helper functions     subprob*, gCOBRA*  -------------------------------------

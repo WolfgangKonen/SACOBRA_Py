@@ -195,7 +195,9 @@ class CobraInitializer:
             # [this is the branch starting in cobraInit.R with "else if(equHandle$active)" (line 821 ff)]
             # equ2Index = np.concat(equ_ind, nConstraints + np.arange(0, equ_ind.size))
             #
-            tempG = Gres.copy()     # .copy important here, otherwise changes to tempG would change Gres as well (!)
+            # tempG = Gres.copy()     # .copy important here, otherwise changes to tempG would change Gres as well (!)
+            # BUG FIX 2025-09-10: Gres is wrong (not normalized), if adCon did normalize. Use instead self.sac_res['Gres']:
+            tempG = self.sac_res['Gres'].copy()  # .copy important here, otherwise changes to tempG would change Gres as well (!)
             tempG[:, equ_ind] = abs(tempG[:, equ_ind])
             # z = self.sac_res['GRfact']
             # tempG2 = tempG * z if nConstraints == 1 else tempG @ np.diag(z)

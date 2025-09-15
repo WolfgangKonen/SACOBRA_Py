@@ -6,7 +6,7 @@ from typing import Union
 from surrogator1 import Surrogator1   # for AdFitter, assert_gres
 from cobraInit import CobraInitializer
 from cobraPhaseII import Phase2Vars
-from innerFuncs import verboseprint, plog, plogReverse
+from innerFuncs import verboseprint, PlogSquasher
 from rbfModel import RBFmodel
 
 
@@ -84,7 +84,7 @@ class Surrogator2:
             newPredY2 = p2.fitnessSurrogate2(x)
             if np.abs(newPredY2) > 705: clip_done = True
             newErr1 += abs(newPredY1 - midpEval[k])
-            newErr2 += abs(plogReverse(newPredY2, verbose=verbose) - midpEval[k])
+            newErr2 += abs(PlogSquasher.plogReverse(newPredY2, verbose=False) - midpEval[k])
         p2.err1 = np.concat((p2.err1, newErr1/nrow))
         p2.err2 = np.concat((p2.err2, newErr2/nrow))
         nu = 1e-20   # regularizing constant to avoid 0/0-situation in p2.errRatio
@@ -125,7 +125,7 @@ class Surrogator2:
 
         # two models are built in every iteration:
         Fres1 = cobra.for_rbf['Fres']
-        Fres2 = plog(cobra.for_rbf['Fres'])
+        Fres2 = PlogSquasher.plog(cobra.for_rbf['Fres'])
         p2.fitnessSurrogate1 = RBFmodel(A, Fres1, s_opts.RBF)
         p2.fitnessSurrogate2 = RBFmodel(A, Fres2, s_opts.RBF)
 

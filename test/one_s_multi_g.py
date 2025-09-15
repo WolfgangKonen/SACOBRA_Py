@@ -25,6 +25,7 @@ class OneS:
             or as given by the defaults.
 
         :param gname:       name of G-problem
+        :param dim:         dimension for G-problems with variable dimension
         :param cobraSeed:   seed
         :param feval:       real function evaluations
         :param conTol:      constraint tolerance, common values are 0 or 1e-7
@@ -40,7 +41,7 @@ class OneS:
         idp = (dim + 1) * (dim + 2) // 2
         if feval == 0: feval = idp+2
 
-        equ = EQUoptions(muGrow=100, muDec=1.6, muFinal=1e-7,
+        equ = EQUoptions(muGrow=100, muDec=1.6, muFinal=1e-6,
                          refinePrint=False, refineAlgo="L-BFGS-B")  # "L-BFGS-B COBYLA"
         cobra = CobraInitializer(gcop.x0, gcop.fn, gcop.name, gcop.lower, gcop.upper, gcop.is_equ,
                                  solu=gcop.solu,
@@ -50,13 +51,13 @@ class OneS:
                                                    # RBF=RBFoptions(degree=1.5, interpolator="sacobra"),  # test only, "cubic"
                                                    # RBF=RBFoptions(kernel="gaussian", degree=2),   # alternative "gaussian"
                                                    # ISA=ISAoptions(onlinePLOG=O_LOGIC.NONE),   # the default (before 2025/08/01)
-                                                   ISA=ISAoptions(onlinePLOG=O_LOGIC.MIDPTS), # run 2025/08/12
+                                                   ISA=ISAoptions(onlinePLOG=O_LOGIC.MIDPTS, TGR=np.inf), # run 2025/08/12
                                                    # ISA=ISAoptions(onlinePLOG=O_LOGIC.XNEW),     # run 2025/08/13
                                                    EQU=equ,
-                                                   SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol)))  # , trueFuncForSurrogates=True
+                                                   SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol, trueFuncForSurrogates=True)))  #
         if feval > idp: c2 = CobraPhaseII(cobra).start()
 
-        fin_err = np.array(cobra.get_fbest() - gcop.fbest)
+        fin_err = np.array(cobra.get_feasible_best() - gcop.fbest)
         if fin_err < 1e-7:
             dummy = 0
         c2.p2.fin_err = fin_err
@@ -64,6 +65,8 @@ class OneS:
         c2.p2.fe_thresh = 1e-1
         c2.p2.dim = dim
         c2.p2.conTol = conTol
+        s_res = cobra.sac_res
+        c2.p2.maxViol = s_res['trueMaxViol'][s_res['ibest']]
         # show_error_plot(cobra, gcop,)  #  ylim=[1e-4,1e0]
         # print(gcop.fn(gcop.solu))
         print(gcop.fbest)
@@ -124,16 +127,17 @@ class OneS:
                             'time': time_ms,
                             'err': fin_err,
                             'feval': feval,
-                            'conTol': c2.p2.conTol}, index=[0])
+                            'conTol': c2.p2.conTol,
+                            'maxViol': c2.p2.maxViol}, index=[0])
                     df2 = pd.concat([df2, new_row_df2], axis=0)
         print(df2)
         df2.to_feather("feather/df2.feather")
         print(f"df2 saved to {os.getcwd()}/feather/df2.feather")
         print(f"\n Number of runs in df2: {df2.seed.unique().size} for each (gname,meth)-combi")
         print("\n --- Median for each problem --- ")
-        print(df2.groupby(['gname','meth']).median())
+        print(df2.groupby(['gname','meth','d']).median())
         print("\n ---  Std for each problem --- ")
-        print(df2.groupby(['gname','meth']).std())
+        print(df2.groupby(['gname','meth','d']).std())
         return df2
 
     def multi_init(self, gnames: list, cobraSeed: int, feval=0):
@@ -183,24 +187,30 @@ class OneS:
             df1['err2'] = df2['err']
             df1 = df1.drop(["conTol","seed"],axis=1)    # drop some columns so that all other columns get printed
         print("\n --- Median for each (problem, meth) --- ")
-        print(df1.groupby(['gname', 'meth', 'd']).median())
+        print(df1.groupby(['gname', 'meth', 'd']).median())   # median() will automatically drop NaNs (!)
         print("\n ---  Std for each (problem, meth) --- ")
-        print(df1.groupby(['gname', 'meth', 'd']).std())
+        x = df1.groupby(['gname', 'meth', 'd']).std()
+        print(x.loc[:, ['err','maxViol']])                    # to get it printed if df1 has too many columns
         # print("\n --- Mean for each problem --- ")
         # del df1['meth']
         # print(df1.groupby(['gname']).mean())
+        y = df1.groupby(['gname', 'meth', 'd']).count()       # count() will automatically drop NaNs
+        print("\n ---  Runs that found no feasible solution --- ")        # --> err may have less counts due to NaNs for
+        print(y['feval'] - y['err'])                          # 'infeasible runs'
 
-        print(f"\nThe (G02, d=2)-errors for {fname1}:")
-        G02_2_errs = np.array(df1[(df1["gname"]=="G02") &
-                                  (df1["d"]==2) &
-                                  (df1["meth"]=="one_s")]["err"])
-        print(np.sort(G02_2_errs))
-        print(f"median = {np.median(G02_2_errs)}")
+        if any(df1['gname'] == "G02"):
+            print(f"\nThe (G02, d=2)-errors for {fname1}:")
+            G02_2_errs = np.array(df1[(df1["gname"]=="G02") &
+                                      (df1["d"]==2) &
+                                      (df1["meth"]=="one_s")]["err"])
+            print(np.sort(G02_2_errs))
+            print(f"median = {np.median(G02_2_errs)}")
 
-        print(f"\nThe (G03, d=10)-errors for {fname1}:")
-        G03_10_errs = np.array(df1[(df1["gname"]=="G03") & (df1["d"]==10)]["err"])
-        print(np.sort(G03_10_errs))
-        print(f"median = {np.median(G03_10_errs)}")
+        if any(df1['gname'] == "G03"):
+            print(f"\nThe (G03, d=10)-errors for {fname1}:")
+            G03_10_errs = np.array(df1[(df1["gname"]=="G03") & (df1["d"]==10)]["err"])
+            print(np.sort(G03_10_errs))
+            print(f"median = {np.median(G03_10_errs)}")
 
 
 if __name__ == '__main__':
@@ -209,13 +219,16 @@ if __name__ == '__main__':
     dims   = [   -1,     2,     5,     7,    10,   -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1]
     gnames = ["G03", "G09",]  #  "G08", "G09", "G10",
     dims   = [   10,   -1]
-    # gnames = ["G13"]  # "G10", "G11", "G12",
-    # dims   = [ -1]  #   -1,    -1,    -1,
-    df2 = one.one_s_multi_g_r(gnames, dims,10, 54, feval=500, conTol=0)       # conTol=0 | 1e-7
+    gnames = ["G14", "G15", "G16", "G17", "G18", "G19", "G21", "G22", "G23", "G24"]
+    dims   = [  -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1]
+    gnames = ["G14"]  # , "G22", "G24" "G10", "G11", "G12",
+    dims   = [ -1]  #   ,     -1,    -1,    -1,
+    df2 = one.one_s_multi_g_r(gnames, dims,10, 54, feval=500, conTol=0.0)       # conTol=0.0 | 1e-7
     # init_df = one.multi_init(gnames, 54, feval=120)
     # one.df_analyze("df2_conTol0.0-fe500-G01-G13.feather", "df2_conTol1e-7-fe500-G01-G13.feather")
     # one.df_analyze("df2_conTol0.0-fe500-G02-d02.feather")
-    # one.df_analyze("df2_conTol0.0-MIDPTS-gauss-fe500-G01-G13.feather")   # NONE | XNEW | MIDPTS
+    # one.df_analyze("df2_conTol0.0-trueFunc-fe500-G14-G24.feather")   # NONE | XNEW | MIDPTS
+    # one.df_analyze("df2_muF1e-7-trueFunc-fe500-G14-G24-EPS-fix.feather")
 
 
 
