@@ -41,7 +41,7 @@ class OneS:
         idp = (dim + 1) * (dim + 2) // 2
         if feval == 0: feval = idp+2
 
-        equ = EQUoptions(muGrow=100, muDec=1.6, muFinal=1e-6,
+        equ = EQUoptions(muGrow=100, muDec=1.6, muFinal=1e-7,
                          refinePrint=False, refineAlgo="L-BFGS-B")  # "L-BFGS-B COBYLA"
         cobra = CobraInitializer(gcop.x0, gcop.fn, gcop.name, gcop.lower, gcop.upper, gcop.is_equ,
                                  solu=gcop.solu,
@@ -54,7 +54,7 @@ class OneS:
                                                    ISA=ISAoptions(onlinePLOG=O_LOGIC.MIDPTS, TGR=np.inf), # run 2025/08/12
                                                    # ISA=ISAoptions(onlinePLOG=O_LOGIC.XNEW),     # run 2025/08/13
                                                    EQU=equ,
-                                                   SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol, trueFuncForSurrogates=True)))  #
+                                                   SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol)))  # , trueFuncForSurrogates=True
         if feval > idp: c2 = CobraPhaseII(cobra).start()
 
         fin_err = np.array(cobra.get_feasible_best() - gcop.fbest)
@@ -221,7 +221,7 @@ if __name__ == '__main__':
     dims   = [   10,   -1]
     gnames = ["G14", "G15", "G16", "G17", "G18", "G19", "G21", "G22", "G23", "G24"]
     dims   = [  -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1]
-    gnames = ["G14"]  # , "G22", "G24" "G10", "G11", "G12",
+    gnames = ["G17"]  # , "G22", "G24" "G10", "G11", "G12",
     dims   = [ -1]  #   ,     -1,    -1,    -1,
     df2 = one.one_s_multi_g_r(gnames, dims,10, 54, feval=500, conTol=0.0)       # conTol=0.0 | 1e-7
     # init_df = one.multi_init(gnames, 54, feval=120)
