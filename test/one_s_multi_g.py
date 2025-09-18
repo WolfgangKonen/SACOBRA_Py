@@ -51,7 +51,7 @@ class OneS:
                                                    # RBF=RBFoptions(degree=1.5, interpolator="sacobra"),  # test only, "cubic"
                                                    # RBF=RBFoptions(kernel="gaussian", degree=2),   # alternative "gaussian"
                                                    # ISA=ISAoptions(onlinePLOG=O_LOGIC.NONE),   # the default (before 2025/08/01)
-                                                   ISA=ISAoptions(onlinePLOG=O_LOGIC.MIDPTS, TGR=np.inf), # run 2025/08/12
+                                                   ISA=ISAoptions(onlinePLOG=O_LOGIC.MIDPTS), # run 2025/08/12 , TGR=np.inf
                                                    # ISA=ISAoptions(onlinePLOG=O_LOGIC.XNEW),     # run 2025/08/13
                                                    EQU=equ,
                                                    SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol)))  # , trueFuncForSurrogates=True
