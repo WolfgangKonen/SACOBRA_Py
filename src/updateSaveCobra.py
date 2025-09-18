@@ -108,6 +108,8 @@ def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, EPS,
     # xbestIndex = which.min(cobra$Fres[feasibleIndices])  # finding index of the best point so far
 
     # only diagnostics, needed for cobra$df & cobra$df2 /WK/
+    if p2.num == 150:
+        dummy = 0
     cobra.solu_cont = SoluContainer(cobra.solu, cobra)
     predSolu, predSoluPenal = cobra.solu_cont.predict_at_solu(p2, fitnessSurrogate, fitFuncPenalRBF)
 

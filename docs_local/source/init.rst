@@ -19,7 +19,7 @@ The initialization in **SACOBRA_Py** is done by creating an object of class :cla
 - create the initial design, see :class:`.InitDesigner`
 - adjust several elements according to constraint range, see :meth:`.adCon`
 - calculate for each initial design point ``numViol``, the number of violated constraints, and ``maxViol``, the maximum constraint violation. If equality constraints are involved, calculate :math:`\mu_{init}`, the radius for an artificial feasibility tube around each equality constraint (see :class:`.EQUoptions`) and base the calculation of ``numViol`` and ``maxViol`` on this artificial feasibility. 
-- calculate the so-far best (artificial) feasible point. If no point fulfills (artificial) feasibility, form the set of points with minimum ``numViol`` and take from this set the one point with the best objective.
+- calculate  the so-far best (artificial) feasible point. If no point fulfills (artificial) feasibility, form the set of points with minimum ``numViol`` and take from this set the one point with the best objective.
 - set up result dictionary :ref:`sac_res <sacres-label>`
 - adjust :ref:`DRC <DRC-label>` according to objective range, see :meth:`.adDRC`
 

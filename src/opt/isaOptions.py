@@ -43,8 +43,6 @@ class ISAoptions:
         :param TGR: threshold: If ``GRatio > TGR``, then apply automatic constraint function transformation. ``GRatio``
                     is the ratio "largest GR / smallest GR" where GR is the min-max range of a specific constraint.
                     If ``TGR < 1``, then the transformation is always performed.
-        :param conPLOG:
-        :param conFitPLOG:
         :param adaptivePLOG: (experimental) flag for objective function transformation with ``plog``, where the
                              parameter ``pShift`` is adapted during iterations
         :param onlinePLOG: three-valued logic for online decision-making: ``O_LOGIC.NONE`` (no online, only fixed
@@ -55,10 +53,10 @@ class ISAoptions:
                     (only relevant for case ``O_LOGIC.XNEW``)
         :param pEffectInit: the initial value for ``pEffect``, needed for first pass through cobraPhaseII while loop in
                     case ``O_LOGIC.XNEW``. Not needed in cases  ``O_LOGIC.NONE`` or ``O_LOGIC.MIDPTS``
-        :param pEff_npts: the number p of initial design points to take from initial design matrix ``A`` to form
-                    p*(p-1)/2 pairs and calculate pair midpoints for case ``O_LOGIC.MIDPTS``
-        :param minMaxNormal:
-        :param onlineMinMax:
+        :param pEffNpts: only for case ``O_LOGIC.MIDPTS``: the number p of initial design points to take from initial
+                    design matrix ``A``: Form p*(p-1)/2 pairs and calculate the midpoints for all those pairs
+        :param pEff_DBG: temporary debug: replace xNew with a single midpoint (needed only by testCOP.py, which
+                    activates a certain branch in cobraPhaseII.py)
     """
     # obsolete:   :param pEffectLogic: logic for pEffect calculation. One out of [O_LOGIC.XNEW, O_LOGIC.MIDPTS]
     def __init__(self,
@@ -76,16 +74,16 @@ class ISAoptions:
                  aCF=True,
                  TFRange=1e+05,
                  TGR=1e+03,
-                 conPLOG=False,
-                 conFitPLOG=False,
+                 # conPLOG=False,
+                 # conFitPLOG=False,
                  adaptivePLOG=False,
                  onlinePLOG=O_LOGIC.NONE,
                  onlineFreqPLOG=10,
                  pEffectInit=0,
-                 pEff_npts=3,
+                 pEffNpts=3,
                  pEff_DBG=False,
-                 minMaxNormal=False,
-                 onlineMinMax=False
+                 # minMaxNormal=False,
+                 # onlineMinMax=False
                  ):
         self.isa_ver = isa_ver
         self.RS = RS
@@ -101,16 +99,16 @@ class ISAoptions:
         self.aCF = aCF
         self.TFRange = TFRange
         self.TGR = TGR
-        self.conPLOG = conPLOG
-        self.conFitPLOG = conFitPLOG
+        # self.conPLOG = conPLOG
+        # self.conFitPLOG = conFitPLOG
         self.adaptivePLOG = adaptivePLOG
         self.onlinePLOG = onlinePLOG
         self.onlineFreqPLOG = onlineFreqPLOG
         self.pEffectInit = pEffectInit
-        self.pEff_npts = pEff_npts
+        self.pEffNpts = pEffNpts
         self.pEff_DBG = pEff_DBG
-        self.minMaxNormal = minMaxNormal
-        self.onlineMinMax = onlineMinMax
+        # self.minMaxNormal = minMaxNormal
+        # self.onlineMinMax = onlineMinMax
 
 
 class ISAoptions0(ISAoptions):
@@ -134,16 +132,16 @@ class ISAoptions0(ISAoptions):
                  aCF=False,
                  TFRange=np.inf,
                  TGR=np.inf,
-                 conPLOG=False,
-                 conFitPLOG=False,
+                 # conPLOG=False,
+                 # conFitPLOG=False,
                  adaptivePLOG=False,
                  onlinePLOG=O_LOGIC.NONE,
                  onlineFreqPLOG=10,
                  pEffectInit=0,
-                 pEff_npts=3,
+                 pEffNpts=3,
                  pEff_DBG=False,
-                 minMaxNormal=False,
-                 onlineMinMax=False
+                 # minMaxNormal=False,
+                 # onlineMinMax=False
                  ):
         super().__init__(
             isa_ver=isa_ver,
@@ -160,16 +158,16 @@ class ISAoptions0(ISAoptions):
             aCF=aCF,
             TFRange=TFRange,
             TGR=TGR,
-            conPLOG=conPLOG,
-            conFitPLOG=conFitPLOG,
+            # self.conPLOG = conPLOG
+            # self.conFitPLOG = conFitPLOG
             adaptivePLOG=adaptivePLOG,
             onlinePLOG=onlinePLOG,
             onlineFreqPLOG=onlineFreqPLOG,
             pEffectInit=pEffectInit,
-            pEff_npts=pEff_npts,
+            pEffNpts=pEffNpts,
             pEff_DBG=pEff_DBG,
-            minMaxNormal=minMaxNormal,
-            onlineMinMax=onlineMinMax
+            # minMaxNormal=minMaxNormal,
+            # onlineMinMax=onlineMinMax
         )
 
 
@@ -194,16 +192,16 @@ class ISAoptions2(ISAoptions):
                  aCF=True,
                  TFRange=-1,
                  TGR=-1,
-                 conPLOG=False,
-                 conFitPLOG=False,
+                 # conPLOG=False,
+                 # conFitPLOG=False,
                  adaptivePLOG=False,
                  onlinePLOG=O_LOGIC.NONE,
                  onlineFreqPLOG=10,
                  pEffectInit=3,
-                 pEff_npts=3,
+                 pEffNpts=3,
                  pEff_DBG=False,
-                 minMaxNormal=False,
-                 onlineMinMax=False
+                 # minMaxNormal=False,
+                 # onlineMinMax=False
                  ):
         super().__init__(
             isa_ver=isa_ver,
@@ -220,14 +218,14 @@ class ISAoptions2(ISAoptions):
             aCF=aCF,
             TFRange=TFRange,
             TGR=TGR,
-            conPLOG=conPLOG,
-            conFitPLOG=conFitPLOG,
+            # self.conPLOG = conPLOG
+            # self.conFitPLOG = conFitPLOG
             adaptivePLOG=adaptivePLOG,
             onlinePLOG=onlinePLOG,
             onlineFreqPLOG=onlineFreqPLOG,
             pEffectInit=pEffectInit,
-            pEff_npts=pEff_npts,
+            pEffNpts=pEffNpts,
             pEff_DBG=pEff_DBG,
-            minMaxNormal=minMaxNormal,
-            onlineMinMax=onlineMinMax
+            # minMaxNormal=minMaxNormal,
+            # onlineMinMax=onlineMinMax
         )

@@ -212,17 +212,20 @@ def calcConstrPred(x, cobra: CobraInitializer, p2: Phase2Vars) -> np.ndarray:
 
         ine_ind = np.flatnonzero(s_res['is_equ'] == False)
         equ_ind = np.flatnonzero(s_res['is_equ'])
-        # constraint_pred1[ine_ind] = constraint_pred1[ine_ind] - currentMu    # g(x) - mu, new 2025/04/02
-        # constraint_pred1[equ_ind] = constraint_pred1[equ_ind] - currentMu   # this creates h(x)-mu
-        # constraint_pred2 = -constraint_pred1[equ_ind] - 2 * currentMu       # this creates -h(x)-mu
-        # # why 2*currentMu? - because we modify the already created h(x)-mu to -(h(x)-mu)-2*mu = -h(x)-mu
-        # constraint_prediction = np.concatenate((constraint_pred1, constraint_pred2), axis=None) + p2.EPS ** 2
-        # --- BUG FIX 2025/09/14: + p2.EPS**2 only for inequality constraints (and NO '- currentMu'): ---
-        constraint_pred1[ine_ind] = constraint_pred1[ine_ind] + p2.EPS ** 2    # g(x) + EPS ** 2 (!!)
-        constraint_pred1[equ_ind] = constraint_pred1[equ_ind] - currentMu   # this creates h(x)-mu
-        constraint_pred2 = -constraint_pred1[equ_ind] - 2 * currentMu       # this creates -h(x)-mu
-        # why 2*currentMu? - because we modify the already created h(x)-mu to -(h(x)-mu)-2*mu = -h(x)-mu
-        constraint_prediction = np.concatenate((constraint_pred1, constraint_pred2), axis=None)
+        OLD_VER = True
+        if OLD_VER:   # Version BEFORE 2025/09/14
+            constraint_pred1[ine_ind] = constraint_pred1[ine_ind] - currentMu    # g(x) - mu, new 2025/04/02
+            constraint_pred1[equ_ind] = constraint_pred1[equ_ind] - currentMu   # this creates h(x)-mu
+            constraint_pred2 = -constraint_pred1[equ_ind] - 2 * currentMu       # this creates -h(x)-mu
+            # why 2*currentMu? - because we modify the already created h(x)-mu to -(h(x)-mu)-2*mu = -h(x)-mu
+            constraint_prediction = np.concatenate((constraint_pred1, constraint_pred2), axis=None) + p2.EPS ** 2
+        else:
+            # --- BUG FIX 2025/09/14: + p2.EPS**2 only for inequality constraints (and NO '- currentMu'): ---
+            constraint_pred1[ine_ind] = constraint_pred1[ine_ind] + p2.EPS ** 2    # g(x) + EPS ** 2 (!!)
+            constraint_pred1[equ_ind] = constraint_pred1[equ_ind] - currentMu   # this creates h(x)-mu
+            constraint_pred2 = -constraint_pred1[equ_ind] - 2 * currentMu       # this creates -h(x)-mu
+            # why 2*currentMu? - because we modify the already created h(x)-mu to -(h(x)-mu)-2*mu = -h(x)-mu
+            constraint_prediction = np.concatenate((constraint_pred1, constraint_pred2), axis=None)
 
     else:  # i.e. if not s_opts.EQU.active
         if s_opts.SEQ.trueFuncForSurrogates:

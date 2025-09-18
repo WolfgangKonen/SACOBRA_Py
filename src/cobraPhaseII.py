@@ -90,6 +90,9 @@ class CobraPhaseII:
         # make dummy surrogate models (for the case trueFuncForSurrogates == False):
         self.p2 = Surrogator.trainSurrogates(self.cobra, self.p2)
 
+        # bug fix 2025-09-16: ensure that EPS is 0.0 if epsilonMax is 0.0:
+        self.p2.EPS = min(self.p2.EPS, s_opts.SEQ.epsilonMax)
+
         while self.p2.num < s_opts.feval:
             self.p2.gama = s_opts.XI[(self.p2.globalOptCounter % s_opts.XI.size)]
             if final_gama is not None:      # final_gama is set at the end of while loop if s_opts.SEQ.finalEpsXiZero is
@@ -98,7 +101,8 @@ class CobraPhaseII:
             # TODO: MS (model-selection) part
 
             # train RBF surrogate models (skipped in case trueFuncForSurrogates == False):
-            if not s_opts.SEQ.trueFuncForSurrogates == False:
+            CALC_FOR_TRUE = True
+            if s_opts.SEQ.trueFuncForSurrogates and CALC_FOR_TRUE:
                 self.p2 = Surrogator.trainSurrogates(self.cobra, self.p2)
 
             if first_pass:

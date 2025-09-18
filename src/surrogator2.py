@@ -132,7 +132,7 @@ class Surrogator2:
         if p2.midpts is None:   # i.e. on first pass through cobraPhaseII while loop:
             # calculate the midpoints for pEffect
             p2.midpts = Surrogator2.comp_midpoints(cobra.for_rbf['A'],
-                                                   s_opts.ISA.pEff_npts)
+                                                   s_opts.ISA.pEffNpts)
             p2.midptsEval = Surrogator2.comp_midp_eval(cobra, p2.midpts)
 
         Surrogator2.calcPEffect(p2, p2.midpts, p2.midptsEval, verbose=True)    # calculates p2.pEffect

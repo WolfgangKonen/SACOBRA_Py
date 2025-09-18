@@ -3,11 +3,9 @@
 
 .. currentmodule:: cobraPhaseII
 
-:no-index:
-
 .. autoclass:: CobraPhaseII
+   :noindex:
 
-   
    .. automethod:: __init__
 
    

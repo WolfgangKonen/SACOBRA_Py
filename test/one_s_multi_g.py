@@ -32,16 +32,17 @@ class OneS:
         :return:    ``c2``, the resulting object after running ``CobraPhaseII.start()``
         """
         print(f"Starting one_s({gname}, dim={dim}, {cobraSeed}) ...")
+        muFinal = 1e-7  # 1e-4 | 1e-7
         if gname in {"G02", "G03"}:
-            gcop = GCOP(gname, dimension=dim)
+            gcop = GCOP(gname, dimension=dim, mu=muFinal)
         else:
-            gcop = GCOP(gname)
+            gcop = GCOP(gname, mu=muFinal)
 
         dim = gcop.dimension
         idp = (dim + 1) * (dim + 2) // 2
         if feval == 0: feval = idp+2
 
-        equ = EQUoptions(muGrow=100, muDec=1.6, muFinal=1e-6,
+        equ = EQUoptions(muGrow=100, muDec=1.6, muFinal=muFinal,
                          refinePrint=False, refineAlgo="L-BFGS-B")  # "L-BFGS-B COBYLA"
         cobra = CobraInitializer(gcop.x0, gcop.fn, gcop.name, gcop.lower, gcop.upper, gcop.is_equ,
                                  solu=gcop.solu,
@@ -51,10 +52,11 @@ class OneS:
                                                    # RBF=RBFoptions(degree=1.5, interpolator="sacobra"),  # test only, "cubic"
                                                    # RBF=RBFoptions(kernel="gaussian", degree=2),   # alternative "gaussian"
                                                    # ISA=ISAoptions(onlinePLOG=O_LOGIC.NONE),   # the default (before 2025/08/01)
-                                                   ISA=ISAoptions(onlinePLOG=O_LOGIC.MIDPTS, TGR=np.inf), # run 2025/08/12
+                                                   ISA=ISAoptions(onlinePLOG=O_LOGIC.MIDPTS), # run 2025/08/12   # , TGR=np.inf
                                                    # ISA=ISAoptions(onlinePLOG=O_LOGIC.XNEW),     # run 2025/08/13
                                                    EQU=equ,
-                                                   SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol, trueFuncForSurrogates=True)))  #
+                                                   SEQ=SEQoptions(finalEpsXiZero=True,  # epsilonMax=0.0,
+                                                                  conTol=conTol, trueFuncForSurrogates=True)))  #
         if feval > idp: c2 = CobraPhaseII(cobra).start()
 
         fin_err = np.array(cobra.get_feasible_best() - gcop.fbest)
@@ -190,7 +192,10 @@ class OneS:
         print(df1.groupby(['gname', 'meth', 'd']).median())   # median() will automatically drop NaNs (!)
         print("\n ---  Std for each (problem, meth) --- ")
         x = df1.groupby(['gname', 'meth', 'd']).std()
-        print(x.loc[:, ['err','maxViol']])                    # to get it printed if df1 has too many columns
+        if 'maxViol' in x.columns:
+            print(x.loc[:, ['err','maxViol']])                    # to get it printed if df1 has too many columns
+        else:
+            print(x.loc[:, ['err']])
         # print("\n --- Mean for each problem --- ")
         # del df1['meth']
         # print(df1.groupby(['gname']).mean())
@@ -221,14 +226,15 @@ if __name__ == '__main__':
     dims   = [   10,   -1]
     gnames = ["G14", "G15", "G16", "G17", "G18", "G19", "G21", "G22", "G23", "G24"]
     dims   = [  -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1]
-    gnames = ["G14"]  # , "G22", "G24" "G10", "G11", "G12",
+    gnames = ["G17"]  # , "G22", "G24" "G10", "G11", "G12",
     dims   = [ -1]  #   ,     -1,    -1,    -1,
     df2 = one.one_s_multi_g_r(gnames, dims,10, 54, feval=500, conTol=0.0)       # conTol=0.0 | 1e-7
     # init_df = one.multi_init(gnames, 54, feval=120)
     # one.df_analyze("df2_conTol0.0-fe500-G01-G13.feather", "df2_conTol1e-7-fe500-G01-G13.feather")
     # one.df_analyze("df2_conTol0.0-fe500-G02-d02.feather")
-    # one.df_analyze("df2_conTol0.0-trueFunc-fe500-G14-G24.feather")   # NONE | XNEW | MIDPTS
+    # one.df_analyze("df2_conTol0.0-MIDPTS-fe500-G14-G24.feather")   # NONE | XNEW | MIDPTS
     # one.df_analyze("df2_muF1e-7-trueFunc-fe500-G14-G24-EPS-fix.feather")
+    # one.df_analyze("df2.feather")
 
 
 
