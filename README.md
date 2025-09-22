@@ -107,11 +107,12 @@ What is missing:
 2025/09/01 - Beta Version, it contains
 
 - better LHS initial design (from scipy.stats.qmc import LatinHypercube)
-- four other RBF kernels for surrogate models
+- four other RBF kernels for surrogate models ("gaussian", "multiquadric", "quintic", "thin_plate_spline")
 - approximating RBFs (smoothing)
 - extended polynomial tail for RBF (degree=1.5, RBFsacob)
-- heuristic RBF width rules (RBFsacob)
+- heuristic RBF width rules (W_RULE in rbfOptions.py)
 - support for multiple solutions
+- all G-problems G01 - G24 implemented (except for G20)
 
 and it contains more tests on the G-problem benchmark suite.
 
