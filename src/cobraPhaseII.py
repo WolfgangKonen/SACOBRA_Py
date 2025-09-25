@@ -2,7 +2,7 @@ import pandas as pd
 # need to specify SACOBRA_Py.src as source folder in File - Settings - Project Structure,
 # then the following import statements will work:
 from cobraInit import CobraInitializer
-from innerFuncs import PlogSquasher
+from innerFuncs import PlogSquasher   # , plog, plogReverse
 from opt.isaOptions import O_LOGIC
 from phase2Vars import Phase2Vars
 import phase2Funcs as p2f
@@ -100,9 +100,8 @@ class CobraPhaseII:
 
             # TODO: MS (model-selection) part
 
-            # train RBF surrogate models (skipped in case trueFuncForSurrogates == False):
-            CALC_FOR_TRUE = True
-            if s_opts.SEQ.trueFuncForSurrogates and CALC_FOR_TRUE:
+            # train RBF surrogate models (skipped in case trueFuncForSurrogates == True):
+            if not s_opts.SEQ.trueFuncForSurrogates:
                 self.p2 = Surrogator.trainSurrogates(self.cobra, self.p2)
 
             if first_pass:

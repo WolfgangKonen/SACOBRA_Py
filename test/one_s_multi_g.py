@@ -56,7 +56,7 @@ class OneS:
                                                    # ISA=ISAoptions(onlinePLOG=O_LOGIC.XNEW),     # run 2025/08/13
                                                    EQU=equ,
                                                    SEQ=SEQoptions(finalEpsXiZero=True,  # epsilonMax=0.0,
-                                                                  conTol=conTol, trueFuncForSurrogates=True)))  #
+                                                                  conTol=conTol)))  # , trueFuncForSurrogates=True
         if feval > idp: c2 = CobraPhaseII(cobra).start()
 
         fin_err = np.array(cobra.get_feasible_best() - gcop.fbest)
@@ -226,14 +226,14 @@ if __name__ == '__main__':
     dims   = [   10,   -1]
     gnames = ["G14", "G15", "G16", "G17", "G18", "G19", "G21", "G22", "G23", "G24"]
     dims   = [  -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1]
-    gnames = ["G17"]  # , "G22", "G24" "G10", "G11", "G12",
-    dims   = [ -1]  #   ,     -1,    -1,    -1,
+    gnames = ["G21"]  # , "G21", "G22", "G21", "G22", "G24" "G10", "G11", "G12",
+    dims   = [   -1]  # ,    -1,    -1,    -1,    -1,    -1,
     df2 = one.one_s_multi_g_r(gnames, dims,10, 54, feval=500, conTol=0.0)       # conTol=0.0 | 1e-7
     # init_df = one.multi_init(gnames, 54, feval=120)
     # one.df_analyze("df2_conTol0.0-fe500-G01-G13.feather", "df2_conTol1e-7-fe500-G01-G13.feather")
     # one.df_analyze("df2_conTol0.0-fe500-G02-d02.feather")
     # one.df_analyze("df2_conTol0.0-MIDPTS-fe500-G14-G24.feather")   # NONE | XNEW | MIDPTS
-    # one.df_analyze("df2_muF1e-7-trueFunc-fe500-G14-G24-EPS-fix.feather")
+    # one.df_analyze("df2_conTol0.0-MIDPTS-fe500-G14-G24-EPS0.feather")
     # one.df_analyze("df2.feather")
 
 

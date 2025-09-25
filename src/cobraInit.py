@@ -199,17 +199,20 @@ class CobraInitializer:
             # BUG FIX 2025-09-10: Gres is wrong (not normalized), if adCon did normalize. Use instead self.sac_res['Gres']:
             tempG = self.sac_res['Gres'].copy()  # .copy important here, otherwise changes to tempG would change Gres as well (!)
             tempG[:, equ_ind] = abs(tempG[:, equ_ind])
-            # z = self.sac_res['GRfact']
+            # trueMaxViol = np.maximum(0, np.max(tempG, axis=1))
+            # /WK/2025/09/25: the above version for trueMaxViol, used from /2025/05/04 on, is now commented out in
+            # favor of this variant:
+            z = self.sac_res['GRfact']
             # tempG2 = tempG * z if nConstraints == 1 else tempG @ np.diag(z)
-            # trueMaxViol = np.maximum(0, np.max(tempG2, axis=1))
-            trueMaxViol = np.maximum(0, np.max(tempG, axis=1))
-            # /WK/2025/05/04: the version with tempG2 is used in R as well: GRfact (see adCon()) is a vector of length
-            # nConstraints and tempG.shape = (idp,nConstraints). With the trick "... @ np.diag(GRfact)" we multiply each
-            # row of tempG elementwise with GRfact. The violations are weighted with GRfact, then we take the maximum.
-            # The simpler alternative would be:
-            #       trueMaxViol = np.maximum(0, np.max(tempG, axis=1))
-            # but this is not the way it is in R.
-
+            tempG2 = tempG * z     # use array brodcasting for z
+            trueMaxViol = np.maximum(0, np.max(tempG2, axis=1))
+            # /WK/2025/09/25: similar to what is used in evaluatorReal.py:
+            # the version with tempG2 is used in R as well: GRfact (see adCon()) is a vector of length
+            # nConstraints and tempG.shape = (idp,nConstraints). With array broadcasting, we can multiply tempG and z.
+            # The violations are weighted with GRfact, then we take the maximum.
+            # The simpler version:
+            #        trueMaxViol = np.maximum(0, np.max(tempG, axis=1))
+            # (commented out above) would not be right in the case of constraint normalization.
             def tav_func(temp_g):
                 temp_g = np.maximum(temp_g, 0)
                 return np.median(np.sum(temp_g, axis=1))
@@ -386,8 +389,8 @@ class CobraInitializer:
         assert not np.any(np.isnan(Gres)), "[adCon] self.sac_res['Gres'] contains NaN elements"
         equ_ind = np.flatnonzero(self.sac_res['is_equ'])
 
-        GRL = np.apply_along_axis(self.maxMinLen, axis=0, arr=Gres)
-        # axis=0 means that arr is sliced along axis 0, i.e. maxMinLen is applied to the columns of Gres
+        GRL = np.apply_along_axis(self.minMaxLen, axis=0, arr=Gres)
+        # axis=0 means that arr is sliced along axis 0, i.e. minMaxLen is applied to the columns of Gres
         if min(GRL) == 0:   # pathological case where at least one constraint is constant:
             GR = -np.inf    # inhibit constraint normalization
         else:
@@ -398,6 +401,7 @@ class CobraInitializer:
             verboseprint(s_opts.verbose, True, f"GR={GR} is large --> normalizing constraint functions ...")
             # GRfact = np.hstack((1, GRL * (1 / np.mean(GRL))))   # probably buggy: at least for G10, some constraint ranges get bigger than before (!)
             GRfact = np.hstack((1, GRL))                          # fix 2025/06/12: seems to give smaller Gres ranges
+            self.sac_res['GRfact'] = GRL
 
             # finding the normalizing coefficient of the equality constraints
             if equ_ind.size != 0:
@@ -409,7 +413,9 @@ class CobraInitializer:
                 # --- /WK/2025/05/04: disabled the following, because it is also disabled (overwritten by the initial
                 # --- setting for muFinal) on the R side: ---
                 # s_opts.EQU.muFinal = finMarginCoef * muFinal
-                self.sac_res['GRfact'] = GRF
+
+                # --- disabled, because we set it above also for the inequality case
+                # self.sac_res['GRfact'] = GRF
                 self.sac_res['finMarginCoef'] = finMarginCoef
 
             def fn(x):
@@ -420,18 +426,18 @@ class CobraInitializer:
             self.sac_res['Gres'] = Gres @ np.diag(1/GRfact[1:])
             self.for_rbf['Gres'] = self.for_rbf['Gres'] @ np.diag(1/GRfact[1:])
             # bug fix 2025/06/12: the line with 'for_rbf' was missing before and this led to wrong constraint surrogate
-            # models whenever 'normalizing constraint functions' was active(mind-buggingly high and wrong maxViol
+            # models whenever 'normalizing constraint functions' was active (mind-buggingly high and wrong maxViol
             # --> no feasible points were found). With this 'for_rbf'-line, everything is OK.
 
         self.sac_res['Grange'] = np.mean(GRL)
         self.sac_res['GrangeEqu'] = np.mean(GRL[equ_ind]) if equ_ind.size > 0 else np.mean(GRL)
 
-    def maxMinLen(self, x):
+    def minMaxLen(self, x):
         maxL = max(x)
         minL = min(x)
         return maxL - minL
 
-    def maxMinLen2(self, x):
+    def minMaxLen2(self, x):
         # never used
         maxL = np.quantile(x, 0.9)
         minL = np.quantile(x, 0.1)

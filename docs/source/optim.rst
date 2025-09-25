@@ -85,7 +85,7 @@ But a closer look reveals that there are two drawbacks:
 
 An alternative (better) p-effect recipe is the case ``ISA.onlinePLOG =`` **O_LOGIC.MIDPTS**. In this case we replace
 :math:`\vec{x}_{new}` with a set of points, namely all :math:`P=p(p-1)/2` midpoints :math:`\vec{m}_{\ell}` between the :math:`p =`
-``ISA.pEff_npts`` first points of initial design matrix ``A``. This has the advantage that the p-effect can be calulated
+``ISA.pEffNpts`` first points of initial design matrix ``A``. This has the advantage that the p-effect can be calulated
 directly after training the surrogate models :math:`M_f, M_p` (because the midpoints are known in advance) and that the
 new decision number
 

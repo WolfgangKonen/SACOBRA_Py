@@ -6,7 +6,7 @@ from scipy.optimize import minimize
 
 from cobraInit import CobraInitializer
 from phase2Vars import Phase2Vars
-from innerFuncs import PlogSquasher
+from innerFuncs import PlogSquasher  # , plog, plogReverse
 
 
 def concat(a, b):
@@ -97,7 +97,6 @@ class EvaluatorReal:
             fitnessSurrogate = p2.fitnessSurrogate
         if f_value is None:
             f_value = p2.opt_res['minf']
-        # fn = cobra$fn
         self.xNew = xNew
         self.xNew = np.maximum(self.xNew, cobra.sac_res['lower'])
         self.xNew = np.minimum(self.xNew, cobra.sac_res['upper'])
@@ -159,6 +158,7 @@ class EvaluatorReal:
         """
         s_opts = cobra.sac_opts
         s_res = cobra.sac_res
+        GRfact = s_res['GRfact']
         # if (cobra$trueMaxViol[cobra$ibest] > cobra$equHandle$muFinal) {
         if True:  # testwise, enforce refine in every step
             # cat("[evalReal] starting refine ...\n")
@@ -309,10 +309,10 @@ class EvaluatorReal:
                 conB = p2.constraintSurrogates(self.x_0)   # constraint surrogates before refine
                 conA = p2.constraintSurrogates(self.x_1)   # constraint surrogates after refine
 
-            conB = conB.reshape(conB.size)
-            conA = conA.reshape(conA.size)
-            trueB = s_res['fn'](self.x_0)[1:]
-            trueA = s_res['fn'](self.x_1)[1:]
+            conB = conB.reshape(conB.size) * GRfact         # fix 2025-09-24: '* GRfact' added
+            conA = conA.reshape(conA.size) * GRfact         #  "      "     :     "        "
+            trueB = s_res['fn'](self.x_0)[1:] * GRfact      #  "      "     :     "        "
+            trueA = s_res['fn'](self.x_1)[1:] * GRfact      #  "      "     :     "        "
             conB[self.equ_ind] = abs(conB[self.equ_ind]) - currentMu
             conA[self.equ_ind] = abs(conA[self.equ_ind]) - currentMu
             trueB[self.equ_ind] = abs(trueB[self.equ_ind]) - currentMu
@@ -352,31 +352,34 @@ class EvaluatorReal:
         """
         s_opts = cobra.sac_opts
         s_res = cobra.sac_res
+        GRfact = s_res['GRfact']
         conTol = s_opts.SEQ.conTol
         # WK: the new version: we check whether
         #
         #          g_i(x) <= 0,  h_j(x) - currentMu <= 0,    -h_j(x) - currentMu <= 0
         #
         # for the real surrogates and set self.newNumViol to the number of violated constraints.
+        # NOTE that below <= 0 is replaced with <= conTol, where conTol may be 0, may be positive.
         # NOTE that temp is also used for self.newMaxViol below.
-        temp = s_res['fn'](self.xNew)[1:].copy()
+        temp = (s_res['fn'](self.xNew)[1:] * GRfact).copy()    # fix 2025-09-24: '* GRfact' added
         temp = concat(temp, -temp[self.equ_ind])
         equ2Index = concat(self.equ_ind, s_res['nConstraints'] + np.arange(self.equ_ind.size))
         temp[equ2Index] = temp[equ2Index] - currentMu
         self.newNumViol = np.flatnonzero(temp > conTol).size
-        # number of constraint violations for new point  (we changed former thresh 0 changed to conTol)
+        # number of constraint violations for new point  (former thresh 0 changed to conTol)
 
         # just a debug check:
         if s_opts.EQU.refine:
             if self.state == "refined" or self.state == "optimized":
-                assert self.newNumViol == self.nv_trueA
+                assert self.newNumViol == self.nv_trueA, "Assertion newNumViol == nv_trueA failed"
             # If state is not "optimized" at start of evalReal, then the branch that
             # computes nv_trueA will not been executed and the assertion would fail. Otherwise, it should hold.
 
         self.feas = concat(self.feas, self.newNumViol < 1)
 
         # WK: brought here currentMu and equ2Index into play as well
-        ptemp = concat(newPredC, -newPredC[self.equ_ind])
+        ptemp = newPredC * GRfact       # fix 2025-09-24: '* GRfact' added
+        ptemp = concat(ptemp, -ptemp[self.equ_ind])
         ptemp[equ2Index] = ptemp[equ2Index] - currentMu
         self.newNumPred = np.flatnonzero(ptemp > conTol).size  # the same on constraint surrogates
         self.feasPred = concat(self.feasPred, self.newNumPred < 1)
@@ -389,7 +392,8 @@ class EvaluatorReal:
         # SB: it is also interesting to observe and save the information about the real maximum violation
         # instead of the maximum distance to the artificial constraints.
         # WK: the difference is that we do not subtract currentMu here
-        temp = s_res['fn'](self.xNew)[1:].copy()
+        # temp = s_res['fn'](self.xNew)[1:].copy()
+        temp = (s_res['fn'](self.xNew)[1:] * GRfact).copy()
         temp[self.equ_ind] = np.abs(temp[self.equ_ind]) - s_opts.EQU.muFinal  # muFinal: bug fix 2025/09/13
         self.trueNumViol = np.flatnonzero(temp > conTol).size
         # ## M = max(0, max(temp * s_res['GRfact']))   # true maximum violation, weighted with GRfact
@@ -418,15 +422,20 @@ class EvaluatorReal:
                 ``newNumPred``, ``trueNumViol``, ``trueMaxViol``; (b) vectors ``feas``, ``feasPred``
         """
         conTol = cobra.sac_opts.SEQ.conTol
+        GRfact =  cobra.sac_res['GRfact']
         # number of constraint violations for new point:
-        self.newNumViol = np.flatnonzero(self.xNewEval[1:] > conTol).size
+        # self.newNumViol = np.flatnonzero(self.xNewEval[1:] > conTol).size
+        self.newNumViol = np.flatnonzero(self.xNewEval[1:] * GRfact  > conTol).size
         # the same on constraint surrogates:
-        self.newNumPred = np.flatnonzero(newPredC > conTol).size
+        self.newNumPred = np.flatnonzero(newPredC * GRfact > conTol).size
         self.feas = concat(self.feas, self.newNumViol < 1)
         self.feasPred = concat(self.feasPred, self.newNumPred < 1)
 
-        if (max(0, max(self.xNewEval[1:]))) > conTol:  # maximum violation
-            self.newMaxViol = max(0, max(self.xNewEval[1:]))
+        # if max(0, max(self.xNewEval[1:])) > conTol:  # OLD version, before 2025/09/23
+        #     self.newMaxViol = max(0, max(self.xNewEval[1:]))
+        M = max(0, max(self.xNewEval[1:] * GRfact))
+        if M > conTol:  # maximum violation
+            self.newMaxViol = M
         else:
             self.newMaxViol = 0
 

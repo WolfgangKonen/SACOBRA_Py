@@ -5,7 +5,7 @@ import numpy as np
 # then the following import statements will work:
 from cobraInit import CobraInitializer
 from cobraPhaseII import Phase2Vars
-from innerFuncs import verboseprint, PlogSquasher
+from innerFuncs import verboseprint, PlogSquasher  # , plog, plogReverse
 from opt.isaOptions import O_LOGIC
 from rbfModel import RBFmodel
 import matplotlib.pyplot as plt
