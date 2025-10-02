@@ -139,7 +139,7 @@ class SeqFuncFactory:
             h = (-1.0) * np.concatenate((h, constraintPrediction), axis=None)
                 # TODO -1* ... is required for COBYLA constraints, maybe also for other optimizers?
         else:
-            h = -h
+            h = -np.array([h])          # bug fix 2025-09-30
         return h
 
     def g_vec_c(self, result, x, grad):
@@ -261,7 +261,7 @@ def check_if_cobra_optimizable(cobra: CobraInitializer, p2: Phase2Vars):
 
 def subProbPhaseI(x, cobra: CobraInitializer, p2: Phase2Vars):
     """
-        surrogate penalty function for unconstrained optimization methods  - PHASE I
+        surrogate penalty function for unconstrained optimization methods  - phase I
 
     :param x:       the input point
     :param cobra:   created by CobraInitializer
@@ -298,7 +298,7 @@ def subProbPhaseI(x, cobra: CobraInitializer, p2: Phase2Vars):
 # # --- TODO other subProb's for Phase I (currently commented out)
 #
 
-#     # surrogate evaluation of 'f' for constrained optimization methods  - PHASE I
+#     # surrogate evaluation of 'f' for constrained optimization methods  - phase I
 #     subProb2PhaseI < - function(x, cobra)
 #     {
 #
@@ -315,7 +315,7 @@ def subProbPhaseI(x, cobra: CobraInitializer, p2: Phase2Vars):
 #
 # }
 
-# # surrogate evaluation of '\vec{g}' for constrained optimization methods  - PHASE I
+# # surrogate evaluation of '\vec{g}' for constrained optimization methods  - phase I
 # gCOBRAPhaseI < - function(x, cobra)
 # {
 #

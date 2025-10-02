@@ -24,4 +24,3 @@ SACOBRA_Py documentation
    appendix
 
 
-

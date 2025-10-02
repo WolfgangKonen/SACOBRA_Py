@@ -196,7 +196,7 @@ class TestCobraInit(unittest.TestCase):
         self.assertTrue(np.allclose(Fres, F_from_R), "Fres and F_from_R are not close")
         self.assertTrue(np.allclose(Gres, G_from_R), "Gres and G_from_R are not close")
         # test that all two columns of new Gres have the same max-min-range:
-        GRL = np.apply_along_axis(self.minMaxLen, axis=0, arr=Gres)
+        GRL = np.apply_along_axis(cobra.minMaxLen, axis=0, arr=Gres)
         self.assertTrue(np.allclose(GRL[0], GRL[1]), "GRL is not the same for the (normalized) constraints")
         print("GRL: ", GRL)
         for i in range(A.shape[0]):
@@ -230,7 +230,6 @@ class TestCobraInit(unittest.TestCase):
               sometimes feasible (within the equality constraint band) and sometimes not: Is the condition 'feasible'
               and the max violation always the same in both cobra structures for all ``x``? -- Yes it is, after
               ensuring that all points are inside the search volume [lower, upper] and therefore not clipped.
-            -
         """
         def fn(x):
             return np.array([3 * np.sum(x ** 2), 10000*(np.sum(x) - 1),  x[1]-x[0]+10])
@@ -251,7 +250,7 @@ class TestCobraInit(unittest.TestCase):
         u = 10                          # upper bound
         lower = np.array([-u, -u])
         upper = np.array([u, u])
-        idp = 2*x0.size + 1
+        idp = (x0.size + 1) * (x0.size + 2) // 2
         cob_1 = CobraInitializer(x0, fn, "f_name", lower, upper, is_equ,
                                  s_opts=SACoptions(verbose=verb, verboseIter=10, feval=idp+5, cobraSeed=42,
                                                    ID=IDoptions(initDesign="LHS", initDesPoints=idp),
@@ -264,7 +263,7 @@ class TestCobraInit(unittest.TestCase):
         Gres1 = s_res['Gres']
         GRfact = s_res['GRfact']
         # test that all two columns of new Gres1 have the same max-min-range:
-        GRL = np.apply_along_axis(self.minMaxLen, axis=0, arr=Gres1)
+        GRL = np.apply_along_axis(cob_1.minMaxLen, axis=0, arr=Gres1)
         self.assertTrue(np.allclose(GRL[0], GRL[1]), "GRL is not the same for the (normalized) constraints")
         print("GRL: ", GRL)
         self.assertEqual(s_res['upper'][0], 1)
@@ -332,11 +331,6 @@ class TestCobraInit(unittest.TestCase):
         cobra = c2.get_cobra()
         assert cobra.phase == "phase2"
         print(cobra.sac_opts.ISA.TGR)
-
-    def minMaxLen(self, x):
-        maxL = max(x)
-        minL = min(x)
-        return maxL - minL
 
 
 if __name__ == '__main__':

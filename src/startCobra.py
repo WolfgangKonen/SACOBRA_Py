@@ -20,7 +20,7 @@ def startCobra(cobra: CobraInitializer):
         cobra2 = CobraPhaseII(cobra)
         return cobra2
     else:
-        verboseprint(verbose=2, important=False, message="Starting COBRA PHASE I ")
+        verboseprint(verbose=2, important=False, message="Starting COBRA phase I ")
         cobra1 = CobraPhaseI(cobra)
         cobra2 = CobraPhaseII(cobra1)
         return cobra2

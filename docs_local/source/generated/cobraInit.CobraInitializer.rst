@@ -21,8 +21,8 @@
       ~CobraInitializer.get_sac_res
       ~CobraInitializer.get_xbest
       ~CobraInitializer.get_xbest_cobra
-      ~CobraInitializer.maxMinLen
-      ~CobraInitializer.maxMinLen2
+      ~CobraInitializer.minMaxLen
+      ~CobraInitializer.minMaxLen2
    
    
 

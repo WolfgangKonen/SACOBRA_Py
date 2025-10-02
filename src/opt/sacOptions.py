@@ -21,7 +21,8 @@ class SACoptions:
                 ``XI``'s inidices. If ``XI==None``, then CobraInitializer will set it, depending on objective range,
                 to short DRC ``[0.001, 0.0]`` or long DRC ``[0.3, 0.05, 0.001, 0.0005, 0.0]``.
         :param skipPhaseI: whether to skip **SACOBRA_Py** phase I or not
-        :param saveIntermediate: whether to save intermediate results (including surrogates) or not
+        :param saveIntermediate: whether to save intermediate results (including surrogates) or not. If True, save to
+            ``f'results/cobra-{f_name}-{SEQ.optimizer}-{cobraSeed}.pkl'``
         :param verbose: verbosity level: 0: print nothing. 1: print only important messages. 2: print every message
         :param verboseIter: an integer value, after how many iterations to print summarized results.
         :param important: controls the importance level for some ``verboseprint``'s in ``updateInfoAndCounters``
@@ -45,7 +46,7 @@ class SACoptions:
                  feval=50,
                  XI=None,
                  skipPhaseI=True,
-                 # isa_ver=1,
+                 # isa_ver=1,                   # this is now included in ISA
                  saveIntermediate=False,
                  # saveSurrogates=False,        # this is now included in saveIntermediate
                  verbose=1, verboseIter=10, important=True,
@@ -55,9 +56,9 @@ class SACoptions:
                  SEQ=SEQoptions(),
                  EQU=EQUoptions(),
                  ISA=ISAoptions(),
-                 # repairInfeas=False, ri=defaultRI(),
                  MS=MSoptions(),
                  TR=TRoptions(),
+                 # repairInfeas=False, ri=defaultRI(),
                  # conditioningAnalysis=defaultCA(),
                  # constraintHandling="DEFAULT",
                  # DEBUG_RBF=defaultDebugRBF(), DEBUG_TR=False,
@@ -68,9 +69,7 @@ class SACoptions:
         self.feval = feval
         self.XI = XI
         self.skipPhaseI = skipPhaseI
-        # self.isa_ver = isa_ver
         self.saveIntermediate = saveIntermediate
-        # self.saveSurrogates = saveSurrogates
         self.verbose = verbose
         self.verboseIter = verboseIter
         self.important = important

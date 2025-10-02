@@ -6,7 +6,6 @@ from rescaleWrapper import RescaleWrapper
 from initDesigner import InitDesigner
 from innerFuncs import verboseprint
 from opt.sacOptions import SACoptions
-# from opt.isaOptions import ISAoptions0, ISAoptions2
 
 # long and short DRC:
 # DRCL: Distance Requirement Cycle, long version:
@@ -67,7 +66,7 @@ class CobraInitializer:
         self.rng = np.random.default_rng(seed=s_opts.cobraSeed)    # moved up here (before potential x0 generation)
         # set.seed(s_opts.cobraSeed)   # obsolete now
         if s_opts.ID.initDesPoints is None:
-            s_opts.ID.initDesPoints = self.set_initDesPoints(dimension, s_opts)
+            s_opts.ID.initDesPoints = CobraInitializer.set_initDesPoints(dimension, s_opts)
         if s_opts.XI is None:
             s_opts.XI = DRCL
         # The threshold parameter for the number of consecutive iterations that yield ...
@@ -132,7 +131,7 @@ class CobraInitializer:
         # STEP 3: create initial design
         #
         # TODO archive functionality
-        A, Fres, Gres = InitDesigner(x0, fn, self.rng, lower, upper, s_opts)()
+        A, Fres, Gres = InitDesigner(x0, fn, self.rng, lower, upper, is_equ, s_opts)()
         verboseprint(s_opts.verbose, important=False,
                      message=f"Shapes of A, Fres, Gres: {A.shape}, {Fres.shape}, {Gres.shape}")
         # print(A[-1,:])
@@ -161,9 +160,17 @@ class CobraInitializer:
                         'nConstraints': nConstraints,
                         'l': ell
                         }
-        self.for_rbf = {'A': A,
+        # # Apply fn to all points (rows) in matrix self.A_for_rbf. The points are the rows of this matrix (axis=1).
+        # fnEval = np.apply_along_axis(fn, axis=1, arr=A_for_rbf)    # fnEval.shape = (initDesPoints, nConstraints+1)
+        # self.for_rbf = {
+        #                 'A': A_for_rbf,
+        #                 'Fres': fnEval[:, 0],
+        #                 'Gres': fnEval[:, 1:]
+        #                 }
+        self.for_rbf = {
+                        'A': A,
                         'Fres': Fres,
-                        'Gres': Gres
+                        'Gres': Gres,
                         }
 
         # TODO: default settings DEBUG_RBF, CA, MS, RI, TR
@@ -239,7 +246,9 @@ class CobraInitializer:
         if 0 in numViol:
             # if there are feasible points, select among them the one with minimal Fres:
             fbest = min(Fres[numViol == 0])
-            xbest = A[Fres == fbest, :]
+            # xbest = A[Fres == fbest, :]                   # OLD and wrong (before 2025-09-30)
+            xbest = A[np.flatnonzero(Fres == fbest)[0], :]  # bug fix 2025-09-30: in rare cases there may be multiple
+                                        # points with Fres ==  fbest --> select only the first of them for xbest (!)
             ibest = np.flatnonzero(Fres == fbest)[0]
         else:
             # if there is no feasible point yet: take the set of points with min number of violated constraints ...
@@ -286,10 +295,6 @@ class CobraInitializer:
         #
         # STEP 8: SACOBRA initialization (depending on s_opts.ISA, perform adDRC and adCon)
         #
-        # --- obsolete, we set s_opts.ISA directly to the right class (ISAoptions, ISAoptions0 or ISAoptions2) ---
-        # if s_opts.isa_ver == 0: s_opts.ISA = ISAoptions0()
-        # elif s_opts.isa_ver == 2: s_opts.ISA = ISAoptions2()
-        # ---
         if s_opts.ISA.isa_ver > 0:
             verboseprint(s_opts.verbose, important=False, message="Parameter and function adjustment phase")
             # s_opts.pEffect = s_opts.ISA.pEffectInit    # obsolete, we have p2.pEffect
@@ -303,8 +308,7 @@ class CobraInitializer:
                           "so XI will be set by automatic DRC adjustment!")
 
                 verboseprint(s_opts.verbose, important=False, message="adjusting DRC")
-                DRC = self.adDRC()     # max(self.sac_res['Fres']), min(self.sac_res['Fres'])
-                s_opts.XI = DRC
+                s_opts.XI = self.adDRC()     # max(self.sac_res['Fres']), min(self.sac_res['Fres'])
 
             # --- adFit is now called in *each* iteration of cobraPhaseII (adaptive plog) ---
 
@@ -313,7 +317,8 @@ class CobraInitializer:
 
         self.sac_opts = s_opts
 
-    def set_initDesPoints(self, dimension, s_opts):
+    @staticmethod
+    def set_initDesPoints(dimension, s_opts):
         # called in case s_opts.initDesPoints == None:
         if s_opts.RBF.degree <= 1:
             initDesPoints = dimension + 1   # required minimum for degree==1, but we use it also for degree==0 or -1.
@@ -368,13 +373,14 @@ class CobraInitializer:
 
     def adDRC(self):        # , maxF, minF
         """ Adjust :ref:`DRC <DRC-label>` (distance requirement cycle), based on range of ``Fres`` """
+        s_opts = self.sac_opts
         FRange = (max(self.sac_res['Fres']) - min(self.sac_res['Fres']))
         if FRange > 1e+03:
             DRC = DRCS
-            print(f"FR={FRange} is large, XI is set to Short DRC")
+            verboseprint(s_opts.verbose, True, f"FR={FRange} is large, XI is set to Short DRC")
         else:
             DRC = DRCL
-            print(f"FR={FRange} is small, XI is set to Long DRC")
+            verboseprint(s_opts.verbose, True, f"FR={FRange} is small, XI is set to Long DRC")
         return DRC
 
     def adCon(self):
@@ -481,3 +487,5 @@ class CobraInitializer:
         :rtype: dict
         """
         return self.sac_res
+
+

@@ -149,3 +149,7 @@ during sequential optimization. The effect is that for every
 :math:`\epsilon` is initialized with parameter ``epsilonInit`` from :class:`.SEQoptions`.
 Method :meth:`phase2Funcs.adjustMargins` adjusts :math:`\epsilon` after each iteration.
 
+If ``SEQ.finalEpsXiZero == True``, then we perform the final iteration with
+:math:`\epsilon = 0` and with :ref:`DRC <DRC-label>` = 0. That is, we exploit maximally in the final iteration (assuming that we need
+no safety margin for the final model).
+

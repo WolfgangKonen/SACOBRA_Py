@@ -11,9 +11,9 @@ class RBFoptions:
         Options for the RBF surrogate models
 
         :param kernel: RBF kernel type, see :ref:`below <kernel_label>`
-        :param degree: degree of polynomial tail for RBF kernel. If None, then
+        :param degree: degree of polynomial tail for RBF kernel. See
                 `SciPy's RBFInterpolator <https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.RBFInterpolator.html>`_
-                will set it depending on kernel type. See SciPy's RBFInterpolator documentation for details.
+                for details.
         :param rho:  Smoothing parameter :math:`\\rho`. If :math:`\\rho=0`, use **interpolating RBFs**: The surrogate
                 model surface passes exactly through the points. If :math:`\\rho>0`, use **approximating RBFs**
                 (spline-like). The larger :math:`\\rho`, the smoother the surrogate model.
@@ -43,7 +43,7 @@ class RBFoptions:
     """
     def __init__(self,
                  kernel="cubic",    # "cubic" | "quintic" | "thin_plate_spline" | "gaussian" | "multiquadric"
-                 degree=None,
+                 degree=2,
                  rho=0.0,
                  rhoDec=2.0,        # exponential decay factor for rho
                  rhoGrow=0,

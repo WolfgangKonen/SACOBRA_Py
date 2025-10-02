@@ -86,6 +86,7 @@ class CobraPhaseII:
         first_pass = True
         final_gama = None
         PlogSquasher.reset_warn_counter()
+        CONSTRAINED = s_res['nConstraints'] > 0
 
         # make dummy surrogate models (for the case trueFuncForSurrogates == False):
         self.p2 = Surrogator.trainSurrogates(self.cobra, self.p2)
@@ -107,7 +108,8 @@ class CobraPhaseII:
             if first_pass:
                 # needed just for assertion check in testCOP.test_G06_R:
                 self.p2.fp1 = self.p2.fitnessSurrogate(s_res['xbest'] + 1)
-                self.p2.gp1 = self.p2.constraintSurrogates(s_res['xbest'] + 1)
+                if CONSTRAINED:
+                    self.p2.gp1 = self.p2.constraintSurrogates(s_res['xbest'] + 1)
                 first_pass = False
 
             if s_opts.EQU.mu4inequality:
@@ -165,19 +167,20 @@ class CobraPhaseII:
             if s_opts.SEQ.finalEpsXiZero:
                 if self.p2.num == s_opts.feval-1:  # last iter: exploit maximally with EPS=gama=0.0 (might require
                     self.p2.EPS = 0.0              # s_opts.SEQ.conTol=1e-7)
-                    final_gama = 0.0
+                    final_gama = 0.0               # this leads to p2.gama = p2.ro = 0 (i.e. no DRC, XI=0)
                     # s_opts.EQU.refine = False
 
             if not s_opts.ISA.onlinePLOG == O_LOGIC.MIDPTS:   # case MIDPTS needs no separate fitnessSurrogate
                 self.p2.time_init += self.p2.fitnessSurrogate.time_init
             self.p2.time_init += self.p2.fitnessSurrogate1.time_init
             self.p2.time_init += self.p2.fitnessSurrogate2.time_init
-            self.p2.time_init += self.p2.constraintSurrogates.time_init
             if not s_opts.ISA.onlinePLOG == O_LOGIC.MIDPTS:   # case MIDPTS needs no separate fitnessSurrogate
                 self.p2.time_call += self.p2.fitnessSurrogate.time_call
             self.p2.time_call += self.p2.fitnessSurrogate1.time_call
             self.p2.time_call += self.p2.fitnessSurrogate2.time_call
-            self.p2.time_call += self.p2.constraintSurrogates.time_call
+            if CONSTRAINED:
+                self.p2.time_init += self.p2.constraintSurrogates.time_init
+                self.p2.time_call += self.p2.constraintSurrogates.time_call
         # end while self.p2.num
 
         if PlogSquasher.get_warn_counter() > 0:

@@ -88,7 +88,7 @@ class RBFmodel:
             # (identical infill points). We avoid this with cobra.for_rbf['A'] (instead of cobra.sac_res['A']),
             # where a new infill point is added in updateInfoAndCounters ONLY if min(xNewDist), the minimum distance
             # of the new infill points to all rows of cobra.for_rbf['A'] is greater than 0.
-            print("[RBFmodel] LinAlgError --> probably identical points in rows of xobs")
+            raise(RuntimeError("[RBFmodel] LinAlgError --> probably identical points in rows of xobs"))
         except ValueError as e:
             print(type(e))
             print(e)

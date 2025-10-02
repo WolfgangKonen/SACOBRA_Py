@@ -8,12 +8,12 @@ class EQUoptions:
           (normally decaying) margin :math:`\mu`.
         :param initType: the equality margin :math:`\mu` is initialized with one of these choices:
           ``["TAV" | "TMV" | "EMV" | "useGrange"]``
-        :param muType: type of function used to shrink margin :math:`\mu` during the optimization process.
+        :param muType: type of function used to shrink margin :math:`\\mu` during the optimization process.
           One out of ``["SAexpFunc" | "expFunc" | "funcDim" | "funcSDim" | "Zhang" | "CONS"]``, see ``modifyMu``
           in ``equHandling.py``
         :param muDec: decay factor for margin :math:`\mu`, see ``modifyMu``
         :param muFinal: lower bound for margin :math:`\mu`. ``muFinal`` should be set to a small but non-zero value (larger than machine accuracy).
-        :param muGrow: every ``muGrow`` (e.g. 100) iterations, re-enlarge the :math:`\mu`-band. If 0, then re-enlarge never
+        :param muGrow: every ``muGrow`` (e.g. 100) iterations, re-enlarge the :math:`\\mu`-band. If 0, then re-enlarge never
         :param mu4inequality: use the artificial feasibility band also for inequalities (experimental)
         :param refine: enables the :ref:`refine step <refineStep-label>` for equality handling
         :param refineMaxit: maximum number of iterations used in the :ref:`refine step <refineStep-label>`. Note that the refine

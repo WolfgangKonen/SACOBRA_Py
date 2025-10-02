@@ -33,6 +33,9 @@ class EvaluatorReal:
                 self.predC = np.zeros((s_opts.ID.initDesPoints, nConstraints))
                 # feasibility of initial design:
                 self.feas = np.apply_along_axis(lambda x: np.max(x) <= 0, axis=1, arr=cobra.sac_res['Gres'])
+            else:
+                self.predC = np.zeros(s_opts.ID.initDesPoints)
+                self.feas = np.repeat(True, s_opts.ID.initDesPoints)
 
             self.feasPred = np.repeat(False, s_opts.ID.initDesPoints)
             self.optimConv = np.repeat(1, s_opts.ID.initDesPoints)  # vector to store optimizer convergence

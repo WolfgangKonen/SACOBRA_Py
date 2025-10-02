@@ -10,15 +10,15 @@ class SEQoptions:
     :param penaF: (TODO)
     :param sigmaD: (TODO)
     :param epsilonInit: initial value for ``EPS``. ``EPS`` is a constant added to each constraint to maintain a certain
-            margin to the boundary. If None, then ``epsilonInit`` is set to :math:`0.005 \ell`,
-            where :math:`\ell` is the length of smallest side of search space
+            margin to the boundary. If None, then ``epsilonInit`` is set to :math:`0.005 \\ell`,
+            where :math:`\\ell` is the length of smallest side of search space
     :param epsilonMax: maximum value for ``EPS``. If None,
             then ``epsilonMax`` is set to :math:`2*0.005 \\ell`.
     :param finalEpsXiZero: if True, set in final iteration ``EPS`` and ``XI`` to zero for best exploitation
     :param Tfeas: threshold for count of feasible iterations in a row. If None, :class:`.CobraInitializer` will
-            set it to :math:`floor(2\sqrt{d})`.
+            set it to :math:`floor(2\\sqrt{d})`.
     :param Tinfeas: threshold for count of infeasible iterations in a row. If None, :class:`.CobraInitializer` will
-            set it to :math:`floor(2\sqrt{d})`.
+            set it to :math:`floor(2\\sqrt{d})`.
     :param trueFuncForSurrogates: if True, use the true (constraint & fitness) functions instead of surrogates (only for
             debug analysis)
     """

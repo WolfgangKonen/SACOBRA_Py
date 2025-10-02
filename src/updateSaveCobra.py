@@ -156,29 +156,21 @@ def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, EPS,
              'RS': df_RS,       # TRUE, if it is an iteration with random start point
              })
     else:   # i.e. if not CONSTRAINED:
-        raise NotImplementedError("[updateSaveCobra] Branch df for CONSTRAINED==False not (yet) implemented")
-        # TODO:
-        # if (is.null(cobra$df$realfeval))
-        #     realfeval < -c()
-        # else
-        #     realfeval < -cobra$df$realfeval
-        #
-        # df < - data.frame(
-        #     y=cobra$Fres,
-        #     predY = predY,  # surrogate fitness
-        #     predSolu = df_predSolu,
-        #     feasible = T,
-        #     feMax = feMax,
-        #     realfeval = c(realfeval, nrow(get("ARCHIVE", envir=intern.archive.env))),
-        #     fBest = cobra$fbestArray,
-        #     optimizer = rep(cobra$seqOptimizer, length(cobra$Fres)),
-        #     optimizationTime = ev1$optimizationTime,
-        #     conv = optimizerConvergence,
-        #     dist = distA,
-        #     distOrig = distOrig,
-        #     RS = df_RS,  # TRUE, if it is an iteration with random start point
-        #     row.names = NULL
-        # )
+        cobra.df = pd.DataFrame(
+            {'iter': np.arange(predY.size),
+             'y': s_res['Fres'],
+             'predY': predY,  # surrogate fitness
+             'predSolu': df_predSolu,
+             'feasible': True,
+             'feMax': feMax,
+             'fBest': s_res['fbestArray'],
+             'optimizer': np.repeat(s_opts.SEQ.optimizer, s_res['Fres'].shape[0]),
+             'optimConv': optimConv,
+             'optimTime': optimTime,
+             'dist': distA,         # distance of solu to infill points, rescaled space (min dist for multiple solu's)
+             'distOrig': distOrig,  # the same, but in original space
+             'RS': df_RS,       # TRUE, if it is an iteration with random start point
+             })
 
     if p2.write_XI:
         cobra.df['XI'] = df_XI
@@ -259,7 +251,7 @@ def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, EPS,
         assert cobra.df.shape[0] == cobra.df2.shape[0] + s_opts.phase1DesignPoints, msg
 
     if s_opts.saveIntermediate:
-        # save after each iteration the optimization result (cobra, p2) in the same pickle file (backup in case
+        # save after each iteration the optimization result (cobra, p2) in the same pickle file (as a backup in case
         # of crash), e.g. "results/cobra-G01-COBYLA-42.pkl" in current dir
         res_dir = 'results'
         if not os.path.exists(res_dir):

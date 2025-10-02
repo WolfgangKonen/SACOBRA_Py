@@ -24,7 +24,7 @@ The initialization in **SACOBRA_Py** is done by creating an object of class :cla
 - adjust :ref:`DRC <DRC-label>` according to objective range, see :meth:`.adDRC`
 
 
-.. autoclass:: cobraInit.CobraInitializer 
+.. autoclass:: cobraInit.CobraInitializer
    :members: adCon, adDRC, is_feasible, get_fbest, get_feasible_best, get_xbest, get_xbest_cobra
 
 .. autoclass:: initDesigner.InitDesigner
@@ -36,15 +36,20 @@ The initialization in **SACOBRA_Py** is done by creating an object of class :cla
 Types of Initial Design
 =======================
 
-The initial design creates a matrix **self.A** with shape ``(P, d)`` of sample points in (potentially rescaled)
+The initial design creates a matrix **self.A** with shape ``(P, d)`` of ``P`` sample points in (potentially rescaled)
 input space ``[lower, upper]`` :math:`\subset \mathbb{R}^d`,
 where ``P = s_opts.ID.initDesPoints`` and ``d =`` input space dimension.
 
 The recipe how to select the sample points is prescribed by  ``s_opts.ID.initDesign``:
 
 - **"RANDOM"**: uniform random
-- **"RAND_R"**: uniform random with reproducible random numbers (both in R and in Python)
+- **"RAND_REP"**: uniform random with reproducible random numbers (both in R and in Python)
 - **"LHS"**: Latin Hypercube Sampling, see `SciPy's LatinHyperCube <https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.qmc.LatinHypercube.html>`_
+- **"BIASED"**: random sample from a normal distribution around mean ``x0`` with standard deviation
+  ``s_opts.ID.initBias``. This is useful if ``x0`` is already in the *interesting* (e.g. near-feasible or objective-minimal) region.
+- **"OPTCOBYLA"**: optimized design: perform a short COBYLA optimization run starting from ``x0`` with the real objective
+  and constraint functions. Extract from the function evaluations the first ``P`` independent points. The idea is that
+  we sample not randomly but in the *relevant* part of the input space.
 
 
 .. _DRC-label:
@@ -80,6 +85,8 @@ setting different from the defaults is desired.
 .. autoclass:: opt.isaOptions.ISAoptions0
 
 .. autoclass:: opt.isaOptions.ISAoptions2
+
+
 
 
 

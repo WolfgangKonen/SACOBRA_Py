@@ -28,7 +28,7 @@ if SCIPY_LHS:
     sam = engine.random(n=n)    #  shape=(n,d), uniform random in [0,1)
     k = np.array(sam).T
 else:  # use package lhsmdu --- deprecated
-    k = np.array(lhsmdu.sample(d, n, randomSeed=seed))  # Latin Hypercube Sampling with multi-dimensional uniformity
+    k = np.array(lhsmdu.sample(d, n, randomSeed=seed))  # Latin Hypercube Sampling with multidimensional uniformity
 
 #print(k)
 plot_lhs(k, n, d)
