@@ -1,11 +1,11 @@
 # need to specify SACOBRA_Py.src as source folder in File - Settings - Project Structure,
 # then the following import statements will work:
-# from cobraInit import CobraInitializer
 from opt.equOptions import EQUoptions
 from opt.idOptions import IDoptions
 from opt.isaOptions import ISAoptions
 from opt.msOptions import MSoptions
 from opt.rbfOptions import RBFoptions
+from opt.riOptions import RIoptions
 from opt.seqOptions import SEQoptions
 from opt.trOptions import TRoptions
 
@@ -18,8 +18,8 @@ class SACoptions:
         :param feval: number of function evaluations
         :param XI:  Distance-Requirement-Cycle (:ref:`DRC <DRC-label>`) that controls exploration:
                 Each infill point has a forbidden-sphere of radius ``XI[c]`` around it. ``c`` loops cyclically through
-                ``XI``'s inidices. If ``XI==None``, then CobraInitializer will set it, depending on objective range,
-                to short DRC ``[0.001, 0.0]`` or long DRC ``[0.3, 0.05, 0.001, 0.0005, 0.0]``.
+                ``XI``'s inidices. If ``XI==None``, then :class:`.CobraInitializer` will set it, depending on objective
+                range, to short DRC ``[0.001, 0.0]`` or long DRC ``[0.3, 0.05, 0.001, 0.0005, 0.0]``.
         :param skipPhaseI: whether to skip **SACOBRA_Py** phase I or not
         :param saveIntermediate: whether to save intermediate results (including surrogates) or not. If True, save to
             ``f'results/cobra-{f_name}-{SEQ.optimizer}-{cobraSeed}.pkl'``
@@ -39,6 +39,8 @@ class SACoptions:
         :type ISA: ISAoptions
         :param MS: nested options for model selection (TODO)
         :type MS: MSoptions
+        :param RI: nested options for repair infeasible (TODO)
+        :type TR: RIoptions
         :param TR: nested options for trust region (TODO)
         :type TR: TRoptions
     """
@@ -57,6 +59,7 @@ class SACoptions:
                  EQU=EQUoptions(),
                  ISA=ISAoptions(),
                  MS=MSoptions(),
+                 RI=RIoptions(),
                  TR=TRoptions(),
                  # repairInfeas=False, ri=defaultRI(),
                  # conditioningAnalysis=defaultCA(),
@@ -81,4 +84,5 @@ class SACoptions:
         self.EQU = EQU
         self.ISA = ISA
         self.MS = MS
+        self.RI = RI
         self.TR = TR

@@ -14,7 +14,7 @@ sys.path.insert(0, str(Path('..', '..', 'demo').resolve()))
 project = 'SACOBRA_Py'
 copyright = '2025, Wolfgang Konen'
 author = 'Wolfgang Konen'
-release = '0.8'
+release = '0.9'
 
 
 # -- General configuration

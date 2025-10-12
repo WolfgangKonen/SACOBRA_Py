@@ -2,6 +2,7 @@ import unittest
 import numpy as np
 import nlopt
 from cobraInit import CobraInitializer
+from opt.rbfOptions import RBFoptions
 from seqOptimizer import SeqFuncFactory
 from cobraPhaseII import CobraPhaseII
 from innerFuncs import PlogSquasher
@@ -34,7 +35,7 @@ class TestPhaseII(unittest.TestCase):
             assert np.allclose(fxi, fxi2), f"not close: {fxi}, {fxi2} for pshift = {pshift}"
         print("[test_plog passed]")
 
-    def test_train_surr(self):
+    def test_trn_surr(self):
         """ Test whether ``Surrogator1.trainSurrogates`` works as expected:
 
             - whether results from ``adFit`` are numerically equivalent to R (see ``demo-trainSurr.R``) for three
@@ -48,9 +49,10 @@ class TestPhaseII(unittest.TestCase):
         """
         nobs = 10
         x0 = np.array([2.5, 2.4])
+        dim = x0.size
         lower = np.array([-5, -5])
         upper = np.array([5, 5])
-        idp = 2*x0.size + 1
+        idp = 2 * x0.size + 1   # needed for comparison with R, requires RBF.degree=1 # (dim+1)*(dim+2) // 2
         xflat = np.array([[ 1.3,  4.1],
                           [-4.5, -2.3],
                           [ 2.4, -2.1],
@@ -62,6 +64,7 @@ class TestPhaseII(unittest.TestCase):
             cobra = CobraInitializer(x0, fn, "f_name", lower, upper, is_equ,
                                      s_opts=SACoptions(verbose=verb, feval=2*nobs,
                                                        ID=IDoptions(initDesign="RAND_R", initDesPoints=idp),
+                                                       RBF=RBFoptions(degree=1),
                                                        ISA=ISAoptions(TFRange=500)))    # , onlinePLOG=O_LOGIC.MIDPTS
             c2 = CobraPhaseII(cobra)
             p2 = c2.get_p2()
@@ -121,10 +124,10 @@ class TestPhaseII(unittest.TestCase):
             ``fn_nl(x)``  :math:`= f(x) = 3\\sum_i{{x_i}^2}` with
             :math:`x \\in \\mathbb{R}^2`:
 
-            - When the constraint is ``np.sum(x) >= 1``, then the constraint is active and the result is
+            - If the constraint is ``np.sum(x) >= 1``, then the constraint is active and the result is
               ``x = [0.5, 0.5]`` (the vector with the smallest norm that fulfills the constraint) with
               :math:`f(x) = 1.5`.
-            - When the constraint is ``np.sum(x) <= 1``, then the constraint is inactive and the result is the global
+            - If the constraint is ``np.sum(x) <= 1``, then the constraint is inactive and the result is the global
               optimum at ``x = [0.0, 0.0]`` with :math:`f(x) = 0.0`.
         """
         def fn_nl(x, grad): return 3 * np.sum(x ** 2)
@@ -171,9 +174,10 @@ class TestPhaseII(unittest.TestCase):
         """
         nobs = 10
         x0 = np.array([2.5, 2.4])
+        dim = x0.size
         lower = np.array([-5, -5])
         upper = np.array([5, 5])
-        idp = 2*x0.size + 1
+        idp = 2 * x0.size + 1   # needed for comparison with R, requires RBF.degree=1 # (dim+1)*(dim+2) // 2
 
         def fn(x):
             return np.array([3 * np.sum(x ** 2), np.sum(x) - 1])
@@ -182,6 +186,7 @@ class TestPhaseII(unittest.TestCase):
         cobra = CobraInitializer(x0, fn, "f_name", lower, upper, is_equ,
                                  s_opts=SACoptions(verbose=verb, feval=2*nobs,
                                                    ID=IDoptions(initDesign="RAND_R", initDesPoints=idp),
+                                                   RBF=RBFoptions(degree=1),
                                                    ISA=ISAoptions(TFRange=500)))
         rw = RescaleWrapper(fn, lower, upper, cobra.sac_res['lower'], cobra.sac_res['upper'])
         xflat = np.array([[ 1.3,  4.1],
@@ -245,9 +250,10 @@ class TestPhaseII(unittest.TestCase):
             - the best infill points are very much the same (abs tol < 1e-5)
         """
         x0 = np.array([2.5, 2.4])
+        dim = x0.size
         lower = np.array([-5, -5])
         upper = np.array([5, 5])
-        idp = 2*x0.size + 1
+        idp = 2 * x0.size + 1   # needed for comparison with R, requires RBF.degree=1 # (dim+1)*(dim+2) // 2
 
         def fn(x):
             return np.array([3 * np.sum(x ** 2), -(np.sum(x) - 1)])
@@ -258,6 +264,7 @@ class TestPhaseII(unittest.TestCase):
             cobra = CobraInitializer(x0, fn, "f_name", lower, upper, is_equ,
                                      s_opts=SACoptions(verbose=verb, feval=20, cobraSeed=myseed,
                                                        ID=IDoptions(initDesign="RAND_R", initDesPoints=idp),
+                                                       RBF=RBFoptions(degree=1),
                                                        ISA=ISAoptions(TFRange=500, RS_rep=True, RStype=rstype),
                                                        SEQ=SEQoptions(trueFuncForSurrogates=True,finalEpsXiZero=False)))
             print(f"Starting with RS_type={cobra.sac_opts.ISA.RStype.name} and cobraSeed={cobra.sac_opts.cobraSeed} ...")
@@ -319,6 +326,28 @@ class TestPhaseII(unittest.TestCase):
             assert np.allclose(A_20, A_20_from_R, atol=1e-5)     # these assertions work on a higher abs tol, final
             assert np.allclose(xbest, xbest_from_R, atol=1e-5)   # result and xbest are close
         print("[test_RS_EPS passed]")
+
+    def test_phaseII(self):
+        """
+        Short test whether ``c2=CobraPhaseII(cobra)`` is correctly instantiated and whether the different names for
+        ``cobra.phase`` are correct.
+        """
+        def fn(x):
+            return np.array([3 * np.sum(x ** 2), np.sum(x) - 1, -3000 * (np.sum(x) - 10)])
+
+        x0 = np.array([2.5, 2.4])
+        lower = np.array([-5, -5])
+        upper = np.array([5, 5])
+        is_equ = np.array([False, False])
+        cobra = CobraInitializer(x0, fn, "f_name", lower, upper, is_equ,
+                                 s_opts=SACoptions(verbose=verb, ID=IDoptions(initDesign="RAND_R")))
+        print("\ntest_phaseII:")
+        assert cobra.phase == "init"
+        print(cobra.sac_opts.ISA.TGR)
+        c2 = CobraPhaseII(cobra)
+        cobra = c2.get_cobra()
+        assert cobra.phase == "phase2"
+        print(cobra.sac_opts.ISA.TGR)
 
 
 if __name__ == '__main__':

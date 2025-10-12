@@ -88,7 +88,7 @@ class CobraPhaseII:
         PlogSquasher.reset_warn_counter()
         CONSTRAINED = s_res['nConstraints'] > 0
 
-        # make dummy surrogate models (for the case trueFuncForSurrogates == False):
+        # make dummy surrogate models (for the case trueFuncForSurrogates == True):
         self.p2 = Surrogator.trainSurrogates(self.cobra, self.p2)
 
         # bug fix 2025-09-16: ensure that EPS is 0.0 if epsilonMax is 0.0:

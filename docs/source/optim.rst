@@ -153,3 +153,12 @@ If ``SEQ.finalEpsXiZero == True``, then we perform the final iteration with
 :math:`\epsilon = 0` and with :ref:`DRC <DRC-label>` = 0. That is, we exploit maximally in the final iteration (assuming that we need
 no safety margin for the final model).
 
+.. _repair_infeas-label:
+
+Repair Infeasible Solutions
+----------------------------
+
+.. autoclass:: repairInfeasRI2.RepairInfeasibleRI2
+   :members: __init__, repairInfeasRI2
+
+

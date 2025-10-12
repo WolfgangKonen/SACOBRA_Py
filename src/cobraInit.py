@@ -29,7 +29,7 @@ class CobraInitializer:
         :param f_name: function name
         :param lower: lower bound, its dimension defines input space dimension
         :param upper: upper bound (same dim as lower)
-        :param is_equ: boolean vector with dim ``nConstraints``: which constraints are equality constraints?
+        :param is_equ: boolean vector with dim ``nConstraints``: Which constraints are equality constraints?
         :param solu:  (optional, for diagnostics) true solution vector or solution matrix (one solution per row):
                       one or several feasible x that deliver the minimal objective value
         :type solu: np.ndarray or None
@@ -130,7 +130,6 @@ class CobraInitializer:
         #
         # STEP 3: create initial design
         #
-        # TODO archive functionality
         A, Fres, Gres = InitDesigner(x0, fn, self.rng, lower, upper, is_equ, s_opts)()
         verboseprint(s_opts.verbose, important=False,
                      message=f"Shapes of A, Fres, Gres: {A.shape}, {Fres.shape}, {Gres.shape}")

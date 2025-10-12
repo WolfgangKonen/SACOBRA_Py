@@ -108,13 +108,16 @@ class InitDesigner:
     with shape ``(P,)`` and constraint function (:math:`g,h`) values **self.Gres** with shape
     ``(P,nC)``, where ``nC`` = number of constraints.
 
-    :param x0:  the last point ``self.A[-1,:]`` is ``x0`` (potentially rescaled)
+    :param x0:  For the cases ``ID.initDesign = "OPTCOBYLA" | "OPTBIASED``, take ``x0`` as start point for a short
+                optimization run. In the other ``ID.initDesign`` choices, set the last point ``self.A[-1,:]`` to
+                ``x0``. ``x0`` is rescaled to [lower, upper] if ``s_opts.ID.rescale`` is set.
     :param fn:  see parameter ``fn`` in :class:`cobraInit.CobraInitializer`
     :param rng: RNG (random number generator) from :class:`cobraInit.CobraInitializer`
     :param lower: vector of shape ``(d,)``
     :param upper: vector of shape ``(d,)``
+    :param is_equ: boolean vector with dim ``nConstraints``: Which constraints are equality constraints?
     :param s_opts: the options. Here we use ``s_opts.cobraSeed`` and from element  :class:`.IDoptions` ``s_opts.ID``
-                   the elements ``initDesign`` and ``initDesPoints``.
+                   the elements ``initDesign``, ``initBias`` and ``initDesPoints``.
     :type s_opts: :class:`SACoptions`
     """
 
@@ -139,6 +142,7 @@ class InitDesigner:
             # Uses self.my_rng2 for better random numbers than in "RAND_R" (avoid cycles!).
             # The seed is s_opts.cobraSeed (set via initial value for self.val).
             self.A = self._my_rng2(npts - 1, d)  # uniform random in [0,1)
+
         elif s_opts.ID.initDesign == "LHS":
             n = npts -1
             # Latin Hypercube Sampling via SciPy
@@ -168,24 +172,39 @@ class InitDesigner:
 
         elif s_opts.ID.initDesign == "BIASED":
             # Create self.A with shape (npts,d) where the first npts-1 points in R^d are normal random from
-            # N(x0, initBias).
+            # N(x0, initBias):
             sd = np.repeat(s_opts.ID.initBias, x0.size)
             self.A = rng.normal(x0, sd, size=(npts - 1, d))  # normal distributed around x0
+            self._clip_lower_upper_A(lower, upper)
+
+        elif s_opts.ID.initDesign == "OPTBIASED":
+            # Establish from a short COBYLA run: suitable point new_x0 (best feasible or near-feasible):
+            self.fnArchiveF = FnArchiveFactory(fn, x0)
+            self._cobyla_run(x0, self.fnArchiveF, npts, lower, upper, is_equ, s_opts)
+            self.A = self.fnArchiveF.getSoluArchive()
+            new_x0 = self._find_best(self.A, fn)
+
+            # Create self.A with shape (npts,d) where the npts points in R^d are normal random from
+            # N(x0, initBias):
+            sd = np.repeat(s_opts.ID.initBias, new_x0.size)
+            self.A = rng.normal(new_x0, sd, size=(npts, d))  # normal distributed around new_x0
             self._clip_lower_upper_A(lower, upper)
 
         else:
             raise RuntimeError(f"[InitDesigner] Invalid value s_opts.initDesign = '{s_opts.ID.initDesign}' ")
 
-        # TODO: other initial designs ("OPTIMIZED", "OPTBIASED", ...)
+        # TODO: other initial designs ("OPTIMIZED", ...)
         # (Note that the MOPTA runs from 2016-2018 used initDesign = "OPTIMIZED")
 
         zero_one_distributed = ["RANDOM", "RAND_R", "RAND_REP", "LHS"]
+        x0_to_be_added = ["RANDOM", "RAND_R", "RAND_REP", "LHS", "BIASED"]
         if s_opts.ID.initDesign in zero_one_distributed:
             # rescale to [lower, upper]:
             self.A = self.A @ np.diag(upper - lower) + np.tile(lower, (npts - 1, 1))
-        if s_opts.ID.initDesign != "OPTCOBYLA":
-            # each initial design != "OPTCOBYLA" gets x0 added as the last point (which is already rescaled to
-            # [lower,upper]). For "OPTCOBYLA we do not add x0, because it is already the first point
+        if s_opts.ID.initDesign in x0_to_be_added:
+            # each initial design in x0_to_be_added gets x0 added as the last point (which is already rescaled to
+            # [lower,upper]). For "OPTCOBYLA" we do not add x0, because it is already the first point.
+            # For "OPTBIASED" we do not add x0, because new_x0 has been established.
             self.A = np.vstack((self.A, x0))
 
         # Apply fn to all points (rows) in matrix self.A. The points are the rows of matrix self.A (axis=1).
@@ -257,6 +276,33 @@ class InitDesigner:
             if min(xNewDist) > 1e-9:  # 0.0:     # a value 1e-9 is needed by G04 to avoid LinAlgError
                 A_for = np.vstack((A_for, xNew))
         return A_for
+
+    def _find_best(self, A, fn):
+        """
+        Given an initial design ``A``, find the best point within the points of ``A``.
+
+        :param A: initial design matrix
+        :param fn:  see parameter ``fn`` in :class:`cobraInit.CobraInitializer`
+        :return: the best solution from the points of ``A``: If feasible solutions exist, then the feasible solution
+            with minimum objective ``Fres``. If no feasible solution exists, then select that point (row of ``A``) that
+            has minimum maxViol.
+        """
+        # Apply fn to all points (rows) in matrix self.A. The points are the rows of matrix self.A (axis=1).
+        fnEval = np.apply_along_axis(fn, axis=1, arr=self.A)    # fnEval.shape = (initDesPoints, nConstraints+1)
+        Fres = fnEval[:, 0]
+        Gres = fnEval[:, 1:]
+
+        if Gres.shape[1] > 0:       # constrained problem
+            maxViol = np.apply_along_axis(np.max, axis=1, arr=Gres)   # maximum constraint violation in each row
+        else:                       # unconstrained problem
+            maxViol = np.repeat(-1, Gres.shape[0])  # --> each point is feasible
+        if min(maxViol) <= 0:       # we have feasible points
+            # return index ibest of feasible point with minimum Fres:
+            cond = (Fres == min(Fres[maxViol <= 0]))
+            ibest = np.flatnonzero(cond)[0]
+        else:                       # no feasible points --> return index of point with minimum maxViol:
+            ibest = np.flatnonzero(maxViol == min(maxViol))[0]
+        return A[ibest, :]
 
     def _my_rng(self, n, d, seed):
         MOD = 10 ** 5 + 7

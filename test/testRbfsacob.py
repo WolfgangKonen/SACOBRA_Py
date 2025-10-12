@@ -282,10 +282,10 @@ class TestRbfSacob(unittest.TestCase):
                     self.inner_test_func_fn(d, ngrid, nobs, deg, kernel, EQUIV_R)
         print("[all tests in test_func_fn passed]")
 
-    def test_gprob_rbf(self):
+    def test_gpr_rbf(self):
         """
-        Test both cubic RBF interpolators ``"scipy"`` and ``"sacobra"`` on different COPs (G06, G07) and measure
-        mean error, total RBF model build (``__init__``) time and total RBF predict (``__call__``) time.
+        Test both cubic RBF interpolators ``"scipy"`` and ``"sacobra"`` on different COPs (G-problems **gpr** = G06,
+        G07) and measure mean error, total RBF model build (``__init__``) time and total RBF predict (``__call__``) time.
 
         Results for ``degree=2``: good, both interpolators have similar and small errors < 1e-6.
 
@@ -427,7 +427,7 @@ class TestRbfSacob(unittest.TestCase):
         dfw2 = pd.concat([dfw2, new_row_dfw], axis=0)
         return dfw2, lon2
 
-    def test_rbf_width(self):
+    def test_rbf_wid(self):
         """
         Test for scale-variant kernels (e.g. "gaussian") how accuracy varies with kernel width.
 

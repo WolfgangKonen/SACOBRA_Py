@@ -45,11 +45,14 @@ The recipe how to select the sample points is prescribed by  ``s_opts.ID.initDes
 - **"RANDOM"**: uniform random
 - **"RAND_REP"**: uniform random with reproducible random numbers (both in R and in Python)
 - **"LHS"**: Latin Hypercube Sampling, see `SciPy's LatinHyperCube <https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.qmc.LatinHypercube.html>`_
-- **"BIASED"**: random sample from a normal distribution around mean ``x0`` with standard deviation
-  ``s_opts.ID.initBias``. This is useful if ``x0`` is already in the *interesting* (e.g. near-feasible or objective-minimal) region.
+- **"BIASED"**: random sample from a normal distribution with mean ``x0`` and standard deviation
+  ``s_opts.ID.initBias``. This is useful if ``x0`` is already in the *interesting* (e.g. near-feasible or objective-minimizing) region.
 - **"OPTCOBYLA"**: optimized design: perform a short COBYLA optimization run starting from ``x0`` with the real objective
   and constraint functions. Extract from the function evaluations the first ``P`` independent points. The idea is that
   we sample not randomly but in the *relevant* part of the input space.
+- **"OPTBIASED"**: establish from a short COBYLA run a new suitable point ``new_x0`` (best feasible or near-feasible).
+  Generate a random sample from a normal distribution with mean ``new_x0`` and standard deviation
+  ``s_opts.ID.initBias``.
 
 
 .. _DRC-label:
@@ -79,6 +82,8 @@ setting different from the defaults is desired.
 .. autoclass:: opt.seqOptions.SEQoptions
 
 .. autoclass:: opt.equOptions.EQUoptions
+
+.. autoclass:: opt.riOptions.RIoptions
 
 .. autoclass:: opt.isaOptions.ISAoptions
 

@@ -41,13 +41,24 @@ class GCOP(COP):
     - **fn**        the COP functions which can be passed to **SACOBRA_Py** (see parameter ``fn`` in :ref:`class CobraInitializer <cobraInit-label>`).
     - **nConstraints** number of constraints
     - **x0**        the suggested optimization starting point, may be ``None`` if not available
-    - **solu**      the best known solution(s), (only for diagnostics purposes). Can be ``None`` (not known) or a vector in case of a single solution or a matrix in case of multiple equivalent solutions (each row of the matrix is a solution)
+    - **solu**      the best known solution(s), (only for diagnostics purposes). Can be ``None`` (not known) or a vector
+      in case of a single solution or a matrix in case of multiple equivalent solutions (each row of the matrix is a
+      solution). For problems with equality constraints, parameter ``mu`` allows to select between different solutions
+      (see below).
     - **fbest**     the objective at the best known solution(s), (only for diagnostics purposes)
     - **info**      information about the problem, may be ``None`` if not available
+
+    **Parameter** ``mu``:
+
+    For problems G14, G15, G17, G21, G22 (all with equality constraints), different solutions **solu** can be selected
+    via parameter ``mu``: If ``mu = 1e-4`` then each equality constraint has a tolerance band
+    :math:`|h_j(x)| \leq 10^{-4}`. This is the feasibility definition of [LiangRunar06], it results in slightly
+    violating solutions with somewhat better (lower) objective. But in the cases of the five G-problems above, one can
+    find also solutions where the equality constraint violation is :math:`10^{-6}, 10^{-7}` or below, at the price of
+    slightly higher objectives. These solutions will be returned when ``mu=1e-6`` or ``mu=1e-7`` is set. This is useful
+    if you want to test if your optimization procedure can also find solutions with lower constraint violation
+    (SACOBRA: parameter ``EQU.muFinal`` in :class:`.EQUoptions` ``EQU``).
     """
-    #
-    # *** TODO: check validity of G16, G19 ***
-    #
     def __init__(self, name, dimension=None, mu=1e-7):
         super().__init__()
         all_names = [f"G{i+1:02d}" for i in range(24)]

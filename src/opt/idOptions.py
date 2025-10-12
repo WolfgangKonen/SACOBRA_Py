@@ -4,11 +4,11 @@ class IDoptions:
     """
     Options for the initial design (:math:`d` = input dimension of problem).
 
-    :param initDesign:    options: "RANDOM", "RAND_R", "RAND_REP", "LHS", ... (see initDesigner)
+    :param initDesign:    options: "RANDOM", "RAND_R", "RAND_REP", "LHS", ... (see  :ref:`Types of initial design <initDesign-label>`)
     :param initDesPoints: number of initial design points. If None, cobraInit will set it to :math:`d+1`
                           if RBF.degree=1 or to :math:`(d+1)(d+2)/2` if RBF.degree=2
     :param initDesOptP:   if None, cobraInit will set it to initDesPoints
-    :param initBias:      standard deviation for normal distribution in case of ``initDesign = BIASED``
+    :param initBias:      standard deviation for normal distribution in cases ``initDesign = "BIASED" | "OPTBIASED"``
     :param rescale:       if True, rescale input space from [lower, upper] to :math:`[` newLower, newUpper :math:`]^d`
     :param newLower:      common new lower bound for each of the :math:`d` input dimensions
     :param newUpper:      common new upper bound for each of the :math:`d` input dimensions

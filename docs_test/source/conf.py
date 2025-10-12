@@ -19,7 +19,7 @@ sys.path.insert(0, str(Path('..', '..', 'test').resolve()))
 project = 'SACOBRA_Py Testing'
 copyright = '2025, Wolfgang Konen'
 author = 'Wolfgang Konen'
-release = '0.8'
+release = '0.9'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

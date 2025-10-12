@@ -26,7 +26,7 @@ class TestRbfModel(unittest.TestCase):
     #     super().__init__()
     #     self.val = 24
 
-    def test_rbf_model(self):
+    def test_rbf_mdl(self):
         """
             Generate an interpolating cubic RBF model for ``fn_rbf``: :math:`\\mathbb{R}^2 \\rightarrow \\mathbb{R}^2`
             from ``nobs=500`` observations (training points). Test whether the model values at ``ngrid*ngrid`` points
@@ -76,7 +76,7 @@ class TestRbfModel(unittest.TestCase):
         assert np.allclose(yflat, yf2, rtol=1e-3)
         print("[test_rbf_model passed]")
 
-    def test_linear_func(self):
+    def test_lin_func(self):
         """
             Generate an interpolating cubic RBF model for the  linear function ``fn_lin``:
             :math:`\\mathbb{R} \\rightarrow \\mathbb{R}` in different forms: 10/100 observations, with/without

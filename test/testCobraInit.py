@@ -13,11 +13,11 @@ from opt.trOptions import TRoptions
 verb = 1
 
 
-class TestCobraInit(unittest.TestCase):
+class TestCInit(unittest.TestCase):
     """
         Several tests for component :class:`CobraInitializer`
     """
-    def test_fn_rescale1(self):
+    def test_rescale1(self):
         """  Test rescaling for a specific 1D-function
         """
         def fn(x):
@@ -27,20 +27,23 @@ class TestCobraInit(unittest.TestCase):
         upper = np.array([ 5, 5])
         is_equ = np.array([])
         cobra = CobraInitializer(x0, fn, "f_name", lower, upper, is_equ, s_opts=SACoptions(verbose=verb))
+
+        # build a RescaleWrapper rw that maps with rw.forward from [lower, upper] to [new_low, new_upp] and test it:
         sac_res = cobra.get_sac_res()
-        # sac_opts = cobra.get_sac_opts()
-        rescaler = RescaleWrapper(fn, lower, upper, sac_res['lower'], sac_res['upper'])
+        new_low = sac_res['lower']
+        new_upp = sac_res['upper']
+        rw = RescaleWrapper(fn, lower, upper, new_low, new_upp)
         # these assertions should be valid for all values of fn, x0, lower, upper:
         self.assertEqual(sac_res['lower'][0], -1)
         self.assertEqual(sac_res['upper'][0], 1)
         self.assertEqual(sac_res['fn'](sac_res['x0']), fn(x0))
-        self.assertTrue((rescaler.inverse(rescaler.forward(x0)) == x0).all())
+        self.assertTrue((rw.inverse(rw.forward(x0)) == x0).all())
         # these assertions are valid only for the specific values above of fn, x0, lower, upper:
         self.assertEqual(sac_res['fn'](sac_res['x0']), 37.5)
-        self.assertTrue((rescaler.forward(x0) == np.array([0.5, 0.5])).all())
+        self.assertTrue((rw.forward(x0) == np.array([0.5, 0.5])).all())
         print("test_rescale1:\n", fn(x0))
 
-    def test_fn_rescale2(self):
+    def test_rescale2(self):
         """  Test rescaling for a specific 2D-function
         """
         def fn(x):
@@ -101,7 +104,7 @@ class TestCobraInit(unittest.TestCase):
         print(A)
         print(newXStart)
 
-    def test_init_design_R(self):
+    def test_init_des_R(self):
         """
             Test whether ``InitDesigner`` produces arrays ``Fres``, ``Gres`` that are numerically equivalent to results
             from R (see ``demo-id.R``). Uses reproducible random numbers from RNG ``self.my_rng2`` that avoids cycles.
@@ -314,24 +317,6 @@ class TestCobraInit(unittest.TestCase):
                 self.assertEqual(f2x[2] <= conTol, p1.ev1.trueNumViol == 0)
 
         print(f"[inner_adCon2 with is_equ = {is_equ}, muFinal = {muFinal:.1e}, conTol = {conTol:.1e} passed]")
-
-    def test_phaseII(self):
-        def fn(x):
-            return np.array([3 * np.sum(x ** 2), np.sum(x) - 1,  -3000*(np.sum(x)-10)])
-        x0 = np.array([2.5, 2.4])
-        lower = np.array([-5, -5])
-        upper = np.array([5, 5])
-        is_equ = np.array([False, False])
-        cobra = CobraInitializer(x0, fn, "f_name", lower, upper, is_equ,
-                                 s_opts=SACoptions(verbose=verb, ID=IDoptions(initDesign="RAND_R")))
-        print("\ntest_phaseII:")
-        assert cobra.phase == "init"
-        print(cobra.sac_opts.ISA.TGR)
-        c2 = CobraPhaseII(cobra)
-        cobra = c2.get_cobra()
-        assert cobra.phase == "phase2"
-        print(cobra.sac_opts.ISA.TGR)
-
 
 if __name__ == '__main__':
     unittest.main()
