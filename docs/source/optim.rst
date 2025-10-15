@@ -158,7 +158,7 @@ no safety margin for the final model).
 Repair Infeasible Solutions
 ----------------------------
 
-.. autoclass:: repairInfeasRI2.RepairInfeasibleRI2
-   :members: __init__, repairInfeasRI2
+.. autoclass:: repairInfeasRI2.RI2
+   :members: is_epsilon_feasible, find_best_infeasible, repairInfeasRI2
 
 

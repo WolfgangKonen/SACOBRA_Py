@@ -5,7 +5,6 @@ Initialization
 This chapter describes the SACOBRA initialization and the options (or hyperparameters) of SACOBRA.
 
 
-
 .. _cobraInit-label:
 
 CobraInitializer
@@ -48,11 +47,14 @@ The recipe how to select the sample points is prescribed by  ``s_opts.ID.initDes
 - **"BIASED"**: random sample from a normal distribution with mean ``x0`` and standard deviation
   ``s_opts.ID.initBias``. This is useful if ``x0`` is already in the *interesting* (e.g. near-feasible or objective-minimizing) region.
 - **"OPTCOBYLA"**: optimized design: perform a short COBYLA optimization run starting from ``x0`` with the real objective
-  and constraint functions. Extract from the function evaluations the first ``P`` independent points. The idea is that
+  and constraint functions. Extract with the help of :class:`.FnArchiveFactory` from the function evaluations the first ``P`` independent points. The idea is that
   we sample not randomly but in the *relevant* part of the input space.
 - **"OPTBIASED"**: establish from a short COBYLA run a new suitable point ``new_x0`` (best feasible or near-feasible).
   Generate a random sample from a normal distribution with mean ``new_x0`` and standard deviation
   ``s_opts.ID.initBias``.
+
+.. autoclass:: fnArchiveFact.FnArchiveFactory
+   :members: __call__, getSoluArchive, getFuncArchive
 
 
 .. _DRC-label:
