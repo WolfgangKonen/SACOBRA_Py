@@ -407,6 +407,8 @@ class CobraInitializer:
             # GRfact = np.hstack((1, GRL * (1 / np.mean(GRL))))   # probably buggy: at least for G10, some constraint ranges get bigger than before (!)
             GRfact = np.hstack((1, GRL))                          # fix 2025/06/12: seems to give smaller Gres ranges
             self.sac_res['GRfact'] = GRL
+            # NOTE: self.sac_res['GRfact'] is a vector of length nConstraints, while GRfact has a '1' appended in front,
+            # it is a vector of length nConstraints+1
 
             # finding the normalizing coefficient of the equality constraints
             if equ_ind.size != 0:

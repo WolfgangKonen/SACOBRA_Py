@@ -22,14 +22,18 @@ def updateCobraEqu(cobra: CobraInitializer, p2: Phase2Vars, xNew):
     s_res = cobra.sac_res
     equ_ind = np.flatnonzero(s_res['is_equ'])
     conTol = s_opts.SEQ.conTol
+    GRfact = s_res['GRfact']
 
     equMargin = p2.currentMu   # new 2025/04/02
-    temp = s_res['Gres'].copy()
+    # temp = s_res['Gres'].copy()
+    # ttemp= s_res['Gres'].copy()
+    temp = s_res['Gres'] * GRfact       # bug fix 2026/01-18: '* GRfact' was missing
+    ttemp= s_res['Gres'] * GRfact       # before (!)
     # We check whether
     #
     #          g_i(x) <= 0,  h_j(x) - equMargin <= 0,    -h_j(x) - equMargin <= 0
     #
-    # for each row of cobra$Gres is valid and set only rows fulfilling this to currentFeas==TRUE
+    # for each row of s_res['Gres'] is valid and set only rows fulfilling this to currentFeas==TRUE
     # New /2025/04/02: replace 0 by cobra$conTol
     temp[:, equ_ind] = abs(temp[:, equ_ind]) - equMargin
     currentMaxViols = np.maximum(0, np.max(temp, axis=1))
@@ -40,6 +44,12 @@ def updateCobraEqu(cobra: CobraInitializer, p2: Phase2Vars, xNew):
     # currentMaxViols = np.maximum(0, np.max(temp,axis=1))    # np.max(..,axis=1): take the row maximum in each row
 
     currentFeas = np.flatnonzero(currentMaxViols <= conTol)  # new 2025/04/02: replaces "<=0"
+
+    # ttemp and derived quantities are only for debugging
+    # (trueMaxViols should match to self.trueMaxViol in evaluatorReal.py:443)
+    ttemp[:, equ_ind] = abs(ttemp[:, equ_ind]) - s_opts.EQU.muFinal
+    trueMaxViols = np.maximum(0, np.max(ttemp, axis=1))
+    trueFeas = np.flatnonzero(trueMaxViols <= conTol)
 
     #   If length(currentFeas)==0, we do the same thing as in updateSaveCobra:
     #   If the new point has a smaller maxViol then we take it as xbest, otherwise

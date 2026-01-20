@@ -5,10 +5,12 @@ from cobraInit import CobraInitializer
 from phase2Vars import Phase2Vars
 from innerFuncs import verboseprint, distLine
 from equHandling import modifyMu
+from surrogator import Surrogator
+from updateSaveCobra import updateSaveCobra
 
 
 def fitFuncPenalRBF(x):
-    ### --- should later go into innerFuncs, but think about EPS and ro and fn
+    # --- should later go into innerFuncs, but think about EPS and ro and fn
     return np.array([0])
     # TODO (from cobraPhaseII.R):
     # if (any( is.nan(x))){
@@ -151,3 +153,101 @@ def adjustMargins(cobra: CobraInitializer, p2: Phase2Vars):
             cobra.sac_opts.RBF.rho = cobra.df2['rho'].values[0]  # every rhoGrow (e.g. 100) iterations, re-enlarge rho
 
     cobra.sac_opts.RBF.rho /= cobra.sac_opts.RBF.rhoDec
+
+
+# def check_gReal_eps1(cobra: CobraInitializer, p2: Phase2Vars):
+#     GRfact = cobra.sac_res['GRfact']
+#     gReal = p2.ev1.xNewEval[1:] * GRfact
+#     equ_ind = np.flatnonzero(cobra.sac_res['is_equ'])  # index to all equality constraints
+#     equ2Index = np.concatenate((equ_ind, cobra.sac_res['nConstraints'] + np.arange(equ_ind.size)), axis=None)
+#     gReal = np.concatenate((gReal, -gReal[equ_ind]), axis=None)
+#     gReal[equ2Index] -= p2.currentMu
+#     g_arti = constraint_to_artif(p2.ev1.xNewEval[1:], cobra, p2)
+#     assert np.allclose(g_arti, gReal)
+#     eps1 = p2.ri2.s_opts.RI.eps1
+#     if p2.ev1.newNumViol > 0 and not np.any(gReal + eps1 > 0):
+#         dummy = 0
+
+
+def constraint_to_artif(g_val, cobra: CobraInitializer, p2: Phase2Vars):
+    """
+    Given a vector ``g_val`` with ``n_constraints`` constraint values, return an artificial constraint
+    vector ``g_arti`` with ``n_constraints+n_equ`` artificial constraint values: multiplied by ``GRfact``, with
+    ``n_equ`` equ-inequalities appended and with ``currentMu`` subtracted from all equ-inequalities.
+
+    :param g_val: constraint vector (size ``n_constraints``)
+    :param cobra:
+    :param p2:
+    :return: artificial constraint vector ``g_arti`` (size ``n_constraints+n_equ``)
+    """
+    GRfact = cobra.sac_res['GRfact']
+    g_arti = (g_val * GRfact).copy()
+    equ_ind = np.flatnonzero(cobra.sac_res['is_equ'])  # index to all equality constraints
+    equ2Index = np.concatenate((equ_ind, cobra.sac_res['nConstraints'] + np.arange(equ_ind.size)), axis=None)
+    g_arti = np.concatenate((g_arti, -g_arti[equ_ind]), axis=None)
+    g_arti[equ2Index] -= p2.currentMu
+    return g_arti
+
+
+def conditions_for_repair_met(cobra: CobraInitializer, p2: Phase2Vars) -> bool:
+    s_opts = cobra.sac_opts
+    ri = s_opts.RI
+    if not s_opts.RI.repairInfeas: return False
+    if not p2.num < s_opts.feval: return False      # no repair, if we are in last iteration (would result in too many iterations)
+    if p2.ev1.newNumViol == 0: return False         # no repair if xNew is feasible anyway
+    # print(p2.ev1.newMaxViol)
+    if p2.ev1.newMaxViol >= s_opts.RI.repairMargin: return False  # no repair if xNew has a too large max violation
+
+    # check_gReal_eps1(cobra, p2)
+
+    fbest = cobra.get_feasible_best()
+    if ri.repairOnlyFresBetter and fbest != np.nan:
+        # if we arrive here, we repair only if fitness < so-far-best-fitness + marFres
+        do_repair = (cobra.sac_res['Fres'][-1] < fbest + ri.marFres)
+    else:
+        # if we arrive here, we repair unconditionally
+        do_repair = True
+    return do_repair
+
+
+def do_repair_step(cobra: CobraInitializer, p2: Phase2Vars):
+    """
+    Do repair step for an infeasible point and necessary surrounding updates (surrogates, ``ev1``, ``cobra``,
+    info & counters).
+
+    The most important result is that the new infill point ``p2.ev1.xNew`` (infeasible) is replaced with a
+    repaired version (hopefully feasible).
+
+    The success of repair (on the surrogates) can be read off from
+    ``p2.ev1.state = "repairFailed" | "repaired" | "repairSuccess"``.
+
+    :param cobra:   SACOBRA settings and results (A, Fres, Gres, xbest, fbest, df, df2, ...)
+    :param p2:      these members may be changed : ``ev1``, ``Cfeas``, ``Cinfeas``
+    """
+    # print("repair is called")   # there is a verboseprint in repairInfeasRI2
+
+    # Build surrogate anew, based on current A, Gres
+    # This is important for accurate constraint surrogates models near current infeasible point
+    p2 = Surrogator.trainSurrogates(cobra, p2)
+
+    x = p2.ev1.xNew
+    gReal = p2.ev1.xNewEval[1:]
+    RIopt = p2.ri2.s_opts.RI
+    z = p2.ri2.repairInfeasRI2(x, gReal, p2.constraintSurrogates, cobra, p2, p2.currentMu, RIopt.checkIt)
+    z_is_feas = p2.ri2.is_epsilon_feasible(z, RIopt.eps2, p2.constraintSurrogates)
+
+    if np.all(z == x):
+        # verboseprint(cobra.sac_opts.verbose, important=True, message="cannot repair")  # printout already in while
+        p2.ev1.state = "repairFailed"
+    else:
+        p2.ev1.state = "repairSuccess" if z_is_feas else "repaired"
+        p2.ev1.update(z, cobra, p2, p2.currentMu)   # set ev1.xNew=z; do update w/o refine, because state!="optimized"
+        updateInfoAndCounters(cobra, p2)            # includes increment p2.num
+        updateSaveCobra(cobra, p2, p2.EPS, fitFuncPenalRBF, distRequirement)
+        if p2.ev1.state == "repairSuccess":
+            if p2.num >= 362:
+                dummy = 0
+
+        # --- questionable: should a repair step be followed by additional adjustMargins (eps, mu, rho)? - I think NO!
+        #     The right way to do adjustMargins is in cobraRepairII, just after the (conditional) repair
+        # adjustMargins(cobra, p2)

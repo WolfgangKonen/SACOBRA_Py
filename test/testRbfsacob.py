@@ -67,7 +67,7 @@ def solve_G06(cobraSeed, rbf_opt, feval=40, verbIter=10, conTol=0):  # conTol=0 
     c2 = CobraPhaseII(cobra)
     c2.start()
 
-    # show_error_plot(cobra, G06)
+    # show_error_plot(cobra, G06, c2.get_muVec())
 
     fin_err = np.array(cobra.get_feasible_best() - G06.fbest)
     c2.p2.fin_err = fin_err

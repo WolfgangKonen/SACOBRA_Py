@@ -1,12 +1,14 @@
+import numpy as np
 import pandas as pd
 # need to specify SACOBRA_Py.src as source folder in File - Settings - Project Structure,
 # then the following import statements will work:
 from cobraInit import CobraInitializer
-from innerFuncs import PlogSquasher   # , plog, plogReverse
+from innerFuncs import PlogSquasher, verboseprint  # , plog, plogReverse
 from opt.isaOptions import O_LOGIC
 from phase2Vars import Phase2Vars
 import phase2Funcs as p2f
 from randomStarter import RandomStarter
+from repairInfeasRI2 import RI2
 from surrogator import Surrogator
 from surrogator1 import Surrogator1
 from seqOptimizer import SeqOptimizer, check_if_cobra_optimizable
@@ -29,11 +31,12 @@ class CobraPhaseII:
         self.p2 = Phase2Vars(cobra)
         self.p2.ev1 = EvaluatorReal(cobra, self.p2)
         self.p2.rs1 = RandomStarter(cobra.sac_opts)
+        self.p2.ri2 = RI2(cobra)
 
         cobra.phase = "phase2"
         self.cobra = cobra
-        self.df = None
-        self.df2 = None
+        # self.df = None
+        # self.df2 = None
 
     def get_cobra(self):
         """
@@ -48,6 +51,9 @@ class CobraPhaseII:
         :rtype: Phase2Vars
         """
         return self.p2
+
+    def get_muVec(self) -> np.ndarray:
+        return self.cobra.df2['muVec'].values
 
     def start(self):
         """
@@ -151,16 +157,23 @@ class CobraPhaseII:
                     Surrogator1.calcPEffect(self.p2, self.p2.ev1.xNew, self.p2.ev1.xNewEval, verbose=True)
 
             # update cobra information (A, Fres, Gres, p2.num and others)
-            p2f.updateInfoAndCounters(self.cobra, self.p2)
+            p2f.updateInfoAndCounters(self.cobra, self.p2)      # includes increment p2.num
+
+            # if self.p2.num == 27:
+            #     dummy = 0
 
             # update and save cobra: data frames df, df2, keys xbest, fbest, ibest in sac_res
             updateSaveCobra(self.cobra, self.p2, self.p2.EPS, p2f.fitFuncPenalRBF, p2f.distRequirement)
 
+            # [conditional] repair of infeasible solutions
+            if p2f.conditions_for_repair_met(self.cobra, self.p2):
+                p2f.do_repair_step(self.cobra, self.p2)
+
             # adjust margin self.p2.EPS, self.p2.currentMu, cobra.sac_opts.RBF.rho and adjust counters
             # (self.p2.Cfeas, self.p2.Cinfeas):
+            # IMPORTANT: do adjustMargins only after (conditional) repair, because repair has to operate on the same
+            # currentMu than the prior p2.ev1.update() (otherwise currentMu may be falsely re-enlarged in repair step)
             p2f.adjustMargins(self.cobra, self.p2)
-
-            # TODO: [conditional] repairInfeasible
 
             # TODO: [conditional] trustRegion
 
@@ -170,6 +183,7 @@ class CobraPhaseII:
                     final_gama = 0.0               # this leads to p2.gama = p2.ro = 0 (i.e. no DRC, XI=0)
                     # s_opts.EQU.refine = False
 
+            # increment several time variables:
             if not s_opts.ISA.onlinePLOG == O_LOGIC.MIDPTS:   # case MIDPTS needs no separate fitnessSurrogate
                 self.p2.time_init += self.p2.fitnessSurrogate.time_init
             self.p2.time_init += self.p2.fitnessSurrogate1.time_init
@@ -181,12 +195,37 @@ class CobraPhaseII:
             if CONSTRAINED:
                 self.p2.time_init += self.p2.constraintSurrogates.time_init
                 self.p2.time_call += self.p2.constraintSurrogates.time_call
-        # end while self.p2.num
+
+        # end while self.p2.num < s_opts.feval
+
+        nr = self.p2.ri2.n_repair
+        if nr > 2:      # if p2f.do_repair_step is called 3 or more times
+            eps2=self.cobra.sac_opts.RI.eps2
+            verboseprint(self.cobra.sac_opts.verbose, important=True,
+                         message=f"Percentage eps2-successful repairs: "
+                         f"{float(self.p2.ri2.n_rep_suc)/nr*100:.3f} %, (n_repair={nr}, eps2={eps2:.0e})")
 
         if PlogSquasher.get_warn_counter() > 0:
             print(PlogSquasher.get_warn_summary())
             PlogSquasher.reset_warn_counter()
         # TODO: some final settings to self.cobra, self.p2
+
+        if self.cobra.is_feasible():
+            # Assert - if a feasible solution was found - that indeed all constraint violations are below conTol.
+            # For equality constrained COPs, this means that the absolute values of equality constraints at the
+            # solution point are all less than muFinal + conTol.
+            xbest = self.cobra.get_xbest()
+            self.p2.constr = s_res['originalfn'](xbest)[1:]
+            equ_ind = np.flatnonzero(s_res['is_equ'])
+            if equ_ind.size > 0:
+                temp = self.p2.constr.copy()
+                temp[equ_ind] = np.abs(temp[equ_ind]) - s_opts.EQU.muFinal
+                assert np.all(temp <= s_opts.SEQ.conTol)
+                # this assertion would fire if we had not fixed the bug in equHandling.py:30
+            else:
+                assert np.all(self.p2.constr <= s_opts.SEQ.conTol)
+
+
 
         return self
 
@@ -223,7 +262,7 @@ class CobraPhaseII:
         :return: SACOBRA diagnostic information
         :rtype: pd.DataFrame
         """
-        return self.df
+        return self.cobra.df
 
     # NOTE: the purpose of this function is just to supply a docstring (used in appendix of Sphinx docu):
     def get_df2(self) -> pd.DataFrame:
@@ -264,4 +303,4 @@ class CobraPhaseII:
         :return: SACOBRA diagnostic information
         :rtype: pd.DataFrame
         """
-        return self.df2
+        return self.cobra.df2

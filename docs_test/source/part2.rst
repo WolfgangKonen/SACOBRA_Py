@@ -15,4 +15,4 @@ PART II: COP, Equ, FnArch and Repair
    :members: test_fn_archive, test_optcobyla, test_biased, test_unconstr
 
 .. autoclass:: testRepair.TestRepair
-   :members: test_eps_feas, test_find_best, test_repair, test_time_repair
+   :members: test_eps_feas, test_find_best, test_repair, test_time_repair, test_grfact

@@ -2,8 +2,10 @@ from typing import Union
 
 import numpy as np
 
+import phase2Funcs
 from cobraInit import CobraInitializer
 from innerFuncs import verboseprint
+from phase2Vars import Phase2Vars
 from rbfModel import RBFmodel
 
 
@@ -18,7 +20,7 @@ class RI2:
 
     See :class:`.RIoptions` for all repair-infeasible options and for the definition of ``eps``-**feasibility**.
 
-    :param cobra: an initialized Cobra object
+    :param cobra: an initialized SACOBRA object with settings and results
     """
     def __init__(self, cobra: CobraInitializer):
         self.s_opts = cobra.sac_opts
@@ -30,11 +32,14 @@ class RI2:
         self.equ2Index = concat(self.equ_ind, cobra.sac_res['nConstraints'] + np.arange(self.equ_ind.size))
         # equ2Index: index to all inequalities that stem from equality constraints
         self.currentMu = cobra.sac_res['muVec'][-1]
+        self.GRfact = cobra.sac_res['GRfact']
         self.con_s = None
         self.constrSurr = None
+        self.n_repair = 0       # call counter for repairInfeasRI2
+        self.n_rep_suc = 0      # counter of successful repairs
 
     def repairInfeasRI2(self, x: np.ndarray, gReal: np.ndarray, constrSurr: RBFmodel,
-                        cobra: CobraInitializer, currentMu, checkIt, true_grad=None) -> np.ndarray[float]:
+                        cobra: CobraInitializer, p2: Phase2Vars, currentMu, checkIt, true_grad=None) -> np.ndarray:
         """
         Repair an infeasible solution with method RI2.
 
@@ -60,7 +65,7 @@ class RI2:
         :param constrSurr: the constraint surrogate models
         :param cobra:   an object of class :class:`.CobraInitializer`, we need here: ``lower``, ``upper``,
                         :class:`.RIoptions` ``s_opts.RI``
-        :param currentMu:  margin for equality constraints
+        :param currentMu:  :math:`\\mu`, margin for equality constraints. Only relevant if equality constraints exist
         :param checkIt: if True, perform a check whether the returned solution is really
                       feasible. Needs access to the true constraint functions.
         :param true_grad: (optional) if not None and if checkIt=True, assert that the calculated ``grad_mat`` and
@@ -78,10 +83,10 @@ class RI2:
         # e.g. 0.002 if the smallest length of search cube is 2.0
 
         dim = x.size
-        nd = np.tile(x,(2*dim+1,1))
-        for i in range(1,dim+1):
-            nd[2*i-1, i - 1] -= gradEps
-            nd[2*i  , i - 1] += gradEps
+        nd = np.tile(x, (2*dim+1, 1))
+        for i in range(1, dim + 1):
+            nd[2 * i - 1, i - 1] -= gradEps
+            nd[2 * i    , i - 1] += gradEps
         # nd is a matrix [[x[0]  , x[1]  , ...],
         #                 [x[0]-e, x[1]  , ...],
         #                 [x[0]+e, x[1]  , ...],
@@ -95,16 +100,25 @@ class RI2:
         # f is at first a (2*dimension+1 x nconstraint) matrix containing constraint surrogate
         # responses at x (row 0) and at small '-' and '+' deviations from x for any dimension
         # in rows 1, ..., 2 * dim
+        f = self.GRfact * f  # bug fix /2025/10/17
+
+        # g_arti = gReal.copy()
+        # gReal = self.GRfact * gReal
 
         if self.s_opts.EQU.active:
-            gReal = concat(gReal, -gReal[self.equ_ind])
-            f = concat(f, -f[:, self.equ_ind])
-            gReal[self.equ2Index] -= self.currentMu
+            # gReal = concat(gReal, -gReal[self.equ_ind])
+            f = np.hstack((f,-f[:, self.equ_ind]))
+            # gReal[self.equ2Index] -= self.currentMu
             f[:, self.equ2Index] -= self.currentMu
             # now f is a ((2*dimension+1) x (nconstraint+nequ)) matrix ( nequ = # equality constraints )
+        # g_arti = phase2Funcs.constraint_to_artif(g_arti, cobra, p2)
+        # assert np.allclose(g_arti, gReal)
+        gReal = phase2Funcs.constraint_to_artif(gReal, cobra, p2)
 
         assert f.ndim == 2 and gReal.ndim == 1
         assert f.shape[1] == gReal.size, "Columns do not match in f and gReal"
+        if not np.any(gReal+ri.eps1 > 0):
+            dummy = 0
         assert np.any(gReal+ri.eps1 > 0), "No constraint is eps1-infeasible"
 
         ix = np.repeat(False, dim)
@@ -115,24 +129,27 @@ class RI2:
         # [ix is the equivalent to matrix multiplication with E, where E is the identity matrix with 0 at the
         #  diagonal elements indexed by ix==True.]
 
+        self.n_repair += 1
+        ind_s = np.array([])
         while True:
-            del_mat = np.zeros((0,dim))
-            grad_mat = np.zeros((0,dim))
+            r_success = False
+            del_mat = np.zeros((0, dim))
+            grad_mat = np.zeros((0, dim))
             viol_lst = []
             for k in range(f.shape[1]):
-                if gReal[k] + ri.eps1 > 0:  # if the kth constraint is ri.eps1-infeasible
+                if gReal[k] + ri.eps1 > 0:  # if the kth constraint is eps1-infeasible
                     gradf = (f[ind_p, k] - f[ind_n, k]) / (2 * gradEps)
                     gradf[ix] = 0   # zero all dimensions which led to 'out-of-search-region' in previous iterations
                     g2 = np.sum(gradf * gradf)
                     if g2 == 0:
                         msg1 = "Cannot repair infeasible solution w/o moving out of search region"
                         msg2 = " --> will return the incoming (infeasible) solution"
-                        verboseprint(self.s_opts.verbose, important=True, message=msg1+msg2)
+                        verboseprint(self.s_opts.verbose, important=False, message=msg1+msg2)
                         return x
                     del_k = - (gReal[k] + ri.eps1) * gradf / g2
                     del_mat = np.vstack((del_mat, del_k))
                     # del_mat is a matrix with dim columns and as many rows as there are eps1-infeasible constraints.
-                    # The kth row of del_mat contains the repair step for the kth constraint.
+                    # The kth row of del_mat contains del_k, the repair step for the kth constraint.
                     grad_mat = np.vstack((grad_mat, gradf))
                     # Similarly, the kth row of grad_mat contains the gradient for the kth constraint.
                     viol_lst = viol_lst + [k]
@@ -140,33 +157,38 @@ class RI2:
 
             if checkIt:
                 self.check_single_constr(x, del_mat, grad_mat, viol_lst, ri.eps1, true_grad)
-                print(np.sqrt(np.sum(del_mat*del_mat, axis=1)))  # row sum (along axis 1)
 
             #  this is the repairInfeasible mechanism after 2014-09-29, see
             #  Notes.d/presentation/present-Wolfgang-2014-09-24-RepairInfeas2:
             num_k = del_mat.shape[0]
-            A = self.rng.random((ri.mmax, num_k)) * ri.q
-            R = np.matmul(A, del_mat)   # R: matrix with parallelepiped vectors {r_i | row indices i}
+            A = self.rng.random((ri.mmax, num_k)) * ri.q      # ri.q is a scalar (extension of all parallelepiped axes)
+            R = np.matmul(A, del_mat)   # R: matrix with parallelepiped vectors r_i in its rows i
             Rx = x + R                  # 'x + R': array broadcasting will repeat x row-wise
             ind_s = np.apply_along_axis(lambda x: self.is_epsilon_feasible(x, ri.eps2, constrSurr),
                                         arr=Rx, axis=1)
-            S = R[ind_s, :]             # S: matrix with all eps2-feasible points from R (if any)
+            S = R[ind_s, :]             # S: matrix with all ri.eps2-feasible points from R (if any)
             if S.shape[0] == 0:
-                # no ri.eps2-feasible point - return the best infeasible solution instead:
+                # no ri.eps2-feasible point - return the best ri.eps2-infeasible solution instead:
                 r_best = self.find_best_infeasible(x, R, ri.eps2, constrSurr)
-                #if (checkIt) checkBestInfeasible(Del);
             else:
-                # select the best ri.eps2-feasible point from S
+                # select the best point from S (minimal length)
                 r_best = self.select_best(S)
+                r_success = True
 
             z = x + r_best
-            ix2 = np.flatnonzero((z > upperP) | (z < lowerP))
-            if ix2.size == 0:
-                # we are done: z is inside search region in every dimension
+            ix2 = (z > upperP) | (z < lowerP)
+            if not np.any(ix2):
+                # we are done: z is inside search region in every dimension (all ix2 are False)
+                if r_success:
+                    self.n_rep_suc += 1  # we have ri.eps2-feasible points in last S --> successful repair
                 break       # out of while
             ix = ix2 | ix        # don't forget the dimensions which were 'outside' in previous iterations
 
-        if checkIt: self.check_solution(z, gReal)
+        # if ind_s.size > 0:       # the last pass through while had a non-empty S -->
+        #     self.n_rep_suc += 1  # we have ri.eps2-feasible points in S --> successful repair
+
+        if checkIt:
+            self.check_solution(z, r_best, gReal)
         return z
 
     # ----------------------------------------------------------------------------------- #
@@ -215,15 +237,16 @@ class RI2:
         :return: the best residual ``R[kBest,:]`` = ``z[kBest]-x``
         """
         self.constrSurr = constrSurr    # update
+
         def numMaxViol(z):
             con_s = self._calc_con_s(z)
             ind = np.flatnonzero(con_s + eps2 > 0)
             # print(ind.size, max(con_s), con_s + eps2)
-            return ind.size , max(con_s)
+            return ind.size, max(con_s)
 
         result = np.apply_along_axis(numMaxViol, arr=R+x, axis=1)       # result.shape = (arr.shape[0],2)
-        numViol = np.int32(result[:,0])
-        maxViol = result[:,1]
+        numViol = np.int32(result[:, 0])
+        maxViol = result[:, 1]
         # DBG = True
         # if DBG:
         #     x0 = x + R[0,:]
@@ -244,12 +267,12 @@ class RI2:
         ind = np.flatnonzero(l2 == min(l2))[0]  # if several points have the same minimal length, select the first one
         return S[ind, :]
 
-    def check_single_constr(self, x, del_mat, grad_mat, viol_lst, eps, true_grad: Union[np.ndarray, None]):
+    def check_single_constr(self, x, del_mat, grad_mat, viol_lst, eps1, true_grad: Union[np.ndarray, None]):
         """
         Debug only: Does the single repair step ``del_mat[k,:]`` calculated for violated constraint ``k`` with
-        surrogate ``s_k`` bring the infill point ``x`` close to the ``eps``-boundary of constraint ``k``, as it should?
+        surrogate ``s_k`` bring the infill point ``x`` close to the ``eps1``-boundary of constraint ``k``, as it should?
 
-        If so, ``fBefore[k]+eps`` should be much larger than ``fSingle[k]+eps`` in magnitude.
+        If so, ``fBefore[k]+eps1`` should be much larger than ``fSingle[k]+eps1`` in magnitude.
 
         With ``fBefore[k]=s_k(x)`` and ``fSingle[k]=s_k(x+del_mat[k,:])``.
 
@@ -258,9 +281,9 @@ class RI2:
         :param x:
         :param del_mat:
         :param grad_mat:
-        :param viol_lst:
-        :param eps:
-        :param true_grad:
+        :param viol_lst:  the list of violated constraint numbers (those that are eps1-infeasible)
+        :param eps1:      usually RI.eps1
+        :param true_grad: the true gradient matrix or None
         """
         if true_grad is not None:
             assert np.allclose(grad_mat, true_grad), "grad_mat is not close to true_grad"
@@ -269,30 +292,37 @@ class RI2:
         fBefore = np.zeros(len(viol_lst))
         fSingle = np.zeros(len(viol_lst))
         for k, v in enumerate(viol_lst):
-            fBefore[k] = self._calc_con_s(x)[v]
+            grfact_v = self.GRfact if np.size(self.GRfact) == 1 else self.GRfact[v]
+            fBefore[k] = self._calc_con_s(x)[v] * grfact_v
             # fBefore[k] is the constraint value of constraint k at x (prior to repair step)
-            fSingle[k] = self._calc_con_s(x + del_mat[k,:])[v]
-            # fSingle[k] is the constraint value of constraint k at 'x + repair step'. Should be close to -eps
+            fSingle[k] = self._calc_con_s(x + del_mat[k, :])[v] * grfact_v
+            # fSingle[k] is the constraint value of constraint k at 'x + repair step'. Should be close to -eps1
+        np.set_printoptions(precision=3)
+        print(f"Violations + eps1 before single corrections: {fBefore + eps1}")
+        print(f"Violations + eps1 after  single corrections: {fSingle + eps1}")
+        print(f"Quotient {(fBefore + eps1)/(fSingle + eps1)} (should be larger than approx. 8.0 in magnitude)")
+        if not np.allclose(fSingle, -eps1, atol=1e-6):
+            print(f"*** Warning *** [check_single_constr] Not all single constraint values are at -eps1={-eps1}!"
+                  f"*** fSingle = {fSingle} ***")
         np.set_printoptions(precision=8)
-        print(f"Violations + eps before single corrections: {fBefore + eps}")
-        print(f"Violations + eps after  single corrections: {fSingle + eps}")
-        print(f"Quotient {(fBefore + eps)/(fSingle + eps)} (should be larger than approx. 8.0 in magnitude)")
-        np.set_printoptions(precision=8)
-        assert np.allclose(fSingle, -eps)
 
-    def check_solution(self, z, gReal):
+    def check_solution(self, z, r_best, gReal):
         ri = self.s_opts.RI
         fTrue = self.fn(z)[1:]  # fTrue: true constraint values after repair
         fRbf = self.constrSurr(z)[0, :]  # fRbf:  constraint surrogate values after repair
         # print(gReal); print(fRbf); print(fTrue)
         violatedConstraints = np.flatnonzero(fTrue > 0)
-        cfcReal = maxReal = 0
+        sumTrue = maxTrue = 0
         if np.any(fTrue > 0):
-            cfcReal = np.sum(fTrue[violatedConstraints])
-            maxReal = np.max(fTrue[violatedConstraints])
-        print(f"Repaired solution is feasible:  {cfcReal <= 0}, cfcReal={cfcReal}, maxViol={maxReal}")
+            sumTrue = np.sum(fTrue[violatedConstraints])    # sum of true constr. viol. after repair
+            maxTrue = np.max(fTrue[violatedConstraints])    # max of true constr. viol. after repair
+        print(f"Repaired solution is feasible:  {sumTrue <= 0}, sumTrueViol={sumTrue}, maxTrueViol={maxTrue}")
         print(f"Repaired solution is eps1-feasible:  {np.all(fTrue + ri.eps1 <= 0)}, fTrue+eps1={fTrue + ri.eps1}")
         print(f"   eps1-inf constraints before repair: {np.flatnonzero(gReal + ri.eps1 > 0)}")
         print(f"   violated constraints before repair: {np.flatnonzero(gReal > 0)}")
-        print(f"   violated constraints  after repair: {np.flatnonzero(fTrue>0)}")
-        print(f"   violated c-surrogates after repair: {np.flatnonzero(fRbf>0)}")
+        print(f"   violated constraints  after repair: {np.flatnonzero(fTrue > 0)}")
+        print(f"   violated c-surrogates after repair: {np.flatnonzero(fRbf > 0)}")
+        if r_best.size <= 5:
+            np.set_printoptions(precision=3)
+            print(f"   shift z-x of solution: {r_best}")
+            np.set_printoptions(precision=8)

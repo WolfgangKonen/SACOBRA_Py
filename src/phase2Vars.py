@@ -45,6 +45,7 @@ class Phase2Vars:
         self.rs_done = None     # bool to indicate whether random_start was done (randomStarter.py)
         self.rs1 = None         # gets RandomStarter object in cobraPhaseII
         self.ev1 = None         # gets EvaluatorReal object in cobraPhaseII
+        self.ri2 = None         # gets RI2 (repair infeasible) object in cobraPhaseII
         self.opt_res = None     # gets the SeqOptimizer results in cobraPhaseII
         self.gama = None        # number, will be set in cobraPhaseII.py
         self.ro = None          # number, will be set in cobraPhaseII.py
@@ -58,4 +59,5 @@ class Phase2Vars:
         self.fe_thresh = None   # number, will be set in ex_COP.py
         self.time_init = 0.0
         self.time_call = 0.0
+        self.constr = None      # array, will be set at the end of cobraPhaseII::start
 

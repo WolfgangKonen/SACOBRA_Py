@@ -23,4 +23,4 @@ print(f"xbest: {cobra.get_xbest()}")
 print(f"fbest: {cobra.get_fbest()}")
 print(f"final error: {cobra.get_fbest() - cop.fbest}")
 
-show_error_plot(cobra, cop)
+show_error_plot(cobra, cop, c2.get_muVec())

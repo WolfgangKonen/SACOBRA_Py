@@ -7,10 +7,25 @@ from scipy.optimize import minimize
 from cobraInit import CobraInitializer
 from phase2Vars import Phase2Vars
 from innerFuncs import PlogSquasher  # , plog, plogReverse
+import phase2Funcs as p2f
 
 
 def concat(a, b):
     return np.concatenate((a, b), axis=None)
+
+# --- obsolete, this is now done with the help of p2f.constraint_to_artif ---
+# def check_gReal_eps1(cobra: CobraInitializer, p2: Phase2Vars):
+#     GRfact = cobra.sac_res['GRfact']
+#     gReal = p2.ev1.xNewEval[1:] * GRfact
+#     equ_ind = np.flatnonzero(cobra.sac_res['is_equ'])  # index to all equality constraints
+#     equ2Index = np.concatenate((equ_ind, cobra.sac_res['nConstraints'] + np.arange(equ_ind.size)), axis=None)
+#     gReal = np.concatenate((gReal, -gReal[equ_ind]), axis=None)
+#     gReal[equ2Index] -= p2.currentMu
+#     g_arti = p2f.constraint_to_artif(p2.ev1.xNewEval[1:], cobra, p2)
+#     assert np.allclose(g_arti, gReal)
+#     eps1 = p2.ri2.s_opts.RI.eps1
+#     if p2.ev1.newNumViol > 0 and not np.any(gReal + eps1 > 0):
+#         dummy = 0
 
 
 class EvaluatorReal:
@@ -85,17 +100,19 @@ class EvaluatorReal:
         (if ``cobra.sac_opts.EQU.active`` and ``self.state == "optimized"``) +
         calculate various feasibility indicators (``numViol``, ``maxViol``, ...)
 
-        :param xNew:    the new infill point (vector) resulting from sequential optimization on surrogates
+        :param xNew: the new infill point (vector) resulting from sequential optimization on surrogates or from
+                    repair step
         :param cobra:
         :param p2:
-        :param currentMu:  current artificial margin :math:`\\mu` for equality constraints
-        :param fitnessSurrogate:  if ``None``, use ``p2.fitnessSurrogate``
-        :param f_value: if ``None``, use ``p2.opt_res['minf']``
+        :param currentMu:  current artificial margin :math:`\mu` for equality constraints
+        :param fitnessSurrogate:  if ``None``, set ``fitnessSurrogate = p2.fitnessSurrogate``.
+                    Used to calculate ``s_f(xNew)`` where ``s_f`` is the fitness surrogate model.
+                    ``s_f(xNew)`` becomes the new last value of vector ``self.predY``
+        :param f_value: if ``None``, set ``f_value=p2.opt_res['minf']``. Used for ``self.predVal`` (probably obsolete)
         :return: nothing, but many elements of ``self`` are updated: ``xNew``, ``xNewEval``, ``x0``, ``x1``, ...
         """
         # update() corresponds to evalReal() in R, which is called in three places:
         # after seq.opt, after repair and after TR-step
-
         if fitnessSurrogate is None:
             fitnessSurrogate = p2.fitnessSurrogate
         if f_value is None:
@@ -115,6 +132,7 @@ class EvaluatorReal:
             newPredY = getPredY0(self.xNew, fitnessSurrogate, p2)
         self.predY = concat(self.predY, newPredY)  # bug fix: now predY is the fitness surrogate value /WK/
         self.predVal = concat(self.predVal, f_value)  # fitness + penalty (in case of NMKB et al.) /WK/
+        # /WK/2025/10/16: predVal is probably never really used
         self.feMax = concat(self.feMax, p2.opt_res['feMax'])
         self.optimConv = concat(self.optimConv, p2.opt_res['res_code'])
         self.optimTime = concat(self.optimTime, p2.opt_res['time_ms'])
@@ -135,7 +153,7 @@ class EvaluatorReal:
 
         if self.CONSTRAINED:
             if cobra.sac_opts.EQU.active:
-                self.equ_num_max_viol(cobra, currentMu, newPredC)
+                self.equ_num_max_viol(cobra, currentMu, newPredC, p2)
             else:
                 self.ine_num_max_viol(cobra, newPredC)
 
@@ -146,6 +164,9 @@ class EvaluatorReal:
             self.trueMaxViol = 0
             self.feas = concat(self.feas, True)
             self.feasPred = concat(self.feasPred, True)
+
+        # check_gReal_eps1(cobra, p2)
+
 
     def equ_refine(self, cobra: CobraInitializer, p2: Phase2Vars, currentMu):
         """
@@ -343,7 +364,7 @@ class EvaluatorReal:
         # which can be retrieved by the caller as p2.ev1.xyz
         # equ_refine(self,...) corresponds to equRefineStep in evalReal.R
 
-    def equ_num_max_viol(self, cobra: CobraInitializer, currentMu, newPredC):
+    def equ_num_max_viol(self, cobra: CobraInitializer, currentMu, newPredC, p2: Phase2Vars):
         """
         Calculate ``self.newNumViol``, ``.newMaxViol``, ... for the equality case (``sac_opts.EQU.active=True``)
 
@@ -363,12 +384,17 @@ class EvaluatorReal:
         #
         # for the real surrogates and set self.newNumViol to the number of violated constraints.
         # NOTE that below <= 0 is replaced with <= conTol, where conTol may be 0, may be positive.
-        # NOTE that temp is also used for self.newMaxViol below.
-        temp = (s_res['fn'](self.xNew)[1:] * GRfact).copy()    # fix 2025-09-24: '* GRfact' added
-        temp = concat(temp, -temp[self.equ_ind])
-        equ2Index = concat(self.equ_ind, s_res['nConstraints'] + np.arange(self.equ_ind.size))
-        temp[equ2Index] = temp[equ2Index] - currentMu
-        self.newNumViol = np.flatnonzero(temp > conTol).size
+        # --- OLD: ---
+        # temp = (s_res['fn'](self.xNew)[1:] * GRfact).copy()    # fix 2025-09-24: '* GRfact' added
+        # temp = concat(temp, -temp[self.equ_ind])
+        # equ2Index = concat(self.equ_ind, s_res['nConstraints'] + np.arange(self.equ_ind.size))
+        # temp[equ2Index] = temp[equ2Index] - currentMu
+        # ---
+        # self.g_arti = p2f.constraint_to_artif(s_res['fn'](self.xNew)[1:], cobra, p2)
+        self.g_arti = p2f.constraint_to_artif(self.xNewEval[1:], cobra, p2)
+        # NOTE that self.g_arti is also used for self.newMaxViol below.
+        # assert np.allclose(self.g_arti, temp)
+        self.newNumViol = np.flatnonzero(self.g_arti > conTol).size
         # number of constraint violations for new point  (former thresh 0 changed to conTol)
 
         # just a debug check:
@@ -381,22 +407,25 @@ class EvaluatorReal:
         self.feas = concat(self.feas, self.newNumViol < 1)
 
         # WK: brought here currentMu and equ2Index into play as well
-        ptemp = newPredC * GRfact       # fix 2025-09-24: '* GRfact' added
-        ptemp = concat(ptemp, -ptemp[self.equ_ind])
-        ptemp[equ2Index] = ptemp[equ2Index] - currentMu
-        self.newNumPred = np.flatnonzero(ptemp > conTol).size  # the same on constraint surrogates
+        # ptemp = newPredC * GRfact       # fix 2025-09-24: '* GRfact' added
+        # ptemp = concat(ptemp, -ptemp[self.equ_ind])
+        # ptemp[equ2Index] = ptemp[equ2Index] - currentMu
+        p_arti = p2f.constraint_to_artif(newPredC, cobra, p2)
+        # assert np.allclose(p_arti, ptemp)
+        self.newNumPred = np.flatnonzero(p_arti > conTol).size  # the same on constraint surrogates
         self.feasPred = concat(self.feasPred, self.newNumPred < 1)
 
         # WK: changed self.newMaxViol back to hold the artificial constraint max violation (currentMu-
         #     margin for equality constraints). This is one condition for entering repair (cobraPhaseII)
-        M = max(0, max(temp))  # maximum violation
+        M = max(0, max(self.g_arti))  # maximum violation
         self.newMaxViol = M
 
         # SB: it is also interesting to observe and save the information about the real maximum violation
         # instead of the maximum distance to the artificial constraints.
         # WK: the difference is that we do not subtract currentMu here
         # temp = s_res['fn'](self.xNew)[1:].copy()
-        temp = (s_res['fn'](self.xNew)[1:] * GRfact).copy()
+        # temp = (s_res['fn'](self.xNew)[1:] * GRfact).copy()
+        temp = (self.xNewEval[1:] * GRfact).copy()
         temp[self.equ_ind] = np.abs(temp[self.equ_ind]) - s_opts.EQU.muFinal  # muFinal: bug fix 2025/09/13
         self.trueNumViol = np.flatnonzero(temp > conTol).size
         # ## M = max(0, max(temp * s_res['GRfact']))   # true maximum violation, weighted with GRfact

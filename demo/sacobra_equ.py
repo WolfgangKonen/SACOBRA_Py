@@ -20,7 +20,7 @@ cobra = CobraInitializer(G13.x0, G13.fn, G13.name, G13.lower, G13.upper, G13.is_
                                            SEQ=SEQoptions(conTol=0)))   # 1e-7 | 0
 c2 = CobraPhaseII(cobra).start()
 
-show_error_plot(cobra, G13, file="../demo/error_plot_G13.png")
+show_error_plot(cobra, G13, c2.get_muVec(), file="../demo/error_plot_G13.png")
 
 fin_err = np.array(cobra.get_fbest() - G13.fbest)
 print(f"final error: {fin_err}")

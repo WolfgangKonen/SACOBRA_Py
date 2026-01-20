@@ -4,9 +4,12 @@ import numpy as np
 
 from cobraInit import CobraInitializer
 from cobraPhaseII import CobraPhaseII
+from gCOP import GCOP
 from opt.idOptions import IDoptions
+from opt.rbfOptions import RBFoptions
 from opt.riOptions import RIoptions
 from opt.sacOptions import SACoptions
+from opt.seqOptions import SEQoptions
 from phase2Vars import Phase2Vars
 from repairInfeasRI2 import RI2
 from surrogator import Surrogator
@@ -18,7 +21,6 @@ class TestRepair(unittest.TestCase):
     """
         Several tests for repair infeasible (class ``RI2 ri2``)
     """
-
 
     def test_eps_feas(self):
         """
@@ -77,11 +79,11 @@ class TestRepair(unittest.TestCase):
 
         ri2 = RI2(cobra)
         constrSurr = p2.constraintSurrogates
-        deltas=[-0.1, -0.01, -1e-4, 0, 1e-4, 0.01]
+        deltas = [-0.1, -0.01, -1e-4, 0, 1e-4, 0.01]
         is_feas = np.zeros(len(deltas), dtype=bool)
-        if ieq1 == False:        # the inequality constraint case
+        if not ieq1:        # the inequality constraint case
             tr_feas = np.array([True, True, False, False, False, False])  # condition: delta <= -RI.eps2
-        else:                   # the one-equality constraint, currentMu = 0.08
+        else:               # the one-equality constraint, currentMu = 0.08
             tr_feas = np.array([False, True, True, False, False, False])  # condition: delta <= -RI.eps2
         if self.first_pass:
             self.con_s = np.zeros((len(deltas), cobra.sac_res['nConstraints']), dtype=float)
@@ -103,7 +105,6 @@ class TestRepair(unittest.TestCase):
             self.first_pass = False
         else:
             assert np.allclose(self.con_s, act_con_s, atol=1e-6)
-
 
     def test_find_best(self):
         """
@@ -158,7 +159,7 @@ class TestRepair(unittest.TestCase):
         idp = 20   # (dim + 1) * (dim +2) // 2
         idesign = "OPTCOBYLA"     # "OPTCOBYLA" | "OPTBIASED"
         lower = np.array([-10, -10])    # be sure that all points x below fall into search space [lower, upper],
-        upper = np.array([+10, 10])     # otherwise con_s values can differ across cases (!)
+        upper = np.array([+10, +10])     # otherwise con_s values can differ across cases (!)
         is_equ = np.array([False, False])
 
         ID = IDoptions(initDesign=idesign, initDesPoints=idp, rescale=rsc)
@@ -176,7 +177,7 @@ class TestRepair(unittest.TestCase):
         q = np.array([0.2, 0.5]) * 5e-3
         if ID.rescale:
             q = ri2.rw.forward(q)
-        deltaMat = (2 * np.random.random_sample((n_delta,2)) - 1) * q
+        deltaMat = (2 * np.random.random_sample((n_delta, 2)) - 1) * q
         # NOTE: delta is in rescaled space if ID.rescale (as needed by ri2.find_best_feasible)
 
         is_feas = np.zeros(n_delta, dtype=bool)
@@ -185,7 +186,7 @@ class TestRepair(unittest.TestCase):
 
         if ID.rescale:
             x_active = ri2.rw.forward(x_active)
-        # NOTE: x_active is in rescaled space if ID.rescale (as needed by ri2.find_best_feasible)
+        # NOTE: x_active is in rescaled space if ID.rescale=True (as needed by ri2.find_best_feasible)
 
         x_best = x_active + ri2.find_best_infeasible(x_active, deltaMat, RI.eps2, constrSurr)
         print(x_best - x_active)
@@ -193,7 +194,7 @@ class TestRepair(unittest.TestCase):
         max_v_best = np.max(ri2.con_s)
         num_f_best = np.flatnonzero(ri2.con_s + RI.eps2 > 0).size   # number of not eps2-feasible constraints in x_best
         for i in range(n_delta):
-            x = x_active + deltaMat[i,:]
+            x = x_active + deltaMat[i, :]
             is_feas[i] = ri2.is_epsilon_feasible(x, RI.eps2, constrSurr)
             act_con_s[i, :] = ri2.con_s
             num_nef[i] = np.flatnonzero(act_con_s[i, :] + RI.eps2 > 0).size
@@ -285,7 +286,7 @@ class TestRepair(unittest.TestCase):
                 # then every x-distance shrinks by factor 10 --> gradient increases by factor 10.
                 # NOTE: pointwise multiply takes into account that different dims may be rescaled differently.
             gReal = cobra.sac_res['fn'](x)[1:]
-            z = ri2.repairInfeasRI2(x, gReal, constrSurr, cobra, currentMu, True, true_grad)
+            z = ri2.repairInfeasRI2(x, gReal, constrSurr, cobra, p2, currentMu, True, true_grad)
             assert ri2.is_epsilon_feasible(z, RI.eps2, constrSurr), f"z={z} is not eps2-feasible!"
             print(f"delta={delta:.0e}, x={x}, z={z}")
 
@@ -337,9 +338,196 @@ class TestRepair(unittest.TestCase):
             if ID.rescale:                              #
                 x = ri2.rw.forward(x)                   # ... then do optional rescale
             gReal = cobra.sac_res['fn'](x)[1:]
-            z = ri2.repairInfeasRI2(x, gReal, constrSurr, cobra, currentMu, False)
+            ri2.repairInfeasRI2(x, gReal, constrSurr, cobra, p2, currentMu, False)
         time_ms = (time.perf_counter() - start) / runs * 1000
         print(f"[test_time repair] time per repair = {time_ms} ms")
+
+    def test_repair_G06(self):
+        G06 = GCOP("G06")
+        cobra = CobraInitializer(G06.x0, G06.fn, G06.name, G06.lower, G06.upper, G06.is_equ, solu=G06.solu,
+                                 s_opts=SACoptions(verbose=1, feval=100, cobraSeed=43,
+                                                   ID=IDoptions(initDesign="LHS", initDesPoints=6),
+                                                   RBF=RBFoptions(degree=2),
+                                                   RI=RIoptions(repairInfeas=True, eps2=0, q=10, checkIt=False),
+                                                   SEQ=SEQoptions(conTol=1e-9)))
+        c2 = CobraPhaseII(cobra).start()
+        fin_err = np.array(cobra.get_fbest() - G06.fbest)
+        print(f"final error: {fin_err}")
+        dummy = 0
+
+
+    def test_grfact(self):
+        """
+        Test ``ri2.repairInfeasRI2`` with constraint normalization: Given a COP ``fn`` with two linear inequality
+        constraints, where at least one of them requires normalization (GRfact != 1.0). The intersection
+        of the two constraint lines is the point ``x_active`` where both constraints are active. If we move from
+        ``x_active`` to the right, we move into the infeasible region.
+
+        We form the infeasible points ``x=x_active+[delta,0]`` for different values
+        ``delta=[0.01,0.1,1.0]`` and call ``z=ri2.repairInfeasRI2(x,...)``. We test the following:
+
+        1. Is the numerical gradient calculated from the constraint surrogates close to the true gradient (we pass in
+           the latter via parameter ``true_grad``)?
+        2. For all ``eps1``-infeasible constraints ``k``: Is the single repair step ``k`` (row ``k`` of matrix
+           ``del_mat``) such that it transports an ``eps1``-infeasible solution to a new location that is very close
+           to the ``eps1``-feasible border in the single constraint ``k``? [Remember that we have to multiply the
+           surrogate output at the new location with ``GRfact[k]`` (!)]
+        3. Assert that ``z`` is ``eps2``-feasible in all constraints.
+        4. Assert that the true constraints at ``z``, multiplied by ``GRfact``, are all close to original ``fn(z)[1:]``.
+
+        Assertions 1. and 2. are done in ``ri2.check_single_constr`` called from ``ri2.repairInfeasRI2`` if
+        ``checkIt=True``. Assertions 3. and 4. are done in ``inner_grfact``.
+
+        We run all those tests for the four cases ``trueFunctionsForSurrogates=[False,True]`` and
+        ``rescale=[False,True]`` [Remember to do ``rw.inverse(z)`` in case ``rescale==True``].
+        """
+        slope = 1e04        # 1e04 triggers constraint normalization via GRfact
+        def fn(x):
+            """  A simple COP with sphere objective and two linear constraints """
+            return np.array([3 * np.sum(x ** 2), slope * (np.sum(x) - 1), -(x[1] - x[0] + 10)])
+
+        x_active = np.array([5.5, -4.5])
+        # x_active is the point where both constraints of fn are active (intersection of constraint lines).
+        # Be sure that x_active is within search space [lower,upper] and not directly at the border (!)
+        orig_grad = np.array([[slope, slope],
+                              [1., -1.]])
+        # orig_grad[0] (1st row) is the true gradient of g[0], orig_grad[1] of g[1] (not rescaled)
+
+        for rsc in [False, True]:  #
+            for tfs in [False, True]:  #
+                print(f"\n*** rescale={rsc}, trueFunc={tfs} ***")
+                self.inner_grfact(fn, x_active, rsc, tfs, orig_grad)
+        print("[test_repair] All assertions passed.")
+
+    def inner_grfact(self, fn, x_active, rsc, tfs, orig_grad):
+        x0 = np.array([2.5, 2.4])
+        dim = x_active.size
+        idp = 20  # (dim + 1) * (dim +2) // 2
+        idesign = "OPTCOBYLA"  # "OPTCOBYLA" | "OPTBIASED"
+        lower = np.array([-10, -10])  # be sure that all points x below fall into search space [lower, upper],
+        upper = np.array([+10, +10])  # otherwise con_s values can differ across cases (!)
+        is_equ = np.repeat(False, dim)
+        currentMu = 1e-7 # 8e-2     # not relevant here
+
+        ID = IDoptions(initDesign=idesign, initDesPoints=idp, rescale=rsc)
+        RI = RIoptions(eps2=2e-4, mmax=1000, trueFuncForSurrogates=tfs)
+        cobra = CobraInitializer(x0, fn, "f_name", lower, upper, is_equ,
+                                 s_opts=SACoptions(verbose=verb, cobraSeed=43,
+                                                   ID=ID, RI=RI))
+        p2 = Phase2Vars(cobra)
+        p2 = Surrogator.trainSurrogates(cobra, p2)
+
+        ri2 = RI2(cobra)
+        constrSurr = p2.constraintSurrogates
+        deltas = [0.01, 0.1, 1.0]  #
+
+        for i, delta in enumerate(deltas):
+            true_grad = orig_grad.copy()
+            x = x_active + np.array([delta, 0.0])  # apply delta always to non-rescaled x_active ...
+            if ID.rescale:  #
+                x_orig = x.copy()  #
+                x = ri2.rw.forward(x)  # ... then do optional rescale
+                true_grad = (x_orig / x) * true_grad  # If we rescale from [-10,10] to [-1,1] in every x-dim
+                # then every x-distance shrinks by factor 10 --> gradient increases by factor 10.
+                # NOTE: pointwise multiply takes into account that different dims may be rescaled differently.
+            gReal = cobra.sac_res['fn'](x)[1:]
+            z = ri2.repairInfeasRI2(x, gReal, constrSurr, cobra, p2, currentMu, True, true_grad)
+            z_orig = ri2.rw.inverse(z) if ID.rescale else z
+            assert ri2.is_epsilon_feasible(z, RI.eps2, constrSurr), f"z={z} is not eps2-feasible!"
+            true_z_grfact = cobra.sac_res['fn'](z)[1:] * cobra.sac_res['GRfact']
+            print(f"delta={delta:.0e}, x={x}, z={z}")
+            print(f"true constr(z) = {cobra.sac_res['fn'](z)[1:]}, RI.eps2 = {RI.eps2}")
+            print(f"true constr(z) * GRfact = {true_z_grfact}")
+            print(f"orig constr(z) = {fn(z_orig)[1:]}")
+            assert np.allclose(true_z_grfact, fn(z_orig)[1:]), "true constr(z) * GRfact and orig constr(z) differ!"
+            dummy = 0
+
+    def test_grfact2(self):
+        """
+        Test ``ri2.repairInfeasRI2`` with constraint normalization: Given a COP ``fn`` with two linear inequality
+        constraints, where at least one of them requires normalization (GRfact != 1.0). The intersection
+        of the two constraint lines is the point ``x_active`` where both constraints are active. If we move from
+        ``x_active`` to the right, we move into the infeasible region.
+
+        We form the infeasible points ``x=x_active+[delta,0]`` for different values
+        ``delta=[0.01,0.1,1.0]`` and call ``z=ri2.repairInfeasRI2(x,...)``. We test the following:
+
+        1. Is the numerical gradient calculated from the constraint surrogates close to the true gradient (we pass in
+           the latter via parameter ``true_grad``)?
+        2. For all ``eps1``-infeasible constraints ``k``: Is the single repair step ``k`` (row ``k`` of matrix
+           ``del_mat``) such that it transports an ``eps1``-infeasible solution to a new location that is very close
+           to the ``eps1``-feasible border in the single constraint ``k``? [Remember that we have to multiply the
+           surrogate output at the new location with ``GRfact[k]`` (!)]
+        3. Assert that ``z`` is ``eps2``-feasible in all constraints.
+        4. Assert that the true constraints at ``z``, multiplied by ``GRfact``, are all close to original ``fn(z)[1:]``.
+
+        Assertions 1. and 2. are done in ``ri2.check_single_constr`` called from ``ri2.repairInfeasRI2`` if
+        ``checkIt=True``. Assertions 3. and 4. are done in ``inner_grfact``.
+
+        We run all those tests for the four cases ``trueFunctionsForSurrogates=[False,True]`` and
+        ``rescale=[False,True]`` [Remember to do ``rw.inverse(z)`` in case ``rescale==True``].
+        """
+        slope = 1e01        # 1e04 triggers constraint normalization via GRfact
+        def fn(x):
+            """  A simple COP with sphere objective and two linear constraints """
+            return np.array([3 * np.sum(x ** 2), slope * (np.sum(x) - 1), -(x[1] - x[0] + 10)])
+
+        x_active = np.array([5.5, -4.5])
+        # x_active is the point where both constraints of fn are active (intersection of constraint lines).
+        # Be sure that x_active is within search space [lower,upper] and not directly at the border (!)
+        orig_grad = np.array([[slope, slope],
+                              [1., -1.]])
+        # orig_grad[0] (1st row) is the true gradient of g[0], orig_grad[1] of g[1] (not rescaled)
+
+        for rsc in [False, True]:  #
+            for tfs in [False, True]:  #
+                print(f"\n*** rescale={rsc}, trueFunc={tfs} ***")
+                self.inner_grfact2(fn, x_active, rsc, tfs, orig_grad)
+        print("[test_repair] All assertions passed.")
+
+    def inner_grfact2(self, fn, x_active, rsc, tfs, orig_grad):
+        x0 = np.array([2.5, 2.4])
+        dim = x_active.size
+        idp = 20  # (dim + 1) * (dim +2) // 2
+        idesign = "OPTCOBYLA"  # "OPTCOBYLA" | "OPTBIASED"
+        lower = np.array([-10, -10])  # be sure that all points x below fall into search space [lower, upper],
+        upper = np.array([+10, +10])  # otherwise con_s values can differ across cases (!)
+        is_equ = np.repeat(True, dim)
+        currentMu = 1e-4 # 8e-2
+
+        ID = IDoptions(initDesign=idesign, initDesPoints=idp, rescale=rsc)
+        RI = RIoptions(eps2=1e-14, mmax=1000, trueFuncForSurrogates=tfs)
+        cobra = CobraInitializer(x0, fn, "f_name", lower, upper, is_equ,
+                                 s_opts=SACoptions(verbose=verb, cobraSeed=43,
+                                                   ID=ID, RI=RI))
+        p2 = Phase2Vars(cobra)
+        p2 = Surrogator.trainSurrogates(cobra, p2)
+
+        ri2 = RI2(cobra)
+        constrSurr = p2.constraintSurrogates
+        deltas = [0.01, 0.1, 1.0]  #
+
+        for i, delta in enumerate(deltas):
+            true_grad = orig_grad.copy()
+            x = x_active + np.array([delta, 0.0])  # apply delta always to non-rescaled x_active ...
+            if ID.rescale:  #
+                x_orig = x.copy()  #
+                x = ri2.rw.forward(x)  # ... then do optional rescale
+                true_grad = (x_orig / x) * true_grad  # If we rescale from [-10,10] to [-1,1] in every x-dim
+                # then every x-distance shrinks by factor 10 --> gradient increases by factor 10.
+                # NOTE: pointwise multiply takes into account that different dims may be rescaled differently.
+            gReal = cobra.sac_res['fn'](x)[1:]
+            z = ri2.repairInfeasRI2(x, gReal, constrSurr, cobra, p2, currentMu, True, true_grad)
+            z_orig = ri2.rw.inverse(z) if ID.rescale else z
+            # assert ri2.is_epsilon_feasible(z, RI.eps2, constrSurr), f"z={z} is not eps2-feasible!"
+            print(f"z is eps2-feasible: {ri2.is_epsilon_feasible(z, RI.eps2, constrSurr)}")
+            true_z_grfact = cobra.sac_res['fn'](z)[1:] * cobra.sac_res['GRfact']
+            print(f"delta={delta:.0e}, x={x}, z={z}")
+            print(f"true constr(z) = {cobra.sac_res['fn'](z)[1:]}, RI.eps2 = {RI.eps2}")
+            print(f"true constr(z) * GRfact = {true_z_grfact}")
+            print(f"orig constr(z) = {fn(z_orig)[1:]}")
+            assert np.allclose(true_z_grfact, fn(z_orig)[1:]), "true constr(z) * GRfact and orig constr(z) differ!"
+            dummy = 0
 
 
 if __name__ == '__main__':

@@ -210,7 +210,7 @@ class ExamCOP:
         c2 = CobraPhaseII(cobra)
         c2.start()
 
-        # show_error_plot(cobra, G06)
+        # show_error_plot(cobra, G06, c2.get_muVec())
 
         fin_err = np.array(cobra.get_fbest() - G06.fbest)
         c2.p2.fin_err = fin_err
@@ -551,7 +551,7 @@ class ExamCOP:
         c2.p2.fin_err = fin_err
         print(f"final err: {fin_err}")
         c2.p2.fe_thresh = 1e-1
-        # show_error_plot(cobra, G21, ylim=[1e-4,1e0])
+        # show_error_plot(cobra, G21, c2.get_muVec(), ylim=[1e-4,1e0])
         c2.p2.conTol = conTol
         return c2
 
@@ -584,7 +584,7 @@ class ExamCOP:
         c2.p2.fin_err = fin_err
         print(f"final err: {fin_err}")
         c2.p2.fe_thresh = 1e-1
-        # show_error_plot(cobra, G22, ylim=[1e-4,1e0])
+        # show_error_plot(cobra, G22, c2.get_muVec(), ylim=[1e-4,1e0])
         c2.p2.conTol = conTol
         return c2
 

@@ -1,6 +1,7 @@
 # 
 SACOBRA_Py_Project/.idea
 archive/
+test/feather
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
