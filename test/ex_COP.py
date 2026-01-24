@@ -63,14 +63,12 @@ class ExamCOP:
                                                    ID=IDoptions(initDesign="RAND_REP", initDesPoints=idp),
                                                    RBF=RBFoptions(degree=1),  # , kernel="gaussian"
                                                    SEQ=SEQoptions(finalEpsXiZero=False, conTol=conTol)))
-        c2 = CobraPhaseII(cobra).start()
+        c2 = CobraPhaseII(cobra).start(gcop=G01)
 
-        fin_err = np.array(cobra.get_fbest() - G01.fbest)
-        print(f"final err: {fin_err}")
-        c2.p2.fin_err = fin_err
+        print(f"final err: {c2.p2.fin_err}")
+        print(c2.p2.f_solu)
+        print(c2.cobra.get_fbest())
         c2.p2.fe_thresh = 5e-6      # same accuracy 1.1e-6 for s_opts.SEQ.finalEpsXiZero=True or False
-        c2.p2.dim = G01.dimension
-        c2.p2.conTol = conTol
         return c2
 
     def solve_G02(self, cobraSeed, dimension=5, feval=350, verbIter=100, conTol=0):      # conTol=0 | 1e-7
@@ -92,15 +90,12 @@ class ExamCOP:
                                                    RBF=RBFoptions(degree=2, rho=2.5, rhoDec=2.0),
                                                    SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol)))
         print(f"idp = {cobra.sac_opts.ID.initDesPoints}")
-        c2 = CobraPhaseII(cobra).start()
+        c2 = CobraPhaseII(cobra).start(gcop=G02)
 
-        fin_err = np.array(cobra.get_fbest() - G02.fbest)
-        print(f"final err: {fin_err}")
-        c2.p2.fin_err = fin_err
+        print(f"final err: {c2.p2.fin_err}")
+        print(c2.p2.f_solu)
+        print(c2.cobra.get_fbest())
         c2.p2.fe_thresh = 1e-9
-        c2.p2.dim = G02.dimension
-        c2.p2.conTol = conTol
-        c2.p2.conTol = conTol
         return c2
 
     def solve_G03(self, cobraSeed, dimension=8, feval=150, verbIter=10, conTol=0):      # conTol=0 | 1e-7
@@ -124,14 +119,12 @@ class ExamCOP:
                                                    EQU=equ_opt,
                                                    SEQ=SEQoptions(finalEpsXiZero=True, trueFuncForSurrogates=True, conTol=conTol)))
         print(f"idp = {cobra.sac_opts.ID.initDesPoints}")
-        c2 = CobraPhaseII(cobra).start()
+        c2 = CobraPhaseII(cobra).start(gcop=G03)
 
-        fin_err = np.array(cobra.get_fbest() - G03.fbest)
-        print(f"final err: {fin_err}")
-        c2.p2.fin_err = fin_err
+        print(f"final err: {c2.p2.fin_err}")
+        print(c2.p2.f_solu)
+        print(c2.cobra.get_fbest())
         c2.p2.fe_thresh = 1e-9
-        c2.p2.dim = G03.dimension
-        c2.p2.conTol = conTol
         return c2
 
     def solve_G04(self, cobraSeed, feval=170, verbIter=10, conTol=0):       # conTol=0 | 1e-7
@@ -151,14 +144,12 @@ class ExamCOP:
                                                    RBF=RBFoptions(degree=2),
                                                    EQU=equ_opt,
                                                    SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol)))
-        c2 = CobraPhaseII(cobra).start()
+        c2 = CobraPhaseII(cobra).start(gcop=G04)
 
-        fin_err = np.array(cobra.get_fbest() - G04.fbest)
-        print(f"final err: {fin_err}")
-        c2.p2.fin_err = fin_err
+        print(f"final err: {c2.p2.fin_err}")
+        print(c2.p2.f_solu)
+        print(c2.cobra.get_fbest())
         c2.p2.fe_thresh = 1e-9
-        c2.p2.dim = G04.dimension
-        c2.p2.conTol = conTol
         return c2
 
     def solve_G05(self, cobraSeed, feval=170, verbIter=10, conTol=0):       # conTol=0 | 1e-7
@@ -180,14 +171,12 @@ class ExamCOP:
                                                    EQU=EQUoptions(muDec=1.6, muFinal=1e-12, refinePrint=False,
                                                                   refineAlgo="COBYLA"),  # "L-BFGS-B COBYLA"
                                                    SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol)))
-        c2 = CobraPhaseII(cobra).start()
+        c2 = CobraPhaseII(cobra).start(gcop=G05)
 
-        fin_err = np.array(cobra.get_fbest() - G05.fbest)
-        print(f"final err: {fin_err}")
-        c2.p2.fin_err = fin_err
+        print(f"final err: {c2.p2.fin_err}")
+        print(c2.p2.f_solu)
+        print(c2.cobra.get_fbest())
         c2.p2.fe_thresh = 5e-6
-        c2.p2.dim = G05.dimension
-        c2.p2.conTol = conTol
         return c2
 
     def solve_G06(self, cobraSeed, feval=40, verbIter=10, conTol=0):        # conTol=0 | 1e-7
@@ -207,18 +196,15 @@ class ExamCOP:
                                                    RBF=RBFoptions(degree=2),
                                                    SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol)))
 
-        c2 = CobraPhaseII(cobra)
-        c2.start()
+        c2 = CobraPhaseII(cobra).start(gcop=G06)
 
         # show_error_plot(cobra, G06, c2.get_muVec())
 
-        fin_err = np.array(cobra.get_fbest() - G06.fbest)
-        c2.p2.fin_err = fin_err
-        print(f"final err: {fin_err}")
+        print(f"final err: {c2.p2.fin_err}")
+        print(c2.p2.f_solu)
+        print(c2.cobra.get_fbest())
         # c2.p2.fe_thresh = 5e-6    # this is for s_opts.SEQ.finalEpsXiZero=False
         c2.p2.fe_thresh = 5e-8      # this is for s_opts.SEQ.finalEpsXiZero=True and s_opts.SEQ.conTol=1e-7
-        c2.p2.dim = G06.dimension
-        c2.p2.conTol = conTol
         return c2
 
     def solve_G07(self, cobraSeed, feval=180, verbIter=10, conTol=0):       # conTol=0 | 1e-7
@@ -239,14 +225,12 @@ class ExamCOP:
                                                    RBF=RBFoptions(degree=2),
                                                    SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol)))
 
-        c2 = CobraPhaseII(cobra).start()
+        c2 = CobraPhaseII(cobra).start(gcop=G07)
 
-        fin_err = np.array(cobra.get_fbest() - G07.fbest)
-        c2.p2.fin_err = fin_err
-        print(f"final err: {fin_err}")
+        print(f"final err: {c2.p2.fin_err}")
+        print(c2.p2.f_solu)
+        print(c2.cobra.get_fbest())
         c2.p2.fe_thresh = 1e-9
-        c2.p2.dim = G07.dimension
-        c2.p2.conTol = conTol
         return c2
 
     def solve_G08(self, cobraSeed, feval=180, verbIter=10, conTol=0):       # conTol=0 | 1e-7
@@ -267,14 +251,12 @@ class ExamCOP:
                                                    RBF=RBFoptions(degree=2),
                                                    SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol)))
 
-        c2 = CobraPhaseII(cobra).start()
+        c2 = CobraPhaseII(cobra).start(gcop=G08)
 
-        fin_err = np.array(cobra.get_fbest() - G08.fbest)
-        c2.p2.fin_err = fin_err
-        print(f"final err: {fin_err}")
+        print(f"final err: {c2.p2.fin_err}")
+        print(c2.p2.f_solu)
+        print(c2.cobra.get_fbest())
         c2.p2.fe_thresh = 1e-9
-        c2.p2.dim = G08.dimension
-        c2.p2.conTol = conTol
         return c2
 
     def solve_G09(self, cobraSeed, feval=500, verbIter=50, conTol=1e-7):        # conTol=0 | 1e-7
@@ -296,16 +278,12 @@ class ExamCOP:
                                                    RBF=RBFoptions(degree=2),
                                                    SEQ=SEQoptions(finalEpsXiZero=True, trueFuncForSurrogates=False, conTol=conTol)))
 
-        c2 = CobraPhaseII(cobra).start()
+        c2 = CobraPhaseII(cobra).start(gcop=G09)
 
-        fin_err = np.array(cobra.get_fbest() - G09.fbest)
-        c2.p2.fin_err = fin_err
-        print(f"final err: {fin_err}")
+        print(f"final err: {c2.p2.fin_err}")
+        print(c2.p2.f_solu)
+        print(c2.cobra.get_fbest())
         c2.p2.fe_thresh = 5e-02
-        c2.p2.dim = G09.dimension
-        print(G09.fbest)
-        print(cobra.get_fbest())
-        c2.p2.conTol = conTol
         return c2
 
     def solve_G10(self, cobraSeed, feval=180, verbIter=10, conTol=1e-7):        # conTol=0 | 1e-7
@@ -327,16 +305,12 @@ class ExamCOP:
                                                    ISA=ISAoptions(TGR=1e3),
                                                    SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol)))
 
-        c2 = CobraPhaseII(cobra).start()
+        c2 = CobraPhaseII(cobra).start(gcop=G10)
 
-        fin_err = np.array(cobra.get_fbest() - G10.fbest)
-        c2.p2.fin_err = fin_err
-        print(f"final err: {fin_err}")
+        print(f"final err: {c2.p2.fin_err}")
+        print(c2.p2.f_solu)
+        print(c2.cobra.get_fbest())
         c2.p2.fe_thresh = 1e-9
-        c2.p2.dim = G10.dimension
-        print(G10.fbest)
-        print(cobra.get_fbest())
-        c2.p2.conTol = conTol
         return c2
 
     def solve_G11(self, cobraSeed, feval=70, verbIter=10, conTol=0):          # conTol=0 | 1e-7
@@ -358,15 +332,13 @@ class ExamCOP:
                                                    # COBYLA is slower, issues warnings, but is a bit more precise
                                                    SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol)))
 
-        c2 = CobraPhaseII(cobra).start()
+        c2 = CobraPhaseII(cobra).start(gcop=G11)
 
-        fin_err = np.array(cobra.get_fbest() - G11.fbest)
-        c2.p2.fin_err = fin_err
-        print(f"final err: {fin_err}")
+        print(f"final err: {c2.p2.fin_err}")
+        print(c2.p2.f_solu)
+        print(c2.cobra.get_fbest())
         # c2.p2.fe_thresh = 1e-13     # this is for s_opts.SEQ.finalEpsXiZero=False
         c2.p2.fe_thresh = 1e-13       # this is for s_opts.SEQ.finalEpsXiZero=True
-        c2.p2.dim = G11.dimension
-        c2.p2.conTol = conTol
         return c2
 
     def solve_G12(self, cobraSeed, feval=140, verbIter=10, conTol=0):       # conTol=0 | 1e-7
@@ -386,14 +358,12 @@ class ExamCOP:
                                                    RBF=RBFoptions(degree=2),
                                                    SEQ=SEQoptions(finalEpsXiZero=False, conTol=conTol)))
 
-        c2 = CobraPhaseII(cobra).start()
+        c2 = CobraPhaseII(cobra).start(gcop=G12)
 
-        fin_err = np.array(cobra.get_fbest() - G12.fbest)
-        c2.p2.fin_err = fin_err
-        print(f"final err: {fin_err}")
+        print(f"final err: {c2.p2.fin_err}")
+        print(c2.p2.f_solu)
+        print(c2.cobra.get_fbest())
         c2.p2.fe_thresh = 1e-13
-        c2.p2.dim = G12.dimension
-        c2.p2.conTol = conTol
         return c2
 
     def solve_G13(self, cobraSeed, feval=500, verbIter=10, conTol=1e-7):
@@ -418,14 +388,12 @@ class ExamCOP:
                                                    EQU=equ,
                                                    SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol)))
 
-        c2 = CobraPhaseII(cobra).start()
+        c2 = CobraPhaseII(cobra).start(gcop=G13)
 
-        fin_err = np.array(cobra.get_fbest() - G13.fbest)
-        c2.p2.fin_err = fin_err
-        print(f"final err: {fin_err}")
+        print(f"final err: {c2.p2.fin_err}")
+        print(c2.p2.f_solu)
+        print(c2.cobra.get_fbest())
         c2.p2.fe_thresh = 1e-8
-        c2.p2.dim = G13.dimension
-        c2.p2.conTol = conTol
         return c2
 
     def solve_G14(self, cobraSeed, feval=500, verbIter=50, conTol=0.0):  # , conTol=1e-7
@@ -450,14 +418,12 @@ class ExamCOP:
                                                    EQU=equ,
                                                    SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol)))
 
-        c2 = CobraPhaseII(cobra).start()
+        c2 = CobraPhaseII(cobra).start(gcop=G14)
 
-        fin_err = np.array(cobra.get_fbest() - G14.fbest)
-        c2.p2.fin_err = fin_err
-        print(f"final err: {fin_err}")
+        print(f"final err: {c2.p2.fin_err}")
+        print(c2.p2.f_solu)
+        print(c2.cobra.get_fbest())
         c2.p2.fe_thresh = 1e-1
-        c2.p2.dim = G14.dimension
-        c2.p2.conTol = conTol
         return c2
 
     def solve_G15(self, cobraSeed, feval=500, verbIter=50, conTol=0.0):       #, conTol=1e-7
@@ -482,13 +448,13 @@ class ExamCOP:
                                                    EQU=equ,
                                                    SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol)))
 
-        c2 = CobraPhaseII(cobra).start()
+        c2 = CobraPhaseII(cobra).start(gcop=G15)
 
-        fin_err = np.array(cobra.get_fbest() - G15.fbest)
-        c2.p2.fin_err = fin_err
-        print(f"final err: {fin_err}")
+        print(f"final err: {c2.p2.fin_err}")
+        print(c2.p2.f_solu)
+        print(c2.cobra.get_fbest())
         c2.p2.fe_thresh = 1e-1
-        c2.p2.conTol = conTol
+
         return c2
 
     def solve_G17(self, cobraSeed, feval=500, verbIter=50, conTol=0.0):    # conTol=1e-7
@@ -499,28 +465,29 @@ class ExamCOP:
             (see ex_COP.R, function solve_G17, multi_gfnc)
         """
         print(f"Starting solve_G17({cobraSeed}) ...")
-        G17 = GCOP("G17")
+        muFinal = 1e-4   # 1e-4 | 1e-7
+        G17 = GCOP("G17", mu=muFinal)
         dim = G17.dimension
         idp = (dim + 1) * (dim + 2) // 2
 
-        equ = EQUoptions(muGrow=100, muDec=1.6, muFinal=1e-7,
+        equ = EQUoptions(muGrow=100, muDec=1.6, muFinal=muFinal,
                          refinePrint=False, refineAlgo="COBYLA")  # "L-BFGS-B COBYLA"
         cobra = CobraInitializer(G17.x0, G17.fn, G17.name, G17.lower, G17.upper, G17.is_equ,
                                  solu=G17.solu,
                                  s_opts=SACoptions(verbose=verb, verboseIter=verbIter, feval=feval, cobraSeed=cobraSeed,
                                                    ID=IDoptions(initDesign="LHS", initDesPoints=idp),
-                                                   RBF=RBFoptions(degree=2),    # , kernel="gaussian"
+                                                   RBF=RBFoptions(degree=2, kernel="gaussian"),    #
                                                    EQU=equ,
                                                    ISA=ISAoptions(onlinePLOG=O_LOGIC.MIDPTS),
                                                    SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol)))
 
-        c2 = CobraPhaseII(cobra).start()
+        c2 = CobraPhaseII(cobra).start(gcop=G17)
 
-        fin_err = np.array(cobra.get_fbest() - G17.fbest)
-        c2.p2.fin_err = fin_err
-        print(f"final err: {fin_err}")
+        print(f"final err: {c2.p2.fin_err}")
+        print(c2.p2.f_solu)
+        print(c2.cobra.get_fbest())
         c2.p2.fe_thresh = 1e-13
-        c2.p2.conTol = conTol
+        analyze_solution(c2, cobra)
         return c2
 
     def solve_G21(self, cobraSeed, feval=500, verbIter=50, conTol=1e-4):
@@ -545,14 +512,13 @@ class ExamCOP:
                                                    # ISA=ISAoptions(TGR=np.inf),
                                                    EQU=equ,
                                                    SEQ=SEQoptions(finalEpsXiZero=False, conTol=conTol)))
-        c2 = CobraPhaseII(cobra).start()
+        c2 = CobraPhaseII(cobra).start(gcop=G21)
 
-        fin_err = np.array(cobra.get_fbest() - G21.fbest)
-        c2.p2.fin_err = fin_err
-        print(f"final err: {fin_err}")
+        print(f"final err: {c2.p2.fin_err}")
+        print(c2.p2.f_solu)
+        print(c2.cobra.get_fbest())
         c2.p2.fe_thresh = 1e-1
         # show_error_plot(cobra, G21, c2.get_muVec(), ylim=[1e-4,1e0])
-        c2.p2.conTol = conTol
         return c2
 
     def solve_G22(self, cobraSeed, feval=500, verbIter=50, conTol=1e-4):
@@ -578,14 +544,14 @@ class ExamCOP:
                                                    ISA=ISAoptions(TGR=np.inf),
                                                    EQU=equ,
                                                    SEQ=SEQoptions(finalEpsXiZero=False, conTol=conTol, trueFuncForSurrogates=True)))
-        c2 = CobraPhaseII(cobra).start()
+        c2 = CobraPhaseII(cobra).start(gcop=G22)
+        # will also set various variables in c2.p2 via p2.fill()
 
-        fin_err = np.array(cobra.get_fbest() - G22.fbest)
-        c2.p2.fin_err = fin_err
-        print(f"final err: {fin_err}")
+        print(f"final err: {c2.p2.fin_err}")
+        print(c2.p2.f_solu)
+        print(c2.cobra.get_fbest())
         c2.p2.fe_thresh = 1e-1
         # show_error_plot(cobra, G22, c2.get_muVec(), ylim=[1e-4,1e0])
-        c2.p2.conTol = conTol
         return c2
 
     def multi_gfnc(self, gfnc, gname: str, runs: int, cobraSeed: int):
@@ -596,7 +562,7 @@ class ExamCOP:
         fin_err_list = np.array([])
         c2 = None
         for run in range(runs):
-            c2 = gfnc(cobraSeed + run, verbIter=100, conTol=1e-7)
+            c2 = gfnc(cobraSeed + run, verbIter=100, conTol=1e-7)  #
             fin_err = c2.p2.fin_err
             fin_err_list = np.concatenate((fin_err_list, fin_err), axis=None)
 
@@ -615,6 +581,27 @@ class ExamCOP:
         print(f"[{gname}] ... finished ({(time.perf_counter() - start) / runs * 1000:.4f} msec per run, {runs} runs)")
         return c2
 
+def analyze_solution(c2: CobraPhaseII, cobra: CobraInitializer):
+    # compare xbest found in CobraPhaseII with true solution
+    print(f"cobra_xbest: {cobra.get_xbest()}")
+    print(f"gcop_solu  : {cobra.solu}")
+
+    # compare true
+    print(f"fn_xbest:   {cobra.sac_res['originalfn'](cobra.get_xbest())}")
+    print(f"fn_solu :   {cobra.sac_res['originalfn'](cobra.solu)}")
+
+    fsurr_xbest = c2.p2.fitnessSurrogate(c2.cobra.get_xbest_cobra())
+    fsurr_solu = c2.p2.fitnessSurrogate(cobra.rw.forward(cobra.solu))
+    print(f"fsurr_xbest:   {fsurr_xbest}")
+    print(f"fsurr_solu :   {fsurr_solu}")
+
+    csurr_xbest = c2.p2.constraintSurrogates(c2.cobra.get_xbest_cobra())
+    csurr_solu = c2.p2.constraintSurrogates(cobra.rw.forward(cobra.solu))
+    print(f"csurr_xbest:   {csurr_xbest}")
+    print(f"csurr_solu :   {csurr_solu}")
+
+    dummy = 0
+
 if __name__ == '__main__':
     cop = ExamCOP()
     # exec("cop.solve_G06(42)")
@@ -629,13 +616,13 @@ if __name__ == '__main__':
     # cop.solve_G13(62)
     # cop.solve_G14(62)
     # cop.solve_G15(62)
-    cop.solve_G18(54)
+    # cop.solve_G17(54)
     # cop.solve_G21(63)
     # cop.solve_G22(55, conTol=0.0, verbIter=10)
     # cc2 = cop.multi_gfnc(cop.solve_G05, "G05", 5, 49)
     # cc2 = cop.multi_gfnc(cop.solve_G04, "G04", 15, 42)
     # cc2 = cop.multi_gfnc(cop.solve_G15, "G15", 10, 48)
-    # cc2 = cop.multi_gfnc(cop.solve_G17, "G17", 10, 54)
+    cc2 = cop.multi_gfnc(cop.solve_G17, "G17", 10, 61)
     # cc2 = cop.multi_gfnc(cop.solve_G14, "G14", 6, 54)
     # cc2 = cop.multi_gfnc(cop.solve_G01, "G01", 6, 54)
     # cc2 = cop.multi_gfnc(cop.solve_G09, "G09", 10, 54)

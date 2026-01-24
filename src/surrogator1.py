@@ -160,6 +160,7 @@ class Surrogator1:
         # test that at the observation points (rows of A),
         # fn(A)[:,1:] and s_res['Gres'] have the same values
         fnEval = np.apply_along_axis(s_res['fn'], axis=1, arr=A)  # fnEval.shape = (initDesPoints, nConstraints+1)
+        s_res['ncall'][10] += A.shape[0]  # ncall-debug
         Gres = fnEval[:, 1:]
         # print(np.max(np.abs(Gres - s_res['Gres'])))
         assert np.allclose(Gres, s_res['Gres']), "Gres-assertion 1 failed"

@@ -27,7 +27,7 @@ def updateCobraEqu(cobra: CobraInitializer, p2: Phase2Vars, xNew):
     equMargin = p2.currentMu   # new 2025/04/02
     # temp = s_res['Gres'].copy()
     # ttemp= s_res['Gres'].copy()
-    temp = s_res['Gres'] * GRfact       # bug fix 2026/01-18: '* GRfact' was missing
+    temp = s_res['Gres'] * GRfact       # bug fix 2026/01/18: '* GRfact' was missing
     ttemp= s_res['Gres'] * GRfact       # before (!)
     # We check whether
     #

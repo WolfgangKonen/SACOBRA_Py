@@ -200,10 +200,13 @@ def conditions_for_repair_met(cobra: CobraInitializer, p2: Phase2Vars) -> bool:
 
     # check_gReal_eps1(cobra, p2)
 
-    fbest = cobra.get_feasible_best()
-    if ri.repairOnlyFresBetter and fbest != np.nan:
-        # if we arrive here, we repair only if fitness < so-far-best-fitness + marFres
-        do_repair = (cobra.sac_res['Fres'][-1] < fbest + ri.marFres)
+    if ri.repairOnlyFresBetter:
+        fbest = cobra.get_feasible_best()
+        if fbest == np.nan:
+            do_repair = True
+        else:
+            # if we arrive here, we repair only if fitness < so-far-best-fitness + marFres
+            do_repair = (cobra.sac_res['Fres'][-1] < fbest + ri.marFres)
     else:
         # if we arrive here, we repair unconditionally
         do_repair = True

@@ -109,6 +109,7 @@ class SeqFuncFactory:
 
         if self.cobra.sac_opts.SEQ.trueFuncForSurrogates:
             y = self.cobra.sac_res['fn'](x)[0]
+            self.cobra.sac_res['ncall'][7] += 1  # ncall-debug
         else:
             y = self.p2.fitnessSurrogate(x)[0]
 
@@ -203,33 +204,44 @@ def calcConstrPred(x, cobra: CobraInitializer, p2: Phase2Vars) -> np.ndarray:
         # in order to fulfill the constraints
         #
         currentMu = s_res['muVec'][-1]
-        currentMu = p2.mu4  # normally 0. Experimental: same value as currentMu, applied to *inequalities*
+        # --- The following line with p2.mu4 was active until 2026-01-20, but I do not know why. It leads always to
+        # --- currentMu = 0. We now return to the earlier behavior: currentMu = s_res['muVec'][-1]
+        # currentMu = p2.mu4  # normally 0. Experimental: same value as currentMu, applied to *inequalities*
+        # --- The right way to use mu also for inequalities
         if s_opts.SEQ.trueFuncForSurrogates:
             constraint_pred1 = s_res['fn'](x)[1:]
+            s_res['ncall'][8] += 1  # ncall-debug
         else:
             constraint_pred1 = p2.constraintSurrogates(x)[0]    # why [0]? - constraintSurrogates returns a
             # (1,nC)-matrix, but we want a (nc,)-vector here (nC = nConstraints)
 
         ine_ind = np.flatnonzero(s_res['is_equ'] == False)
         equ_ind = np.flatnonzero(s_res['is_equ'])
-        OLD_VER = False
-        if OLD_VER:   # Version BEFORE 2025/09/14
+        version = 2   #  0 | 1 | 2
+        if version == 0:    # Version BEFORE 2025/09/14
             constraint_pred1[ine_ind] = constraint_pred1[ine_ind] - currentMu    # g(x) - mu, new 2025/04/02
             constraint_pred1[equ_ind] = constraint_pred1[equ_ind] - currentMu   # this creates h(x)-mu
             constraint_pred2 = -constraint_pred1[equ_ind] - 2 * currentMu       # this creates -h(x)-mu
             # why 2*currentMu? - because we modify the already created h(x)-mu to -(h(x)-mu)-2*mu = -h(x)-mu
             constraint_prediction = np.concatenate((constraint_pred1, constraint_pred2), axis=None) + p2.EPS ** 2
-        else:
+        elif version == 1:  # Version 2025/09/14 - 2026/01/20
             # --- BUG FIX 2025/09/14: + p2.EPS**2 only for inequality constraints (and NO '- currentMu'): ---
             constraint_pred1[ine_ind] = constraint_pred1[ine_ind] + p2.EPS ** 2    # g(x) + EPS ** 2 (!!)
             constraint_pred1[equ_ind] = constraint_pred1[equ_ind] - currentMu   # this creates h(x)-mu
             constraint_pred2 = -constraint_pred1[equ_ind] - 2 * currentMu       # this creates -h(x)-mu
             # why 2*currentMu? - because we modify the already created h(x)-mu to -(h(x)-mu)-2*mu = -h(x)-mu
             constraint_prediction = np.concatenate((constraint_pred1, constraint_pred2), axis=None)
+        else:   # i. e. version == 2, after 2026/01/20
+            # --- BUG FIX 2026/01/20: DON'T set currentMu=p2.mu4, but use p2.mu4 in inequalities ---
+            constraint_pred1[ine_ind] = constraint_pred1[ine_ind] - p2.mu4 + p2.EPS**2  # g(x)-mu4 + EPS**2
+            constraint_pred1[equ_ind] = constraint_pred1[equ_ind] - currentMu   # this creates h(x)-mu
+            constraint_pred2 = -constraint_pred1[equ_ind] - 2 * currentMu       # this creates -h(x)-mu
+            constraint_prediction = np.concatenate((constraint_pred1, constraint_pred2), axis=None)
 
     else:  # i.e. if not s_opts.EQU.active
         if s_opts.SEQ.trueFuncForSurrogates:
             constraint_prediction = s_res['fn'](x)[1:] + p2.EPS ** 2
+            s_res['ncall'][9] += 1  # ncall-debug
         else:
             constraint_prediction = p2.constraintSurrogates(x) + p2.EPS ** 2
 

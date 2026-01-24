@@ -189,6 +189,7 @@ class RI2:
 
         if checkIt:
             self.check_solution(z, r_best, gReal)
+            cobra.sac_res['ncall'][14] += 1  # ncall-debug (for fTrue in check_solution)
         return z
 
     # ----------------------------------------------------------------------------------- #

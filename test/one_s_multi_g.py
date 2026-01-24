@@ -60,24 +60,31 @@ class OneS:
                                                    EQU=equ,
                                                    RI=RIoptions(repairInfeas=True, eps2=0, q=3, repairMargin=np.inf, checkIt=False), # new 2025/10/15
                                                    SEQ=SEQoptions(finalEpsXiZero=True,  # epsilonMax=0.0,
-                                                                  conTol=conTol, trueFuncForSurrogates=True)))  #
-        if feval > idp: c2 = CobraPhaseII(cobra).start()
+                                                                  conTol=conTol,)))  #,  trueFuncForSurrogates=True
+        # --- ncall-debug only: ---
+        # print(f"after cobraInit: gcop.ncall = {gcop.ncall}")
+        # cobra.sac_res['ncall'][18] = idp                # initial design points
+        # cobra.sac_res['ncall'][19] = gcop.ncall - idp   # remaining calls during cobraInit
 
-        fin_err = np.array(cobra.get_feasible_best() - gcop.fbest)
-        if fin_err < 1e-7:
+        if feval > idp:
+            c2 = CobraPhaseII(cobra).start(gcop)
+            # will also set various variables in c2.p2 via p2.fill()
+
+        if c2.p2.fin_err < 1e-7:
             dummy = 0
-        c2.p2.fin_err = fin_err
-        print(f"final err: {fin_err}")
-        c2.p2.fe_thresh = 1e-1
-        c2.p2.dim = dim
-        c2.p2.conTol = conTol
-        s_res = cobra.sac_res
-        c2.p2.maxViol = s_res['trueMaxViol'][s_res['ibest']]
-        c2.p2.gcop = gcop
+        print(f"final err: {c2.p2.fin_err}")
         # show_error_plot(cobra, gcop, c2.get_muVec())  #  ylim=[1e-4,1e0]
         # print(gcop.fn(gcop.solu))
         print(gcop.fbest)
         print(c2.cobra.get_fbest())
+        #
+        # --- ncall-debug only: ---
+        # print(f"after phase II: gcop.ncall = {gcop.ncall}")
+        # ind_ncall = np.flatnonzero(cobra.sac_res['ncall']>0)
+        # print(f"sum(sac_res['ncall'] = {sum(cobra.sac_res['ncall'])} from inidices "
+        #       f"{ind_ncall} with values {cobra.sac_res['ncall'][ind_ncall]}" )
+        # print(f"missing calls: {gcop.ncall - sum(cobra.sac_res['ncall']) }")
+
         return c2
 
     def one_s_multi_g_r(self, gnames: list, dims: list, runs: int, cobraSeed: int, feval=300, conTol: float|None=0):
@@ -105,7 +112,7 @@ class OneS:
         dfsum = pd.DataFrame()
         for i, gname in enumerate(gnames):
             dim = dims[i]
-            for meth in ['one_s',]:   #  'solve',
+            for meth in ['solve',]:   #  'solve','one_s'
                 for run in range(runs):
                     start = time.perf_counter()
                     if conTol is None:          # use the default conTol of each method
@@ -130,7 +137,6 @@ class OneS:
                         else:
                             c2 = eval(f"cop.solve_{gname}(cobraSeed + run, feval={feval}, verbIter=100 {conTolStr})")
                     time_ms = (time.perf_counter() - start) / runs * 1000
-                    fin_err = c2.p2.fin_err
                     new_row_dfs = pd.DataFrame(
                         {
                             'gname': gname,
@@ -138,17 +144,18 @@ class OneS:
                             'meth': meth,
                             'seed': cobraSeed + run,
                             'time': time_ms,
-                            'err': fin_err,
+                            'err': c2.p2.fin_err,
                             'feval': feval,
                             'conTol': c2.p2.conTol,
                             'maxViol': c2.p2.maxViol,
-                            'maxConstr': max(c2.p2.constr),
-                            'ncall': c2.p2.gcop.ncall,
+                            'isFeas': 0 if c2.p2.maxViol > 0 else 1,
+                            'maxConstr': max(c2.p2.constr),     # c2.p2.constr: see end of CobraPhaseII::start
+                            'ncall': c2.p2.ncall,
                             'n_repair': c2.p2.ri2.n_repair,
                             'n_rep_suc': c2.p2.ri2.n_rep_suc,
                         }, index=[0])
                     dfsum = pd.concat([dfsum, new_row_dfs], axis=0)
-                    f_prefix = f"{dir_run}/{gname}_{run:02d}"
+                    f_prefix = f"{dir_run}/{gname}_{c2.p2.dim:02d}_{run:02d}"
                     c2_df1 = c2.cobra.df.drop(["optimizer", "optimConv"], axis=1)
                     c2_df2 = c2.cobra.df2.drop(["predSoluPenal", "sigmaD", "penaF", "err1", "err2",
                                                "nv_cB", "nv_cA", "nv_tB", "nv_tA"], axis=1)
@@ -156,7 +163,8 @@ class OneS:
                     print(f"c2.cobra.df  saved to {os.getcwd()}/{f_prefix}_df1.feather")
                     c2_df2.to_feather(f"{f_prefix}_df2.feather")
                     print(f"c2.cobra.df2 saved to {os.getcwd()}/{f_prefix}_df2.feather")
-                    png_error_plot(c2.cobra.df, c2.get_muVec(), c2.p2.gcop.fbest, gname, png_file=f"{f_prefix}.png")
+                    gtitle = f"{gname}, d={c2.p2.dim:02d}"
+                    png_error_plot(c2.cobra.df, c2.get_muVec(), c2.p2.f_solu, gtitle, png_file=f"{f_prefix}.png")
                     dummy = 0
         print(dfsum)
         dfsum.to_feather(f"{dir_run}/dfsum.feather")
@@ -166,7 +174,12 @@ class OneS:
         dfsum.to_csv(f"{dir_run}/dfsum.csv", sep=";", index = False, float_format =" %.8e")
         print(f"\n Number of runs in dfsum: {dfsum.seed.unique().size} for each (gname,meth)-combi")
         print("\n --- Median for each problem --- ")
+        # if there are NaNs in column dfsum['err'] (run with no feasible solu found), then groupby will automatically
+        # drop all NaN-rows prior to median calculation. The number of feasible runs is found by summing column
+        # dfsum['isFeas'] in s_df and replacing this column in m_df by the s_df-column
         m_df = dfsum.groupby(['gname','meth','d']).median()
+        s_df = dfsum.groupby(['gname','meth','d']).sum()
+        m_df['isFeas'] = s_df['isFeas']
         m_df = m_df.drop(["seed", "conTol", "maxViol", "n_repair", "n_rep_suc"], axis=1)
         print(m_df)
         print("\n ---  Std for each problem --- ")
@@ -196,7 +209,6 @@ class OneS:
             start = time.perf_counter()
             c2 = self.one_s(gname, cobraSeed, feval)
             time_ms = (time.perf_counter() - start) * 1000
-            fin_err = c2.p2.fin_err
             new_row_df = pd.DataFrame(
                 {
                     'gname': gname,
@@ -205,7 +217,7 @@ class OneS:
                     'TGR': c2.cobra.sac_opts.ISA.TGR,
                     'seed': cobraSeed,
                     'time': time_ms,
-                    'err': fin_err}, index=[0])
+                    'err': c2.p2.fin_err}, index=[0])
             init_df = pd.concat([init_df, new_row_df], axis=0)
         print(init_df)
         init_df.to_feather("feather/init_df.feather")
@@ -266,23 +278,23 @@ if __name__ == '__main__':
     one = OneS()
     gnames = ["G03", "G09",]  #  "G08", "G09", "G10",
     dims   = [   10,   -1]
-    gnames = ["G14", "G15", "G16", "G17", "G18", "G19", "G21", "G22", "G23", "G24"]
-    dims   = [  -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1]
     gnames = ["G22"]  # , "G21", "G22", "G21", "G22", "G24" "G10", "G11", "G12",
     dims   = [   -1]  # ,    -1,    -1,    -1,    -1,    -1,
     gnames = ["G05", "G06"]     # "G13",
     dims   = [   -1,    -1]  # ,    -1,    -1,    -1,    -1,
-    gnames = ["G11"]  # , "G21", "G22", "G21", "G22", "G24" "G10", "G11", "G12",
-    dims   = [   -1]  # ,    -1,    -1,    -1,    -1,    -1,
     gnames = ["G05", "G06"]     # "G13",
     dims   = [   -1,    -1]  # ,    -1,    -1,    -1,    -1,
     gnames = ["G02"]  # , "G21", "G22", "G21", "G22", "G24" "G10", "G11", "G12",
     dims   = [   2]  # ,    -1,    -1,    -1,    -1,    -1,
-    gnames = ["G05", "G06"]     # "G13",
-    dims   = [   -1,    -1]  # ,    -1,    -1,    -1,    -1,
     gnames = ["G01", "G02", "G02", "G03", "G03", "G04", "G05", "G06", "G07", "G08", "G09", "G10", "G11", "G12", "G13"] #
     dims   = [  -1,     2,     5,     7,    10,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1 ] #
-    df2 = one.one_s_multi_g_r(gnames, dims,3, 61, feval=500, conTol=0.0)     #   # conTol=1e-4 | 1e-7
+    gnames = ["G05", "G06"]  # , "G13",
+    dims   = [   -1,    -1]  # ,    -1,    -1,    -1,    -1,
+    gnames = ["G14", "G15", "G16", "G17", "G18", "G19", "G21", "G22", "G23", "G24"]
+    dims   = [  -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1]
+    gnames = ["G17"]  # , "G21", "G22", "G21", "G22", "G24" "G10", "G11", "G12",
+    dims   = [   -1]  # ,    -1,    -1,    -1,    -1,    -1,
+    df2 = one.one_s_multi_g_r(gnames, dims,3, 65, feval=500, conTol=0.0)     #   # conTol=1e-4 | 1e-7
     # init_df = one.multi_init(gnames, 54, feval=120)
     # one.df_analyze("df2_conTol0.0-fe500-G01-G13.feather", "df2_conTol1e-7-fe500-G01-G13.feather")
     # one.df_analyze("df2_conTol0.0-MIDPTS-fe500-G14-G24.feather")   # NONE | XNEW | MIDPTS

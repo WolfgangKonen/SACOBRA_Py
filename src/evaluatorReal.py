@@ -128,6 +128,7 @@ class EvaluatorReal:
 
         if cobra.sac_opts.SEQ.trueFuncForSurrogates:
             newPredY = cobra.sac_res['fn'](self.xNew)[0]
+            cobra.sac_res['ncall'][1] += 1  # ncall-debug
         else:
             newPredY = getPredY0(self.xNew, fitnessSurrogate, p2)
         self.predY = concat(self.predY, newPredY)  # bug fix: now predY is the fitness surrogate value /WK/
@@ -144,6 +145,7 @@ class EvaluatorReal:
                                       # but we want here a (nc,)-vector (nC = nConstraints)
 
         self.xNewEval = cobra.sac_res['fn'](self.xNew)
+        cobra.sac_res['ncall'][2] += 1  # ncall-debug
         # TODO later:
         # if (cobra$CA$active & & cobra$TFlag){
         #     xNewT < -(ev1$xNew-cobra$tCenter) % * %cobra$TM
@@ -211,6 +213,7 @@ class EvaluatorReal:
             if s_opts.SEQ.trueFuncForSurrogates:
                 def myf(x, grad):
                     conR = s_res['fn'](x)[1:]
+                    cobra.sac_res['ncall'][3] += 1     # ncall-debug
                     return np.sum(concat(np.maximum(0, conR[self.ine_ind]) ** 2, conR[self.equ_ind] ** 2))
 
             def myf2(x):
@@ -315,6 +318,7 @@ class EvaluatorReal:
                 conA[self.equ_ind] = abs(conA[self.equ_ind])
                 aMaxV = np.max(concat(np.maximum(0, conA[self.ine_ind]), conA[self.equ_ind]))
                 conTrue = s_res['fn'](self.x_1)[1:]  # true constraints after refine
+                cobra.sac_res['ncall'][4] += 1  # ncall-debug
                 conTrue[self.equ_ind] = abs(conTrue[self.equ_ind])
                 cgtrue = np.sum(concat(np.maximum(0, conTrue[self.ine_ind]) ** 2, conTrue[self.equ_ind] ** 2))
                 trueMaxV = np.max(concat(np.maximum(0, conTrue[self.ine_ind]), conTrue[self.equ_ind]))
@@ -329,6 +333,7 @@ class EvaluatorReal:
             if s_opts.SEQ.trueFuncForSurrogates:
                 conB = s_res['fn'](self.x_0)[1:]  # true constraints before refine
                 conA = s_res['fn'](self.x_1)[1:]  # true constraints after refine
+                cobra.sac_res['ncall'][5] += 2  # ncall-debug
             else:
                 conB = p2.constraintSurrogates(self.x_0)   # constraint surrogates before refine
                 conA = p2.constraintSurrogates(self.x_1)   # constraint surrogates after refine
@@ -337,6 +342,7 @@ class EvaluatorReal:
             conA = conA.reshape(conA.size) * GRfact         #  "      "     :     "        "
             trueB = s_res['fn'](self.x_0)[1:] * GRfact      #  "      "     :     "        "
             trueA = s_res['fn'](self.x_1)[1:] * GRfact      #  "      "     :     "        "
+            cobra.sac_res['ncall'][6] += 2  # ncall-debug
             conB[self.equ_ind] = abs(conB[self.equ_ind]) - currentMu
             conA[self.equ_ind] = abs(conA[self.equ_ind]) - currentMu
             trueB[self.equ_ind] = abs(trueB[self.equ_ind]) - currentMu

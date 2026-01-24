@@ -157,7 +157,8 @@ class CobraInitializer:
                         'Fres': Fres,
                         'Gres': Gres,
                         'nConstraints': nConstraints,
-                        'l': ell
+                        'l': ell,
+                        'ncall': np.zeros(20, dtype=np.int32),      # ncall-debug only
                         }
         # # Apply fn to all points (rows) in matrix self.A_for_rbf. The points are the rows of this matrix (axis=1).
         # fnEval = np.apply_along_axis(fn, axis=1, arr=A_for_rbf)    # fnEval.shape = (initDesPoints, nConstraints+1)
@@ -357,6 +358,7 @@ class CobraInitializer:
         """
         # Note: We cannot take the best function value via ``sac_res['fn']``, because this
         #       may be modified by PLOG or others.
+        self.sac_res['ncall'][12] += 1  # ncall-debug
         return self.sac_res['originalfn'](self.get_xbest())[0]
 
     def get_feasible_best(self):

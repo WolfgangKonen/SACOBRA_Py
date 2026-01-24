@@ -78,7 +78,7 @@ class GCOP(COP):
         elif name == "G08": self._call_G08()
         elif name == "G09": self._call_G09()
         elif name == "G10": self._call_G10()
-        elif name == "G11": self._call_G11()
+        elif name == "G11": self._call_G11(mu=mu)
         elif name == "G12": self._call_G12()
         elif name == "G13": self._call_G13()
         elif name == "G14": self._call_G14(mu=mu)
@@ -90,7 +90,7 @@ class GCOP(COP):
         elif name == "G20": self._call_G20()
         elif name == "G21": self._call_G21(mu=mu)
         elif name == "G22": self._call_G22(mu=mu)
-        elif name == "G23": self._call_G23()
+        elif name == "G23": self._call_G23(mu=mu)
         elif name == "G24": self._call_G24()
         else:
             strg = f"G-function {name} not (yet) implemented"
@@ -230,16 +230,26 @@ class GCOP(COP):
         self.nConstraints = 5
         self.is_equ = np.array([False, False, True, True, True])
         if mu == 1e-4:
-            self.solu = np.array([6.799169083101890e+02,    # other solution from Py, slightly better (7.7e-5) objective
-                                  1.026097471507338e+03,    # obj: 5126.4980325661 but maxViol: 2.11e-05
-                                  1.188966167417673e-01,
-                                  -3.962239266867656e-01
+            # self.solu = np.array([6.799169083101890e+02,    # other solution from Py, slightly better (7.7e-5) objective
+            #                       1.026097471507338e+03,    # obj: 5126.4980325661 but maxViol: 2.11e-05
+            #                       1.188966167417673e-01,
+            #                       -3.962239266867656e-01
+            #                       ])
+            self.solu = np.array([6.800006935447321e+02,  # other solution from Py, slightly better (2.5e-4) objective
+                                  1.026007899086600e+03,  # obj: 5126.497855379439 but maxViol: 3.32e-05
+                                  1.188368502896305e-01,
+                                  -3.962523038247179e-01
                                   ])
         else:
-            self.solu = np.array([679.94531748791177961,    # original solution (from R), better feasible
-                                  1026.06713513571594376,   # obj: 5126.498109595, maxViol: 2.27e-13
-                                  0.11887636617838561,
-                                  -0.39623355240329272])
+            # self.solu = np.array([679.94531748791177961,    # original solution (from R), better feasible
+            #                       1026.06713513571594376,   # obj: 5126.498109595, maxViol: 2.27e-13
+            #                       0.11887636617838561,
+            #                       -0.39623355240329272])
+            self.solu = np.array([6.799472170788223e+02,    # other solution from Py, slightly better (5.5e-7) objective
+                                  1.026065105231284e+03,    # obj: 5126.498109041019, maxViol: 6.4e-08
+                                  1.188750115200669e-01,
+                                  -3.962341953479763e-01
+                                  ])
         # self.x0 = np.concatenate((np.random.rand(2) * 1200,             # x1, x2  # original: random start point
         #                          0.55 * (np.random.rand(2)*2 - 1)))     # x3, x4
         self.x0 = np.concatenate((np.array([0.4, 0.6]) * 1200,            # x1, x2  # fixed choice for reproducible
@@ -374,14 +384,22 @@ class GCOP(COP):
         # self.fn = lambda x: ...
         self.fn = g10_fn     # increments ncall
 
-    def _call_G11(self):
+    def _call_G11(self, mu: float):
         self.dimension = 2
         self.lower = np.array([-1, -1])
         self.upper = np.array([1, 1])
         self.nConstraints = 1
         self.is_equ = np.array([True])
-        self.solu = np.array([-np.sqrt(0.5), 0.5])
         # no x0 provided
+        if mu == 1e-4:
+            self.solu = np.array([-0.707036200564406,  0.50000018890849])
+            # better solution found from SACOBRA_Py if mu-band=1e-4 is allowed:
+            # obj: 0.749900, maxViol: 9.9999999e-5
+        else:
+            self.solu = np.array([-np.sqrt(0.5), 0.5])
+            # original solution (also reported -wrongly- in [LiangRunar06] as the solution for conTol=1e-4), this is
+            # the 'ideal' solution perfectly on the equality constraint line:
+            # obj: 0.750000, maxViol: -1.1e-16
 
         def g11_fn(x):
             self.ncall += 1
@@ -446,11 +464,16 @@ class GCOP(COP):
         self.nConstraints = 3
         self.is_equ = np.repeat(True, 3)
         cvec = np.array([-6.089, -17.164, -34.054, -5.914, -24.721, -14.986, -24.1, -10.708, -26.662, -22.179])
-        self.fn = lambda x: np.array([np.sum(x*(cvec+np.log(x/np.sum(x)))),
+
+        def g14_fn(x):
+            self.ncall += 1
+            return np.array([np.sum(x*(cvec+np.log(x/np.sum(x)))),
                                       x[0]+2*x[1]+2*x[2]+x[5]+x[9]-2,
                                       x[3]+2*x[4]+x[5]+x[6]-1,
                                       x[2]+x[6]+x[7]+2*x[8]+x[9]-1
                                       ])
+        # self.fn = lambda x: ...
+        self.fn = g14_fn     # increments ncall
         if mu == 1e-4:
             # original solution from the R side, with maxViol = 1e-4, not fully feasible.
             # (This is also the solution in [LiangRunar06], who states that conTol = 1e-4 is allowed for all equality
@@ -472,10 +495,15 @@ class GCOP(COP):
         self.upper = np.repeat(10, 3)
         self.nConstraints = 2
         self.is_equ = np.repeat(True, 2)
-        self.fn = lambda x: np.array([1000-(x[0]**2)-2*x[1]**2-x[2]**2-x[0]*x[1]-x[0]*x[2],
+
+        def g15_fn(x):
+            self.ncall += 1
+            return np.array([1000-(x[0]**2)-2*x[1]**2-x[2]**2-x[0]*x[1]-x[0]*x[2],
                                       x[0]**2+x[1]**2+x[2]**2-25,
                                       8*x[0]+14*x[1]+7*x[2]-56
                                       ])
+        # self.fn = lambda x: ...
+        self.fn = g15_fn
         if mu == 1e-4:
             # original solution from the R side, with maxViol = 1e-4, not fully feasible:
             # (This is also the solution in [LiangRunar06], who states that conTol = 1e-4 is allowed for all equality
@@ -496,7 +524,8 @@ class GCOP(COP):
         self.nConstraints = 38
         self.is_equ = np.repeat(False, self.nConstraints)
 
-        def func_fn(x):
+        def g16_fn(x):
+            self.ncall += 1
             y1 = x[1] + x[2] + 41.6
             c1 = 0.024 * x[3]-4.62
             y2 = (12.5 / c1) + 12
@@ -579,7 +608,7 @@ class GCOP(COP):
                              , g19, g20, g21, g22, g23, g24, g25, g26, g27
                              , g28, g29, g30, g31, g32, g33, g34, g35, g36, g37, g38])
 
-        self.fn = lambda x: func_fn(x)
+        self.fn = g16_fn     # increments ncall
         self.solu = np.array([705.17454,  68.60000, 102.90000, 282.32493,  37.58412])
         # no x0 provided
 
@@ -592,16 +621,20 @@ class GCOP(COP):
         f0 = lambda x0: 30*x0 if 0 <= x0 < 300 else 31 * x0
         f2 = lambda x1: 29*x1 if 100 <= x1 < 200 else 30 * x1
         f1 = lambda x1: 28*x1 if 0 <= x1 < 100 else f2(x1)
-        self.fn = lambda x: np.array([f0(x[0]) + f1(x[1]),
-                                      -x[0] + 300 - (x[2] * x[3]) / 131.078 * np.cos(1.48477 - x[5]) +
-                                                  (0.90798 * x[2] ** 2) / 131.078 * np.cos(1.47588),
-                                      -x[1] - (x[2] * x[3]) / 131.078 * np.cos(1.48477 + x[5]) +
-                                                  (0.90798 * x[3] ** 2) / 131.078 * np.cos(1.47588),
-                                      -x[4] - (x[2] * x[3]) / 131.078 * np.sin(1.48477 + x[5]) +
-                                                  (0.90798 * x[3] ** 2) / 131.078 * np.sin(1.47588),
-                                      200 - (x[2] * x[3]) / 131.078 * np.sin(1.48477 - x[5]) +
-                                                  (0.90798 * x[2] ** 2) / 131.078 * np.sin(1.47588)
-                                    ])
+
+        def g17_fn(x):
+            self.ncall += 1
+            return np.array([f0(x[0]) + f1(x[1]),
+                            -x[0] + 300 - (x[2] * x[3]) / 131.078 * np.cos(1.48477 - x[5]) +
+                                    (0.90798 * x[2] ** 2) / 131.078 * np.cos(1.47588),
+                            -x[1] - (x[2] * x[3]) / 131.078 * np.cos(1.48477 + x[5]) +
+                                    (0.90798 * x[3] ** 2) / 131.078 * np.cos(1.47588),
+                            -x[4] - (x[2] * x[3]) / 131.078 * np.sin(1.48477 + x[5]) +
+                                    (0.90798 * x[3] ** 2) / 131.078 * np.sin(1.47588),
+                            200 - (x[2] * x[3]) / 131.078 * np.sin(1.48477 - x[5]) +
+                                    (0.90798 * x[2] ** 2) / 131.078 * np.sin(1.47588)
+                            ])
+        self.fn = g17_fn    # increments ncall
         if mu == 1e-4:
             # original solution from the R side, with maxViol = 1e-4, not fully feasible:
             # (This is also the solution in [LiangRunar06], who states that conTol = 1e-4 is allowed for all equality
@@ -623,21 +656,26 @@ class GCOP(COP):
         self.upper = np.concatenate((np.repeat(+10,8), [20]))
         self.nConstraints = 13
         self.is_equ = np.repeat(False, 13)
-        self.fn = lambda x: np.array([-0.5*(x[0]*x[3]-x[1]*x[2] + x[2]*x[8]-x[4]*x[8] + x[4]*x[7]- x[5]*x[6]),
-                                      x[2] ** 2 + x[3] ** 2 - 1,
-                                      x[8] ** 2 - 1,
-                                      x[4] ** 2 + x[5] ** 2 - 1,
-                                      x[0] ** 2 + (x[1] - x[8]) ** 2 - 1,
-                                      (x[0] - x[4]) ** 2 + (x[1] - x[5]) ** 2 - 1,
-                                      (x[0] - x[6]) ** 2 + (x[1] - x[7]) ** 2 - 1,
-                                      (x[2] - x[4]) ** 2 + (x[3] - x[5]) ** 2 - 1,
-                                      (x[2] - x[6]) ** 2 + (x[3] - x[7]) ** 2 - 1,
-                                      x[6] ** 2 + (x[7] - x[8]) ** 2 - 1,
-                                      x[1] * x[2] - x[0] * x[3],
-                                      -x[2] * x[8],
-                                      x[4] * x[8],
-                                      x[5] * x[6] - x[4] * x[7]
-                                      ])
+
+        def g18_fn(x):
+            self.ncall += 1
+            return np.array([-0.5*(x[0]*x[3]-x[1]*x[2] + x[2]*x[8]-x[4]*x[8] + x[4]*x[7]- x[5]*x[6]),
+                            x[2] ** 2 + x[3] ** 2 - 1,
+                            x[8] ** 2 - 1,
+                            x[4] ** 2 + x[5] ** 2 - 1,
+                            x[0] ** 2 + (x[1] - x[8]) ** 2 - 1,
+                            (x[0] - x[4]) ** 2 + (x[1] - x[5]) ** 2 - 1,
+                            (x[0] - x[6]) ** 2 + (x[1] - x[7]) ** 2 - 1,
+                            (x[2] - x[4]) ** 2 + (x[3] - x[5]) ** 2 - 1,
+                            (x[2] - x[6]) ** 2 + (x[3] - x[7]) ** 2 - 1,
+                            x[6] ** 2 + (x[7] - x[8]) ** 2 - 1,
+                            x[1] * x[2] - x[0] * x[3],
+                            -x[2] * x[8],
+                            x[4] * x[8],
+                            x[5] * x[6] - x[4] * x[7]
+                            ])
+        # self.fn = lambda x: ...
+        self.fn = g18_fn    # increments ncall
         # original solution from the R side,  also the solution in [LiangRunar06]:
         self.solu = np.array([-0.9890005492667746, 0.1479118418638228, -0.6242897641574451,
                               -0.7811841737429015, -0.9876159387318453, 0.1504778305249072,
@@ -693,7 +731,10 @@ class GCOP(COP):
                           - self.eVec19[j] + np.dot(self.aMat19[:,j], x[0:10]))
             return res
 
-        self.fn = lambda x: np.array([fitFunc(x)] + conFunc(x).tolist())
+        def g19_fn(x):
+            self.ncall += 1
+            return np.array([fitFunc(x)] + conFunc(x).tolist())
+        self.fn = g19_fn    # increments ncall
         self.solu = np.array([
             0, 0,  3.94600628013917,  0,    3.28318162727873, 10, 0, 0, 0,0,
             0.370762125835098, 0.278454209512692, 0.523838440499861, 0.388621589976956, 0.29815843730292])
@@ -708,14 +749,18 @@ class GCOP(COP):
         self.upper = np.array([1000, 40, 40, 300, 6.7, 6.4, 6.25])
         self.nConstraints = 6
         self.is_equ = np.array([False, True, True, True, True, True])
-        self.fn = lambda x: np.array([+x[0],     # obj
-                                      -x[0]+35*(x[1]**(0.6))+35*(x[2]**0.6),                                       # g1
-                                      -300*x[2] + 7500*x[4]- 7500*x[5] - 25*x[3]*x[4] + 25*x[3]*x[5] + x[2]*x[3],  # h1
-                                      +100*x[1] + 155.365*x[3] + 2500*x[6] - x[1]*x[3] - 25*x[3]*x[6] - 15536.5,   # h2
-                                      -x[4] + np.log(-x[3] + 900),                                                 # h3
-                                      -x[5] + np.log(x[3] + 300),                                                  # h4
-                                      -x[6] + np.log(-2 * x[3] + 700)                                              # h5
-                                      ])
+
+        def g21_fn(x):
+            self.ncall += 1
+            return np.array([+x[0],                                                                      # obj
+                            -x[0]+35*(x[1]**(0.6))+35*(x[2]**0.6),                                       # g1
+                            -300*x[2] + 7500*x[4]- 7500*x[5] - 25*x[3]*x[4] + 25*x[3]*x[5] + x[2]*x[3],  # h1
+                            +100*x[1] + 155.365*x[3] + 2500*x[6] - x[1]*x[3] - 25*x[3]*x[6] - 15536.5,   # h2
+                            -x[4] + np.log(-x[3] + 900),                                                 # h3
+                            -x[5] + np.log(x[3] + 300),                                                  # h4
+                            -x[6] + np.log(-2 * x[3] + 700)                                              # h5
+                            ])
+        self.fn = g21_fn    # increments ncall
         if mu == 1e-4:
             # original solution from the R side, with maxViol = 1e-4, not fully feasible:
             # (This is also the solution in [LiangRunar06], who states that conTol = 1e-4 is allowed for all equality
@@ -737,29 +782,32 @@ class GCOP(COP):
         self.upper = np.array([20000, 1e6, 1e6, 1e6, 4e7, 4e7, 4e7, 299.99, 399.99, 300, 400, 600, 500, 500, 500, 300, 400, 6.25, 6.25, 6.25, 6.25, 6.25])
         self.nConstraints = 20
         self.is_equ = np.append(False, np.repeat(True,19))
-        self.fn = lambda x: np.array([+x[0],  # obj
-                                      -x[0] + x[1]**0.6 + x[2]**0.6 + x[3]**0.6,  # g1
-                                      x[4] - 100000*x[7] + 1e7,  # h1
-                                      x[5] + 100000*x[7] - 100000*x[8],  # h2
-                                      x[6] + 100000*x[8] - 5e7,  # h3
-                                      x[4] + 100000*x[9] - 3.3e7,  # h4
-                                      x[5] + 100000*x[10] - 4.4e7,   # h5
-                                      x[6] + 100000*x[11] - 6.6e7,  # h6
-                                      x[4] - 120*x[1]*x[12],  # h7
-                                      x[5] - 80*x[2]*x[13],  # h8
-                                      x[6] - 40*x[3]*x[14],  # h9
-                                      x[7] - x[10] + x[15],  # h10
-                                      x[8] - x[11] + x[16],  # h11
-                                      -x[17] + np.log(x[9] - 100),   # h12
-                                      -x[18] + np.log(-x[7] + 300),  # h13
-                                      -x[19] + np.log(x[15]),  # h14
-                                      -x[20] + np.log(-x[8] + 400),  # h15
-                                      -x[21] + np.log(x[16]),  # h16
-                                      -x[7] - x[9] + x[12]*x[17] - x[12]*x[18] + 400,   # h17
-                                      x[7] - x[8] - x[10] + x[13]*x[19] - x[13]*x[20] + 400,  # h18
-                                      x[8] - x[11] - 4.60517*x[14] + x[14]*x[21] + 100   # h19
-                                      ])
 
+        def g22_fn(x):
+            self.ncall += 1
+            return np.array([+x[0],                                     # obj
+                            -x[0] + x[1]**0.6 + x[2]**0.6 + x[3]**0.6,  # g1
+                            x[4] - 100000*x[7] + 1e7,                   # h1
+                            x[5] + 100000*x[7] - 100000*x[8],           # h2
+                            x[6] + 100000*x[8] - 5e7,                   # h3
+                            x[4] + 100000*x[9] - 3.3e7,                 # h4
+                            x[5] + 100000*x[10] - 4.4e7,                # h5
+                            x[6] + 100000*x[11] - 6.6e7,                # h6
+                            x[4] - 120*x[1]*x[12],                      # h7
+                            x[5] - 80*x[2]*x[13],                       # h8
+                            x[6] - 40*x[3]*x[14],                       # h9
+                            x[7] - x[10] + x[15],                       # h10
+                            x[8] - x[11] + x[16],                       # h11
+                            -x[17] + np.log(x[9] - 100),                # h12
+                            -x[18] + np.log(-x[7] + 300),               # h13
+                            -x[19] + np.log(x[15]),                     # h14
+                            -x[20] + np.log(-x[8] + 400),               # h15
+                            -x[21] + np.log(x[16]),                     # h16
+                            -x[7] - x[9] + x[12]*x[17] - x[12]*x[18] + 400,         # h17
+                            x[7] - x[8] - x[10] + x[13]*x[19] - x[13]*x[20] + 400,  # h18
+                            x[8] - x[11] - 4.60517*x[14] + x[14]*x[21] + 100        # h19
+                            ])
+        self.fn = g22_fn    # increments ncall
         if mu == 1e-4:
             # original solution from the R side, with maxViol = 1e-4, not fully feasible:
             # (This is also the solution in [LiangRunar06], who states that conTol = 1e-4 is allowed for all equality
@@ -806,29 +854,41 @@ class GCOP(COP):
         #self.lower = self.solu - 100
         #self.upper = self.solu + 100
 
-    def _call_G23(self):
+    def _call_G23(self, mu):
         self.dimension = 9
         self.lower = np.append(np.repeat(0,8), 0.01)
         self.upper = np.array([300, 300, 100, 200, 100, 300, 100, 200, 0.03])
         self.nConstraints = 6
         self.is_equ = np.append(np.repeat(False,2), np.repeat(True,4))
-        self.fn = lambda x: np.array([-9*x[4] - 15*x[7] + 6*x[0] + 16*x[1] + 10*(x[5] + x[6]),     # obj
-                                      x[8]*x[2] + 0.02*x[5] - 0.025*x[4],          # g1
-                                      x[8]*x[3] + 0.02*x[6] - 0.015*x[7],          # g2
-                                      x[0] + x[1] - x[2] - x[3],                   # h1
-                                      0.03*x[0] + 0.01*x[1] - x[8]*(x[2] + x[3]),  # h2
-                                      x[2] + x[5] - x[4],                          # h3
-                                      x[3] + x[6] - x[7]                           # h4
-                                      ])
 
-        # original solution from the R side and from [LiangRunar06]: exactly feasible
-        self.solu = np.array([0,  100, 0,  100,  0,  0,   100, 200, 0.01])
-        #                    obj -400.000000, maxViol 0.0
-        # better feasible solution from SACOBRA_Py run (trueFuncForSurrogates=True, cobraSeed=54, muFinal=1e-7, epsilonMax=0.0):
-        self.solu = np.array([2.296029616433160e-06, 9.999999964208477e+01, 5.975775430044905e-11,
-                              1.000000019381573e+02, 5.306852807196449e-06, 5.306852807196449e-06,
-                              9.999999806112899e+01, 1.999999999992329e+02, 1.000000011069957e-02])
-        #                    obj -400.000006, maxViol 3.4e-08
+        def g23_fn(x):
+            self.ncall += 1
+            return np.array([-9*x[4] - 15*x[7] + 6*x[0] + 16*x[1] + 10*(x[5] + x[6]),     # obj
+                            x[8]*x[2] + 0.02*x[5] - 0.025*x[4],          # g1
+                            x[8]*x[3] + 0.02*x[6] - 0.015*x[7],          # g2
+                            x[0] + x[1] - x[2] - x[3],                   # h1
+                            0.03*x[0] + 0.01*x[1] - x[8]*(x[2] + x[3]),  # h2
+                            x[2] + x[5] - x[4],                          # h3
+                            x[3] + x[6] - x[7]                           # h4
+                            ])
+        self.fn = g23_fn    # increments ncall
+
+        if mu == 1e-4:
+            # better solution from SACOBRA_Py run (cobraSeed=61, muFinal=1e-4) with maxViol < 1e-4:
+            self.solu = np.array([4.950004409665087e-03, 9.999516013545789e+01, 0.000000000000000e+00,
+                                  1.000001111305474e+02, 4.000006002702339e-04, 4.375832150960157e-04,
+                                  9.999988887027335e+01, 2.000000000000000e+02, 1.000000000000198e-02])
+            #                    obj -400.0480732, maxViol 9.9e-05
+        else:
+            # original solution from the R side and from [LiangRunar06]: exactly feasible
+            self.solu = np.array([0,  100, 0,  100,  0,  0,   100, 200, 0.01])
+            #                    obj -400.000000, maxViol 0.0
+            # better solution from SACOBRA_Py run (trueFuncForSurrogates=True, cobraSeed=54, muFinal=1e-7,
+            # epsilonMax=0.0) with slight infeasibility:
+            self.solu = np.array([2.296029616433160e-06, 9.999999964208477e+01, 5.975775430044905e-11,
+                                  1.000000019381573e+02, 5.306852807196449e-06, 5.306852807196449e-06,
+                                  9.999999806112899e+01, 1.999999999992329e+02, 1.000000011069957e-02])
+            #                    obj -400.000006, maxViol 3.4e-08
         # no x0 provided
 
 
@@ -838,10 +898,14 @@ class GCOP(COP):
         self.upper = np.array([3, 4])
         self.nConstraints = 2
         self.is_equ = np.array([False, False])
-        self.fn = lambda x: np.array([-x[0] - x[1],                                              # obj
-                                      -2*x[0]**4 + 8*x[0]**3 - 8*x[0]**2 + x[1] - 2,             # g1
-                                      -4*x[0]**4 +32*x[0]**3 -88*x[0]**2 + 96*x[0] + x[1] - 36,  # g2
-                                      ])
+
+        def g24_fn(x):
+            self.ncall += 1
+            return np.array([-x[0] - x[1],                                             # obj
+                            -2*x[0]**4 + 8*x[0]**3 - 8*x[0]**2 + x[1] - 2,             # g1
+                            -4*x[0]**4 +32*x[0]**3 -88*x[0]**2 + 96*x[0] + x[1] - 36,  # g2
+                            ])
+        self.fn = g24_fn    # increments ncall
         self.solu = np.array([2.329520197477607, 3.17849307411768])
         # no x0 provided
 
@@ -924,6 +988,7 @@ def check_problems():
     print(gdf)
     return(gdf)
 
+
 def inner_plot(df: DataFrame, muVec, gcop_fbest, gname, png_file, ylim=None):
     """
         Helper function for show_error_plot and png_error_plot
@@ -961,6 +1026,7 @@ def inner_plot(df: DataFrame, muVec, gcop_fbest, gname, png_file, ylim=None):
     if png_file is not None:
         plt.savefig(png_file)
 
+
 def show_error_plot(cobra: CobraInitializer, cop: COP, muVec, ylim=None, file=None):
     """
     Show a logarithmic error curve plot and save it to ``png_file``.
@@ -978,6 +1044,8 @@ def show_error_plot(cobra: CobraInitializer, cop: COP, muVec, ylim=None, file=No
     inner_plot(cobra.df, muVec, cop.fbest, cop.name, file, ylim)
     # err = cobra.sac_res['fbestArray'] - cop.fbest
     plt.show()
+    plt.close()
+
 
 def png_error_plot(df: DataFrame, muVec, gcop_fbest, gname, png_file, ylim=None):
     """
@@ -995,7 +1063,7 @@ def png_error_plot(df: DataFrame, muVec, gcop_fbest, gname, png_file, ylim=None)
     :param ylim:    (optional) limits for the y-axis
     """
     inner_plot(df, muVec, gcop_fbest, gname, png_file, ylim)
-    dummy = 0
+    plt.close()
 
 
 if __name__ == '__main__':

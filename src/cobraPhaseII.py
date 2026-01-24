@@ -3,6 +3,7 @@ import pandas as pd
 # need to specify SACOBRA_Py.src as source folder in File - Settings - Project Structure,
 # then the following import statements will work:
 from cobraInit import CobraInitializer
+from gCOP import GCOP
 from innerFuncs import PlogSquasher, verboseprint  # , plog, plogReverse
 from opt.isaOptions import O_LOGIC
 from phase2Vars import Phase2Vars
@@ -55,7 +56,7 @@ class CobraPhaseII:
     def get_muVec(self) -> np.ndarray:
         return self.cobra.df2['muVec'].values
 
-    def start(self):
+    def start(self, gcop:GCOP=None):
         """
         Start the main optimization loop of phase II.
 
@@ -83,6 +84,11 @@ class CobraPhaseII:
         retrieved from ``cobra`` with methods :meth:`.is_feasible`, :meth:`.get_fbest`,  :meth:`.get_feasible_best`,
         :meth:`.get_xbest` and :meth:`.get_xbest_cobra`.
 
+        Further results are in object :class:`.Phase2Vars` ``self.p2``.
+
+        :param gcop: (optional) a COP object, just needed to retrieve ``ncall`` at the end of optimization phase II. If
+                     ``None`` then the default ``ncall=0`` remains.
+        :type gcop: GCOP
         :return: ``self``
         """
         s_opts = self.cobra.sac_opts
@@ -118,10 +124,11 @@ class CobraPhaseII:
                     self.p2.gp1 = self.p2.constraintSurrogates(s_res['xbest'] + 1)
                 first_pass = False
 
-            if s_opts.EQU.mu4inequality:
-                # The internal parameter p2.mu4 (will become currentMu in seqOptimizer.py) is normally 0.
-                # It will be set to the last element of cobra.sac_res['muVec'] (cobra$currentEps in R)
-                # if mu4inequality is TRUE.
+            if s_opts.EQU.mu4inequality:        # EXPERIMENTAL
+                # The internal parameter p2.mu4 (will be used for a mu-band around inequalities in seqOptimizer.py)
+                # is normally 0. It will be set to the last element of cobra.sac_res['muVec'] (cobra$currentEps in R)
+                # if s_opts.EQU.mu4inequality == TRUE.
+                # self.p2.mu4 is only in effect if s_opts.EQU.active == True.
                 self.p2.mu4 = s_res['muVec'][-1]
 
             # TODO: CA (conditioning analysis, whitening part), if(cobra$CA$active)  [OPTIONAL]
@@ -152,6 +159,7 @@ class CobraPhaseII:
                     A = self.cobra.for_rbf['A']
                     xpeffect = (A[0, :] + A[1, :]) / 2
                     xPeEval = self.cobra.sac_res['fn'](xpeffect)
+                    self.cobra.sac_res['ncall'][0] += 1     # ncall-debug
                     Surrogator1.calcPEffect(self.p2, xpeffect, xPeEval, verbose=True)
                 else:
                     Surrogator1.calcPEffect(self.p2, self.p2.ev1.xNew, self.p2.ev1.xNewEval, verbose=True)
@@ -210,22 +218,23 @@ class CobraPhaseII:
             PlogSquasher.reset_warn_counter()
         # TODO: some final settings to self.cobra, self.p2
 
+        # Fill in remaining variables of self.p2 (constr, fin_err, ncall, ...)
+        self.p2.fill(self.cobra, gcop)
+
         if self.cobra.is_feasible():
-            # Assert - if a feasible solution was found - that indeed all constraint violations are below conTol.
+            # Assert - if a feasible solution was found - that indeed all constraint violations (self.p2.constr,
+            # with muFinal subtracted for equality constraints) are below conTol.
             # For equality constrained COPs, this means that the absolute values of equality constraints at the
             # solution point are all less than muFinal + conTol.
-            xbest = self.cobra.get_xbest()
-            self.p2.constr = s_res['originalfn'](xbest)[1:]
+            self.cobra.sac_res['ncall'][13] += 1  # ncall-debug
             equ_ind = np.flatnonzero(s_res['is_equ'])
             if equ_ind.size > 0:
                 temp = self.p2.constr.copy()
                 temp[equ_ind] = np.abs(temp[equ_ind]) - s_opts.EQU.muFinal
                 assert np.all(temp <= s_opts.SEQ.conTol)
-                # this assertion would fire if we had not fixed the bug in equHandling.py:30
+                # this assertion would indeed fire, if we had not made the bug fix 2026/01/18 in equHandling.py:30
             else:
                 assert np.all(self.p2.constr <= s_opts.SEQ.conTol)
-
-
 
         return self
 
@@ -304,3 +313,6 @@ class CobraPhaseII:
         :rtype: pd.DataFrame
         """
         return self.cobra.df2
+
+
+# analyze_solution(c2, c2.cobra)

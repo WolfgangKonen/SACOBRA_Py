@@ -48,6 +48,7 @@ class Surrogator2:
         midpEval = np.zeros(nrow)
         for k in range(nrow):
             midpEval[k] = cobra.sac_res['fn'](midp[k, :])[0]
+            cobra.sac_res['ncall'][11] += 1  # ncall-debug
         return midpEval
 
     @staticmethod
