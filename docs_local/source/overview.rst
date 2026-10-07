@@ -74,6 +74,7 @@ The **SACOBRA_Py** realization relies on these other Python packages and softwar
 
 We acknowledge and are grateful for all the work that goes into these great open source software tools!
 
+
 .. [Regis14] Regis, Rommel G. Constrained optimization by radial basis function interpolation for high-dimensional expensive black-box problems with infeasible initial points. Engineering Optimization, 46(2):218-243, 2014.
 
 .. [Bagh16a] Bagheri, S., Konen, W., Bäck, T. **Equality constraint handling for surrogate-assisted constrained optimization.** In K. C. Tan, editor, Proc. World Congress on Computational Intelligence (WCCI), Vancouver, p. 1924-1931. IEEE, 2016. [URL](http://www.gm.fh-koeln.de/~konen/Publikationen/Bagh16-WCCI.pdf)
