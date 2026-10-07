@@ -14,11 +14,12 @@ which contains upon successful completion the following files:
 - ``dfsum.csv``: data frame :ref:`dfsum <dfsum-label>`, CSV format
 - ``dfsum.feather``: data frame :ref:`dfsum <dfsum-label>`, feather format
 - ``%gname_%dim_%meth_%run.png``: plot error-vs-iterations for each ``(gname,dim,meth,run)``-combination
-- ``%gname_%dim_%meth_%run.df1.feather``: data frame ``df`` for this run
-- ``%gname_%dim_%meth_%run.df2.feather``: data frame ``df2`` for this run
+- ``%gname_%dim_%meth_%run_df1.feather``: data frame ``df`` for this run
+- ``%gname_%dim_%meth_%run_df2.feather``: data frame ``df2`` for this run
+- ``%gname_%dim_%meth_sac_opts.pickle``: :class:`.SACoptions` optimization settings ``cobra.sac_opts`` for this ``(gname,dim,meth)``-combination
 - ``med_std_grp.csv``: group data frame ``dfsum`` by ``(gname,dim,meth)`` with operators median and standard deviation
-  and write results in new data frame with columns ``time,err,...,std_time,std_err``
-- ``s_opts.pickle``: all :class:`.SACoptions` optimization settings from ``cobra.sac_opts`` (last run)
+  and write results to new data frame with columns ``time,err,...,std_time,std_err``
+- ``s_opts.pickle``: :class:`.SACoptions` optimization settings ``cobra.sac_opts`` (last run)
 
 It is recommended that the last run uses ``meth='one_s'``, then the settings saved to ``s_opts.pickle`` are those valid
 for **all** ``'one_s'`` runs.

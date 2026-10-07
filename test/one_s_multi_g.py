@@ -187,6 +187,7 @@ class OneS:
                         }, index=[0])
                     dfsum = pd.concat([dfsum, new_row_dfs], axis=0)
                     f_prefix = f"{dir_run}/{gname}_{c2.p2.dim:02d}_{meth}_{run:02d}"     # /WK/2026-10-03: added {meth}
+                    f_pref_0 = f"{dir_run}/{gname}_{c2.p2.dim:02d}_{meth}"               # run-independent prefix
                     c2_df1 = c2.cobra.df.drop(["optimizer", "optimConv"], axis=1)
                     c2_df2 = c2.cobra.df2.drop(["predSoluPenal", "sigmaD", "penaF", "err1", "err2",
                                                "nv_cB", "nv_cA", "nv_tB", "nv_tA"], axis=1)
@@ -194,6 +195,9 @@ class OneS:
                     print(f"c2.cobra.df  saved to {os.getcwd()}/{f_prefix}_df1.feather")
                     c2_df2.to_feather(f"{f_prefix}_df2.feather")
                     print(f"c2.cobra.df2 saved to {os.getcwd()}/{f_prefix}_df2.feather")
+                    with open(f"{f_pref_0}_sac_opts.pickle", 'wb') as f:
+                        pickle.dump(c2.cobra.sac_opts, f, pickle.HIGHEST_PROTOCOL)
+                    print(f"sac_opts saved to {os.getcwd()}/{dir_run}/{f_pref_0}_sac_opts.pickle")
                     if c2.p2.f_solu is None:
                         print(f"WARNING: Cannot call png_error_plot, because cobra.solu (p2.f_solu) is None.")
                     else:
@@ -357,5 +361,5 @@ if __name__ == '__main__':
     # one.df_analyze("df2.feather")
     # one.df_analyze("df2-G22-T5.feather")
     # one.df_analyze("df2_repair-conTol0.0-MIDPTS-cubic-fe500-G14-24.feather")
-    one.run_analyze("run2026-10-04_11h01m26-g01g13")
+    # one.run_analyze("run2026-10-04_11h01m26-g01g13")
     # one.run_analyze("run2026-01-20_21h01m13-mu1m4-ncall")
