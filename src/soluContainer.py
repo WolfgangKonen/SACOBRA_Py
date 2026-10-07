@@ -71,7 +71,8 @@ class SoluContainer():
     def distance_to_solu(self, cobra: CobraInitializer) -> Tuple[np.ndarray, np.ndarray]:
         """
         Compute the distance of all infill points to the true solution. Each row of matrix ``A = cobra.sac_res['A']``
-        contains an infill point.
+        contains an infill point. ``dbest`` computes the distances of ``xbest`` at every iteration to the true
+        solution.
 
         Returns distance vectors of length ``A.shape[0]``.
 
@@ -80,9 +81,11 @@ class SoluContainer():
         Return the minimum over solutions, if multiple equivalent solutions exist (``solu.ndim==2``).
 
         :param cobra: needed for the infill points ``A`` (see above) and for the rescale wrapper
-        :return: tuple (distA, distOrig) = (vector of distances in rescaled space, ... in original space)
+        :return: tuple (distA, distOrig, dbest) = (vector of distances in rescaled space, ... in original space,
+                 distances of ``xbest`` in rescaled space to true solution)
         """
         A = cobra.sac_res['A']
+        xba = cobra.sac_res['xbestArray']
         if self.solu is None:
             distA = np.repeat(np.nan, A.shape[0])
             distOrig = np.repeat(np.nan, A.shape[0])
@@ -91,13 +94,15 @@ class SoluContainer():
             if self.solu.ndim == 1:
                 distA = distLine(self.solu, A)
                 distOrig = distLine(self.originalSolu, origA)
+                dbest = distLine(self.solu, xba)
             elif self.solu.ndim == 2:
                 da = np.apply_along_axis(lambda x: distLine(x, A), axis=1, arr=self.solu)
                 do = np.apply_along_axis(lambda x: distLine(x, origA), axis=1, arr=self.originalSolu)
-                # da and do have solu.shape[0] rows and A.shape[0] columns. Select in each column the minimum element:
+                db = np.apply_along_axis(lambda x: distLine(x, xba), axis=1, arr=self.solu)
+                # da, do and db have solu.shape[0] rows and A.shape[0] columns. Select in each column the minimum element:
                 distA = np.min(da, axis=0)
                 distOrig = np.min(do, axis=0)
+                dbest = np.min(db, axis=0)
             else:
                 raise ValueError(f"solu.ndim = {self.solu.ndim} is not allowed!")
-
-        return distA, distOrig
+        return distA, distOrig, dbest

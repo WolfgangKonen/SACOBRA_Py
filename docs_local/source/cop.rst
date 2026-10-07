@@ -6,7 +6,7 @@ This chapter defines COPs (Constraint Optimization Problems) and introduces the 
 
 
 COPs
------------------
+----------------
 
 A constrained optimization problem (COP) for numerical and continuous quantities in :math:`\mathbb{R}^d` is defined as:
 
@@ -37,5 +37,5 @@ The G-problems are available in **SACOBRA_Py** as objects of class ``GCOP``:
 .. autoclass:: gCOP.GCOP
 
 
-.. [LiangRunar06] J. Liang, T. P. Runarsson, E. Mezura-Montes, M. Clerc, P. Suganthan, C. C. Coello, and K. Deb, “Problem definitions and evaluation criteria for the CEC 2006 special session on constrained real-parameter optimization,” Journal of Applied Mechanics, vol. 41, p. 8, 2006. `http://www.lania.mx/~emezura/util/files/tr_cec06.pdf <http://www.lania.mx/~emezura/util/files/tr_cec06.pdf>`_
+.. [LiangRunar06] Liang, J. , Runarsson, T. P., Mezura-Montes, E., Clerc, M., Suganthan, P., Coello, C. C., and Deb, K., “Problem definitions and evaluation criteria for the CEC 2006 special session on constrained real-parameter optimization,” Journal of Applied Mechanics, vol. 41, p. 8, 2006. `http://www.lania.mx/~emezura/util/files/tr_cec06.pdf <http://www.lania.mx/~emezura/util/files/tr_cec06.pdf>`_
 

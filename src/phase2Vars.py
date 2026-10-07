@@ -87,10 +87,11 @@ class Phase2Vars:
         # compute final error
         if cobra.solu is None:
             self.f_solu = None
+            self.fin_err = np.nan
         else:
             first_solu = cobra.solu[0, :] if cobra.solu.ndim == 2 else cobra.solu
             self.f_solu = s_res['originalfn'](first_solu)[0]     # objective at (first) solution point
-        self.fin_err = np.array(cobra.get_feasible_best() - self.f_solu)
+            self.fin_err = np.array(cobra.get_feasible_best() - self.f_solu)
 
         # Compute constraint values at best solution found (which might be infeasible)
         xbest = cobra.get_xbest()
@@ -99,6 +100,7 @@ class Phase2Vars:
         self.dim = s_res['dimension']
         self.conTol = cobra.sac_opts.SEQ.conTol
         self.maxViol = s_res['trueMaxViol'][s_res['ibest']]
+        self.dbest = s_res['dbest'][s_res['ibest']]
 
         if gcop is not None:
             self.gcop = gcop

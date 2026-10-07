@@ -1,4 +1,10 @@
 # Configuration file for the Sphinx documentation builder.
+#
+# For the full list of built-in configuration values, see the documentation:
+# https://www.sphinx-doc.org/en/master/usage/configuration.html
+
+# -- Project information -----------------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 import sys
 from pathlib import Path
@@ -7,17 +13,16 @@ from pathlib import Path
 #sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 sys.path.insert(0, str(Path('..', '..', 'src').resolve()))
 sys.path.insert(0, str(Path('..', '..', 'demo').resolve()))
+sys.path.insert(0, str(Path('..', '..', 'test').resolve()))
 #print(sys.path)
-
-# -- Project information
 
 project = 'SACOBRA_Py'
 copyright = '2025, Wolfgang Konen'
 author = 'Wolfgang Konen'
 release = '0.9'
 
-
-# -- General configuration
+# -- General configuration ---------------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
     'sphinx.ext.duration',
@@ -27,17 +32,13 @@ extensions = [
     'sphinx.ext.intersphinx',
 ]
 
-intersphinx_mapping = {
-    'python': ('https://docs.python.org/3/', None),
-    'sphinx': ('https://www.sphinx-doc.org/en/master/', None),
-}
-intersphinx_disabled_domains = ['std']
-
 templates_path = ['_templates']
+exclude_patterns = []
 
-# -- Options for HTML output
 
-html_theme = 'sphinx_rtd_theme'
+# -- Options for HTML output -------------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-# -- Options for EPUB output
-epub_show_urls = 'footnote'
+# html_theme = 'alabaster'
+html_theme = 'furo'
+html_static_path = ['_static']

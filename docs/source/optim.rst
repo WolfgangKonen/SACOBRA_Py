@@ -6,13 +6,13 @@ This chapter gives an overview over the optimization process. SACOBRA's optimiza
 Phase I and Phase II, where Phase I is optional.
 
 Phase I
--------
+--------
 
 TODO
 
 
 Phase II
---------
+---------
 
 .. autoclass:: cobraPhaseII.CobraPhaseII
    :members: get_cobra, get_p2, start

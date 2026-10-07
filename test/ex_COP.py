@@ -1,12 +1,15 @@
 import time
 import numpy as np
 import pandas as pd
+from matplotlib import pyplot as plt
 
 from cobraInit import CobraInitializer
 from gCOP import GCOP, show_error_plot
 from cobraPhaseII import CobraPhaseII
+from innerFuncs import distLine
 from opt.equOptions import EQUoptions
 from opt.isaOptions import ISAoptions, O_LOGIC
+from opt.riOptions import RIoptions
 from opt.sacOptions import SACoptions
 from opt.idOptions import IDoptions
 from opt.rbfOptions import RBFoptions
@@ -27,22 +30,35 @@ def set_idp(dim, deg):
 
 class ExamCOP:
     """
-        Example COPs from the G function benchmark. Test for statistical equivalence to the R side (ex_COP.R)
+        Example COPs from the G function benchmark. Test for statistical equivalence to the R side (ex_COP.R).
+        The class methods ``solve_Gxx`` allow to set specific parameters for each G function (used by
+        :meth:`.OneS.one_s_multi_g_r` in conjunction with ``meth='solve'``).
 
         - G01 is a COP with 9 linear inequality constraints and d=13
+        - G02 is a COP with 2 inequality constraints and steerable dimension d.
         - G03 is a COP with 1 equality constraint (sphere) and steerable dimension d.
         - G04 is a COP with 6 inequality constraints and d=5.
         - G05 is a COP with 2 inequality and 3 equality constraints. d=4.
         - G06 is a COP with two circular inequality constraints that form a very narrow feasible region. d=2.
         - G07 is a COP with 8 inequality constraints. d=10.
+        - G08 is a COP with 2 inequality constraints and d=2.
+        - G09 is a COP with 4 inequality constraints and d=7.
+        - G10 is a COP with 6 inequality constraints and d=8.
         - G11 is a COP with 1 equality constraint. d=2.
+        - G12 is a COP with 1 inequality constraint and d=3.
         - G13 is a COP with 3 equality constraints. d=5.
         - G14 is a COP with 3 equality constraints. d=10.
         - G15 is a COP with 5 equality constraints. d=3.
         - G17 is a COP with 4 equality constraints. d=6.
+        - G18 is a COP with 13 inequality constraints and d=9.
+        - G19 is a COP with 5 inequality constraints and d=15.
+        - G20 is not yet implemented.
         - G21 is a COP with 5 equality constraints. d=7.
+        - G22 is a COP with 19 equality constraints. d=2.
+        - G23 is a COP with 4 equality constraints. d=9.
+        - G24 is a COP with 2 inequality constraints and d=2.
 
-        In summary, there are 8 COPs (G03, G05, G11, G13, G14, G15, G17, G21) containing equality constraints.
+        In summary, there are 10 COPs (G03, G05, G11, G13, G14, G15, G17, G21, G22, G23) with equality constraints.
     """
 
     def solve_G01(self, cobraSeed, feval=170, verbIter=10, conTol=0):
@@ -106,18 +122,24 @@ class ExamCOP:
             (see ex_COP.R)
         """
         print(f"Starting solve_G03({cobraSeed}, dim={dimension}, ...) ...")
-        G03 = GCOP("G03", dimension)
+        muFinal = 1e-4   # 1e-4 | 1e-7     # before 2026/10/03: muFinal=1e-12 --> strange png_err_plot (colors)
+        G03 = GCOP("G03", dimension, mu=muFinal)
 
         x0 = G03.x0             # None --> a random x0 will be set
         # x0 = np.arange(dimension)/dimension    # fixed x0
-        equ_opt = EQUoptions(muGrow=100, muDec=1.6, muFinal=1e-12, refineAlgo="BFGS_1", refinePrint=False)
+        dim = G03.dimension
+        idp = (dim + 1) * (dim + 2) // 2
+        if feval == 0: feval = idp + 2
+        equ_opt = EQUoptions(muGrow=100, muDec=1.6, muFinal=muFinal, refinePrint=False, refineAlgo="L-BFGS-B")  # "BFGS_1"
         cobra = CobraInitializer(x0, G03.fn, G03.name, G03.lower, G03.upper, G03.is_equ,
                                  solu=G03.solu,
                                  s_opts=SACoptions(verbose=verb, verboseIter=verbIter, feval=feval, cobraSeed=cobraSeed,
-                                                   ID=IDoptions(initDesign="LHS", rescale=True),
-                                                   RBF=RBFoptions(degree=2, rho=0.0, rhoDec=2.0),
+                                                   ID=IDoptions(initDesign="LHS", initDesPoints=idp, rescale=True),  #
+                                                   RBF=RBFoptions(degree=2),    # , rho=0.0, rhoDec=2.0
+                                                   ISA=ISAoptions(onlinePLOG=O_LOGIC.MIDPTS),
                                                    EQU=equ_opt,
-                                                   SEQ=SEQoptions(finalEpsXiZero=True, trueFuncForSurrogates=True, conTol=conTol)))
+                                                   RI=RIoptions(repairInfeas=True, eps2=0, q=3, repairMargin=np.inf, checkIt=False), # new 2025/10/15
+                                                   SEQ=SEQoptions(finalEpsXiZero=True, trueFuncForSurrogates=False, conTol=conTol)))
         print(f"idp = {cobra.sac_opts.ID.initDesPoints}")
         c2 = CobraPhaseII(cobra).start(gcop=G03)
 
@@ -139,6 +161,7 @@ class ExamCOP:
 
         equ_opt = EQUoptions(muGrow=100, muDec=1.6, muFinal=1e-7, refineAlgo="BFGS_0", refinePrint=False)
         cobra = CobraInitializer(G04.x0, G04.fn, G04.name, G04.lower, G04.upper, G04.is_equ,
+                                 solu=G04.solu,             # /WK/ bug fix: this was missing before 2026/10/03
                                  s_opts=SACoptions(verbose=verb, verboseIter=verbIter, feval=feval, cobraSeed=cobraSeed,
                                                    ID=IDoptions(initDesign="LHS", rescale=False),
                                                    RBF=RBFoptions(degree=2),
@@ -160,7 +183,8 @@ class ExamCOP:
             (see ex_COP.R)
         """
         print(f"Starting solve_G05({cobraSeed}) ...")
-        G05 = GCOP("G05")
+        muFinal = 1e-4   # 1e-4 | 1e-7
+        G05 = GCOP("G05", mu=muFinal)
         idp = 15   # =(d+1)(d+2)/2, the minimum for RBF.kernel="cubic", RBF.degree=2 and d=4
 
         cobra = CobraInitializer(G05.x0, G05.fn, G05.name, G05.lower, G05.upper, G05.is_equ,
@@ -168,7 +192,7 @@ class ExamCOP:
                                  s_opts=SACoptions(verbose=verb, verboseIter=verbIter, feval=feval, cobraSeed=cobraSeed,
                                                    ID=IDoptions(initDesign="LHS", initDesPoints=idp),
                                                    RBF=RBFoptions(degree=2),
-                                                   EQU=EQUoptions(muDec=1.6, muFinal=1e-12, refinePrint=False,
+                                                   EQU=EQUoptions(muDec=1.6, muFinal=muFinal, refinePrint=False,  # before 2026/10/03: muFinal=1e-12, never feasible
                                                                   refineAlgo="COBYLA"),  # "L-BFGS-B COBYLA"
                                                    SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol)))
         c2 = CobraPhaseII(cobra).start(gcop=G05)
@@ -321,14 +345,16 @@ class ExamCOP:
             (see ex_COP.R, function solve_G11, multi_gfnc)
         """
         print(f"Starting solve_G11({cobraSeed}) ...")
-        G11 = GCOP("G11")
+        muFinal = 1e-4
+        G11 = GCOP("G11", mu=muFinal)
+        # G11.x0 = np.array([+np.sqrt(0.5-muFinal), 0.5])+0.1   # just to test, if the 2nd solution is found
 
         cobra = CobraInitializer(G11.x0, G11.fn, G11.name, G11.lower, G11.upper, G11.is_equ,
                                  solu=G11.solu,
                                  s_opts=SACoptions(verbose=verb, verboseIter=verbIter, feval=feval, cobraSeed=cobraSeed,
                                                    ID=IDoptions(initDesign="LHS", initDesPoints=6),
                                                    RBF=RBFoptions(degree=2),
-                                                   EQU=EQUoptions(refinePrint=False, refineAlgo="COBYLA"),  # "L-BFGS-B COBYLA"
+                                                   EQU=EQUoptions(refinePrint=False, muFinal=muFinal, refineAlgo="COBYLA"),  # "L-BFGS-B COBYLA"
                                                    # COBYLA is slower, issues warnings, but is a bit more precise
                                                    SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol)))
 
@@ -374,11 +400,12 @@ class ExamCOP:
             (see ex_COP.R, function solve_G11, multi_gfnc)
         """
         print(f"Starting solve_G13({cobraSeed}) ...")
-        G13 = GCOP("G13")
+        muFinal = 1e-4  # 1e-4, 1e-7
+        G13 = GCOP("G13", mu=muFinal)
         dim = G13.dimension
         idp = (dim + 1) * (dim + 2) // 2
 
-        equ = EQUoptions(muGrow=100, muDec=1.6, muFinal=1e-7,
+        equ = EQUoptions(muGrow=100, muDec=1.6, muFinal=muFinal,
                          refinePrint=False, refineAlgo="COBYLA")  # "L-BFGS-B COBYLA"
         cobra = CobraInitializer(G13.x0, G13.fn, G13.name, G13.lower, G13.upper, G13.is_equ,
                                  solu=G13.solu,
@@ -498,11 +525,12 @@ class ExamCOP:
             (see ex_COP.R, function solve_G17, multi_gfnc)
         """
         print(f"Starting solve_G21({cobraSeed}) ...")
-        G21 = GCOP("G21")
+        muFinal = 1e-4   # 1e-4 | 1e-7
+        G21 = GCOP("G21", mu=muFinal)
         dim = G21.dimension
         idp = (dim + 1) * (dim + 2) // 2
 
-        equ = EQUoptions(muGrow=100, muDec=1.6, muFinal=1e-7,
+        equ = EQUoptions(muGrow=100, muDec=1.6, muFinal=muFinal,        # 1e-7
                          refinePrint=False, refineAlgo="L-BFGS-B")  # "L-BFGS-B COBYLA"
         cobra = CobraInitializer(G21.x0, G21.fn, G21.name, G21.lower, G21.upper, G21.is_equ,
                                  solu=G21.solu,
@@ -529,12 +557,13 @@ class ExamCOP:
             (see ex_COP.R, function solve_G17, multi_gfnc)
         """
         print(f"Starting solve_G21({cobraSeed}) ...")
-        G22 = GCOP("G22")
+        muFinal = 1e-4   # 1e-4 | 1e-7
+        G22 = GCOP("G22", mu=muFinal)
         dim = G22.dimension
         deg = 2
         idp = set_idp(dim, deg)
 
-        equ = EQUoptions(muGrow=100, muDec=1.6, muFinal=1e-4,
+        equ = EQUoptions(muGrow=100, muDec=1.6, muFinal=muFinal,
                          refinePrint=False, refineAlgo="L-BFGS-B")  # "L-BFGS-B COBYLA"
         cobra = CobraInitializer(G22.x0, G22.fn, G22.name, G22.lower, G22.upper, G22.is_equ,
                                  solu=G22.solu,
@@ -582,13 +611,17 @@ class ExamCOP:
         return c2
 
 def analyze_solution(c2: CobraPhaseII, cobra: CobraInitializer):
-    # compare xbest found in CobraPhaseII with true solution
-    print(f"cobra_xbest: {cobra.get_xbest()}")
-    print(f"gcop_solu  : {cobra.solu}")
+    # compare xbest (as found by CobraPhaseII) with true solution. What is the maximum deviation in difference vector?
+    print(f"cobra_xbest : {cobra.get_xbest()}")
+    print(f"gcop_solu   : {cobra.solu}")
+    print(f"d_xbest_solu: {cobra.get_xbest() - cobra.solu}")
+    max_d_solu = np.max(np.abs(cobra.get_xbest() - cobra.solu))
 
     # compare true
-    print(f"fn_xbest:   {cobra.sac_res['originalfn'](cobra.get_xbest())}")
-    print(f"fn_solu :   {cobra.sac_res['originalfn'](cobra.solu)}")
+    fn_xbest = cobra.sac_res['originalfn'](cobra.get_xbest())
+    fn_solu = cobra.sac_res['originalfn'](cobra.solu)
+    print(f"fn_xbest:   {fn_xbest}")
+    print(f"fn_solu :   {fn_solu}")
 
     fsurr_xbest = c2.p2.fitnessSurrogate(c2.cobra.get_xbest_cobra())
     fsurr_solu = c2.p2.fitnessSurrogate(cobra.rw.forward(cobra.solu))
@@ -600,6 +633,80 @@ def analyze_solution(c2: CobraPhaseII, cobra: CobraInitializer):
     print(f"csurr_xbest:   {csurr_xbest}")
     print(f"csurr_solu :   {csurr_solu}")
 
+    return fn_xbest, fn_solu, fsurr_xbest, fsurr_solu, csurr_xbest, csurr_solu, max_d_solu
+
+
+def plot_func_surr(c2: CobraPhaseII, cobra: CobraInitializer, i, dim, d_range, png_file=None, ylim=None):
+    """
+    Plot a diagnostic visualization of optimization funcs and their surrogates:
+    All plot lines are a cuts where input dimension ``dim`` is varied in range ``xbest[dim] +- d_range`` while all other
+    input dimensions are left at their ``xbest``-values
+
+    - red thick line: component ``i`` of true func ``fn``
+    - blue dashed: component ``i`` of the surrogates (i=0: fitness, i>0: constraint i-1)
+    - blue dotted: take for each input point ``x`` the nearest element from design matrix ``A`` and return the
+      corresponding ``Fres|Gres`` value.
+
+    Assertion (TODO): If the distance to the nearest row of design matrix is 0 or close to 0, then blue dot and red
+    line should also coincide.
+
+    :param c2:
+    :param cobra:
+    :param i:   the component of ``fn`` to visualize
+    :param dim: the input dimension to vary
+    :param d_range: the +- range over which to vary
+    :param ylim: (optional) y-limits for the plot
+    :return:
+    """
+    xbest = cobra.get_xbest()
+    lower = cobra.sac_res['originalL']
+    upper = cobra.sac_res['originalU']
+    fn_func = lambda i,x: cobra.sac_res['originalfn'](x)[i]
+    if i == 0:
+        surr_func = lambda i,x: c2.p2.fitnessSurrogate(cobra.rw.forward(x))
+    else:
+        surr_func = lambda i, x: c2.p2.constraintSurrogates(cobra.rw.forward(x))[0][i-1]
+    # darr = np.array([x for x in np.arange(xbest[dim]-d_range,xbest[dim]+d_range,2*d_range/100)])
+    darr = np.array([x for x in np.arange(lower[dim], upper[dim], (upper[dim] - lower[dim]) / 100)])
+    farr = darr * 0.0
+    sarr = darr * 0.0
+    sar2 = darr * 0.0
+    marr = darr * 0.0
+    x = xbest.copy()
+    A = cobra.sac_res['A']
+    F = cobra.sac_res['Fres']
+    G = cobra.sac_res['Gres']
+    FG = np.concatenate((F.reshape(F.shape[0], 1), G), axis=1)
+    for k, d in enumerate(darr):
+        x[dim] = d
+        dist_x = distLine(cobra.rw.forward(x), A)
+        min_ind = np.flatnonzero(dist_x == np.min(dist_x))[0]
+        marr[k] = dist_x[min_ind]       # marr[k]: distance of k'th point to nearest point from A
+        # x_close = A[min_ind, :]
+        farr[k] = fn_func(i, x)
+        sarr[k] = surr_func(i, x)
+        sar2[k] = FG[min_ind, i]
+    plt.close()
+    plt.figure(figsize=(7, 6))  # (width,height) in inches
+    plt.plot(darr, farr, 'r-', label='f', linewidth=2.2)  # thick red, to make it visible if otherwise blue sarr would overplot
+    plt.plot(darr, sarr, 'b--', label='surr')   # '--' dashed line style
+    plt.plot(darr, sar2, 'b:', label='s_A')     # ':'  dotted line style
+    lower_k = max(fn_func(i,xbest)-100, np.min((farr,sarr,sar2)))
+    upper_k = min(fn_func(i,xbest)+100, np.max((farr,sarr,sar2)))
+    plt.plot([xbest[dim], xbest[dim]], [lower_k, upper_k], 'k-')
+    plt.legend()
+    plt.title(f"{cobra.sac_res['f_name']}, dim={cobra.get_xbest().size}", fontsize=20)
+    plt.xlabel(f'x[{dim}] ', fontsize=16)
+    plt.ylabel(f'fn[{i}]', fontsize=16)
+    plt.xticks(fontsize=14)
+    plt.yticks(fontsize=14)
+    plt.subplot(111).set_yscale("linear")
+    if ylim is not None:
+        plt.subplot(111).set(ylim=ylim)
+    if png_file is None:
+        plt.show()
+    else:
+        plt.savefig(png_file)
     dummy = 0
 
 if __name__ == '__main__':
@@ -619,10 +726,10 @@ if __name__ == '__main__':
     # cop.solve_G17(54)
     # cop.solve_G21(63)
     # cop.solve_G22(55, conTol=0.0, verbIter=10)
-    # cc2 = cop.multi_gfnc(cop.solve_G05, "G05", 5, 49)
+    cc2 = cop.multi_gfnc(cop.solve_G05, "G05", 5, 49)
     # cc2 = cop.multi_gfnc(cop.solve_G04, "G04", 15, 42)
     # cc2 = cop.multi_gfnc(cop.solve_G15, "G15", 10, 48)
-    cc2 = cop.multi_gfnc(cop.solve_G17, "G17", 10, 61)
+    # cc2 = cop.multi_gfnc(cop.solve_G17, "G17", 10, 61)
     # cc2 = cop.multi_gfnc(cop.solve_G14, "G14", 6, 54)
     # cc2 = cop.multi_gfnc(cop.solve_G01, "G01", 6, 54)
     # cc2 = cop.multi_gfnc(cop.solve_G09, "G09", 10, 54)

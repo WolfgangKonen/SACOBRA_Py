@@ -13,6 +13,7 @@ from pathlib import Path
 #sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 sys.path.insert(0, str(Path('..', '..', 'src').resolve()))
 sys.path.insert(0, str(Path('..', '..', 'demo').resolve()))
+sys.path.insert(0, str(Path('..', '..', 'test').resolve()))
 #print(sys.path)
 
 project = 'SACOBRA_Py'

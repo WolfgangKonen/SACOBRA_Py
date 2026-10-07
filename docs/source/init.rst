@@ -8,7 +8,7 @@ This chapter describes the SACOBRA initialization and the options (or hyperparam
 .. _cobraInit-label:
 
 CobraInitializer
-----------------
+-----------------
 
 The initialization in **SACOBRA_Py** is done by creating an object of class :class:`.CobraInitializer` and it consists of the following steps:
 

@@ -3,7 +3,6 @@
 ------------
 Appendix
 ------------
-
 This chapter has details on some of **SACOBRA_Py**'s data structures.
 
 With
@@ -14,6 +13,8 @@ With
 
 we generate the main data structure ``cobra`` of **SACOBRA_Py** (see :class:`.CobraInitializer`).
 Some of its data frame and dictionary elements are described below.
+
+See class :class:`.OneS` for a description of data frame **dfsum** (summary reproducible experiments).
 
 cobra.sac_opts
 --------------

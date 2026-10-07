@@ -482,6 +482,8 @@ class CobraInitializer:
         - **muVec**: vector of size ``p2.num``: :math:`\\mu` in the ``i``'th iteration
         - **numViol, trueNumViol, maxViol, trueMaxViol**: same as columns *nViolations, trueNViol, maxViolation, trueMaxViol* of :ref:`cobra.df <df-label>`
         - **fbestArray**: vector of size ``p2.num``: best feasible objective value in the ``i``'th iteration
+        - **xbestArray**: matrix ``(p2.num, dimension)``: best feasible point ``xbest`` found in the ``i``'th iteration
+        - **dbest**: vector of size ``p2.num``: distance of ``xbest`` at every iteration to true solution, in rescaled space. Minimum distance for multiple solu's
         - ...
 
         ``p2.num`` counts the number of real function evaluations, see :class:`.Phase2Vars` ``p2``.

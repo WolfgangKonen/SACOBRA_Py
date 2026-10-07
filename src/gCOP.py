@@ -23,7 +23,7 @@ class GCOP(COP):
     """
     Constraint Optimization Problem Benchmark (G Function Suite)
 
-    [LiangRunar06] J. Liang, T. P. Runarsson, E. Mezura-Montes, M. Clerc, P. Suganthan, C. C. Coello, and K. Deb, “Problem definitions and evaluation criteria for the CEC 2006 special session on constrained real-parameter optimization,” Journal of Applied Mechanics, vol. 41, p. 8, 2006. `http://www.lania.mx/~emezura/util/files/tr_cec06.pdf <http://www.lania.mx/~emezura/util/files/tr_cec06.pdf>`_
+    [LiangRunar06] Liang, J. , Runarsson, T. P., Mezura-Montes, E., Clerc, M., Suganthan, P., Coello, C. C., and Deb, K., “Problem definitions and evaluation criteria for the CEC 2006 special session on constrained real-parameter optimization,” Journal of Applied Mechanics, vol. 41, p. 8, 2006. `http://www.lania.mx/~emezura/util/files/tr_cec06.pdf <http://www.lania.mx/~emezura/util/files/tr_cec06.pdf>`_
 
     Example: Instantiate problem G01 or G02 with
 
@@ -51,13 +51,13 @@ class GCOP(COP):
 
     **Parameter** ``mu``:
 
-    For problems G05, G14, G15, G17, G21, G22 (all with equality constraints), different solutions **solu** can be
-    selected via parameter ``mu``: If ``mu = 1e-4`` then each equality constraint has a tolerance band
+    For problems G03, G05, G11, G13, G14, G15, G17, G21, G22, G23 (those with equality constraints), different solutions
+    **solu** can be selected via parameter ``mu``: If ``mu = 1e-4`` then each equality constraint has a tolerance band
     :math:`|h_j(x)| \leq 10^{-4}`. This is the feasibility definition of [LiangRunar06], it results in slightly
-    violating solutions with somewhat better (lower) objective. But in the cases of the six G-problems above, one can
-    find also solutions where the equality constraint violation is :math:`10^{-6}, 10^{-7}` or below, at the price of
+    violating solutions with somewhat better (lower) objective. But in the cases of the ten G-problems above, one can
+    find also solutions with equality constraint violation :math:`10^{-6}, 10^{-7}` or below, at the price of
     slightly higher objectives. These solutions will be returned when ``mu=1e-6`` or ``mu=1e-7`` is set. This is useful
-    if you want to test if your optimization procedure can also find solutions with lower constraint violation
+    if you want to test if your optimization procedure can also find solutions with lower constraint violations
     (SACOBRA: parameter ``EQU.muFinal`` in :class:`.EQUoptions` ``EQU``).
     """
     def __init__(self, name, dimension=None, mu=1e-7):
@@ -70,7 +70,7 @@ class GCOP(COP):
         self.ncall = 0
         if name == "G01": self._call_G01()
         elif name == "G02": self._call_G02(dimension)
-        elif name == "G03": self._call_G03(dimension)
+        elif name == "G03": self._call_G03(dimension, mu=mu)
         elif name == "G04": self._call_G04()
         elif name == "G05": self._call_G05(mu=mu)
         elif name == "G06": self._call_G06()
@@ -80,7 +80,7 @@ class GCOP(COP):
         elif name == "G10": self._call_G10()
         elif name == "G11": self._call_G11(mu=mu)
         elif name == "G12": self._call_G12()
-        elif name == "G13": self._call_G13()
+        elif name == "G13": self._call_G13(mu=mu)
         elif name == "G14": self._call_G14(mu=mu)
         elif name == "G15": self._call_G15(mu=mu)
         elif name == "G16": self._call_G16()
@@ -101,6 +101,26 @@ class GCOP(COP):
         else:
             first_solu = self.solu[0, :] if self.solu.ndim == 2 else self.solu
             self.fbest = self.fn(first_solu)[0]     # objective at (first) solution point
+
+    def dist_to_solu(self, xbest):
+        """
+        Return the distance of ``xbest`` to the true solution of the COP. If there are multiple solutions, compute the
+        distance of ``xbest`` to all of them and return the minimum. If ``self.solu`` is None, return NaN.
+
+        :param xbest: a vector in the original input space of the COP.
+        """
+        if self.solu is None:
+            return np.nan
+        if self.solu.ndim == 1:
+            return np.linalg.norm(xbest - self.solu)
+        elif self.solu.ndim == 2:
+            # If there are N equivalent solutions, then self.solu.shape = (N, dimension).
+            # We reshape xbest to (1, dimension), then array broadcasting will enlarge it to (N, dimension) to make
+            # the matrix subtraction possible. np.linalg.norm(..., axis=1) computes the norm along axis 1, i.e. the
+            # norm of all N row vectors.
+            return np.min(np.linalg.norm(xbest.reshape(1, self.dimension) - self.solu, axis=1))
+        else:
+            raise RuntimeError(f"Wrong value self.solu.ndim={self.solu.ndim}")
 
     def _call_G01(self):
         self.dimension = 13
@@ -172,7 +192,7 @@ class GCOP(COP):
         # self.fn = lambda x: ...
         self.fn = g02_fn    # increments ncall
 
-    def _call_G03(self, dim):
+    def _call_G03(self, dim, mu: float):
         assert dim is not None, "[_call_G03] dimension has to be integer, not None"
         assert type(dim) is int, "[_call_G03] dimension has to be integer"
         self.dimension = dim
@@ -180,7 +200,12 @@ class GCOP(COP):
         self.upper = np.repeat(1, dim)
         self.nConstraints = 1
         self.is_equ = np.repeat(True, 1)
-        self.solu = np.repeat(1/np.sqrt(dim), dim)          # with objective = -1.0, maxViol = 0.0
+        # --- the version before 2026/10/04 (we can now do better with general solution, see below) ---
+        # self.solu = np.repeat(1/np.sqrt(dim), dim)          # with objective = -1.0, maxViol = 0.0
+        #
+        # General solution for arbitrary mu, found via Lagrangion.
+        # obj:  -(1+mu)**(dim/2) ~ -1.0005 for (d,mu)=(10,1e-4), maxViol: mu
+        self.solu = np.repeat(np.sqrt(1 + mu) / np.sqrt(dim), dim)
         # no x0 provided
 
         def g03_fn(x):
@@ -390,16 +415,24 @@ class GCOP(COP):
         self.upper = np.array([1, 1])
         self.nConstraints = 1
         self.is_equ = np.array([True])
+        # --- the version before 2026/10/04 (we can now do better with general solution, see below) ---
+        # if mu == 1e-4:
+        #     self.solu = np.array([-0.707036200564406,  0.50000018890849])
+        #     # better solution found from SACOBRA_Py if mu-band=1e-4 is allowed:
+        #     # obj: 0.749900, maxViol: 9.9999999e-5
+        # else:
+        #     self.solu = np.array([-np.sqrt(0.5), 0.5])
+        #     # original solution (also reported -wrongly- in [LiangRunar06] as the solution for conTol=1e-4), this is
+        #     # the 'ideal' solution perfectly on the equality constraint line:
+        #     # obj: 0.750000, maxViol: -1.1e-16
+        #
+        # General solution for arbitrary mu, found via Lagrangion.
+        # Note that [+np.sqrt(0.5-mu), 0.5] is a second solution.
+        # obj:  0.75 - mu, maxViol: mu
+        solu0 = np.array([-np.sqrt(0.5-mu), 0.5])
+        self.solu = solu0.copy()
+        self.solu = np.vstack((self.solu, np.array([-solu0[0], solu0[1]])))     # bug fix 2026/10/04: added 2nd solu
         # no x0 provided
-        if mu == 1e-4:
-            self.solu = np.array([-0.707036200564406,  0.50000018890849])
-            # better solution found from SACOBRA_Py if mu-band=1e-4 is allowed:
-            # obj: 0.749900, maxViol: 9.9999999e-5
-        else:
-            self.solu = np.array([-np.sqrt(0.5), 0.5])
-            # original solution (also reported -wrongly- in [LiangRunar06] as the solution for conTol=1e-4), this is
-            # the 'ideal' solution perfectly on the equality constraint line:
-            # obj: 0.750000, maxViol: -1.1e-16
 
         def g11_fn(x):
             self.ncall += 1
@@ -430,7 +463,8 @@ class GCOP(COP):
         # self.fn = lambda x: ...
         self.fn = g12_fn     # increments ncall
 
-    def _call_G13(self):
+    def _call_G13(self, mu: float):
+        # currently, we do not have a 'better' solution for mu > 0
         self.dimension = 5
         self.lower = np.concatenate((np.repeat(-2.3, 2), np.repeat(-3.2, 3)))
         self.upper = np.concatenate((np.repeat(+2.3, 2), np.repeat(+3.2, 3)))
@@ -641,7 +675,7 @@ class GCOP(COP):
             # constraints. But this is illogical, because the same conTol is NOT applied for G11.)
             self.solu = np.array([201.784467214523659, 99.9999999999999005, 383.071034852773266,
                                   420, -10.9076584514292652, 0.0731482312084287128])
-            #                   obj = 8853.534016, but maxViol = 1e-4 (!)
+            #                   obj = 8853.534016, maxViol = 1e-4 (!)
         else:
             # better feasible solution from SACOBRA_Py run (trueFuncForSurrogates=True, cobraSeed=62):
             self.solu = np.array([2.017846653971304e+02,  9.999999784008750e+01, 3.830709791968072e+02,
@@ -769,7 +803,7 @@ class GCOP(COP):
                                   100.047897801386839, 6.68445185362377892, 5.99168428444264833, 6.21451648886070451
                                   ])        # obj = 193.7245100 with maxViol = 1.0e-04
         else:
-            # # better feasible solution from SACOBRA_Py run (trueFuncForSurrogates=True, cobraSeed=62):
+            # better feasible solution from SACOBRA_Py run (trueFuncForSurrogates=True, cobraSeed=62):
             self.solu = np.array([193.78692526205364,  0.               ,  17.328489707654096,
                                   100.00202460356996,  6.684609196910262,   5.991469608604098, 6.214599999975119
                                   ])        # obj = 193.786925 with maxViol = 2.2e-13
@@ -964,6 +998,7 @@ def check_problems():
 
             new_row_gdf = pd.DataFrame({
                 'name': problem,
+                'dim': newProb.dimension,
                 'nc': newProb.nConstraints,
                 'nEqu': np.sum(newProb.is_equ == True),
                 'sDim': sDim,           # number of dimensions of solu object
@@ -1009,6 +1044,9 @@ def inner_plot(df: DataFrame, muVec, gcop_fbest, gname, png_file, ylim=None):
         j_start=0
         for k in range(jumps.size):
             ind_k = ind_blue[j_start:jumps[k]]
+            if ind_blue[j_start] > 0:
+                # add 'one index earlier' to paint also the upwards shoulder of the jump in blue:
+                ind_k = np.array([ind_blue[j_start]-1] + list(ind_blue[j_start:jumps[k]]))
             plt.plot(iStart + ind_k, np.abs(err[ind_k]), 'b-', label='error')
             j_start = jumps[k]
     plt.title(gname, fontsize=20)
@@ -1039,7 +1077,7 @@ def show_error_plot(cobra: CobraInitializer, cop: COP, muVec, ylim=None, file=No
     :param cop:   contains fbest, the true best objective value, and name, the problem name
     :param muVec: values of ``currentMu`` (for all iterations after SACOBRA initialization)
     :param ylim:  (optional) limits for the y-axis
-    :param file:  (optional) where to save the PNG
+    :param file:  (optional) where to save the plot as PNG
     """
     inner_plot(cobra.df, muVec, cop.fbest, cop.name, file, ylim)
     # err = cobra.sac_res['fbestArray'] - cop.fbest
@@ -1064,6 +1102,44 @@ def png_error_plot(df: DataFrame, muVec, gcop_fbest, gname, png_file, ylim=None)
     """
     inner_plot(df, muVec, gcop_fbest, gname, png_file, ylim)
     plt.close()
+
+
+def png_boxplot_errs(dfsum: DataFrame, tit: str, png_file: str, ylim=None):
+    gnames = sorted(set(dfsum['gname'].values))
+    errs2 = []
+    labels2 = []
+    for g in gnames:
+        dims =  sorted(set(dfsum[dfsum.gname==g]['d'].values))
+        errs2 += [dfsum[(dfsum.gname==g) & (dfsum.d==d)]['err'].values for d in dims]
+        if len(dims) == 1:
+            labels2 += [g]
+        else:
+            labels2 += [g + '-'+str(d) for d in dims]
+    errs = [dfsum[dfsum.gname==g]['err'].values for g in gnames]
+    colors = ['peachpuff', 'orange', 'tomato', 'peachpuff', 'orange', 'tomato', 'peachpuff', 'orange', 'tomato',
+              'peachpuff', 'orange', 'tomato', 'peachpuff', 'orange', 'tomato', 'peachpuff', 'orange', 'tomato',
+              'peachpuff', 'orange', 'tomato', 'peachpuff', 'orange', 'tomato', 'peachpuff', 'orange', 'tomato',]
+    fig, ax = plt.subplots(figsize=(14, 6))
+    bplot = ax.boxplot(errs2,
+                       patch_artist=True,  # fill with color
+                       medianprops={"color": "black", "linewidth": 0.5},
+                       tick_labels=labels2)  # will be used to label x-ticks
+    # fill with colors
+    for patch, color in zip(bplot['boxes'], colors):
+        patch.set_facecolor(color)
+
+    plt.title(f"{tit}, {errs[0].size} runs", fontsize=20)
+    plt.xlabel('problem', fontsize=16)
+    plt.ylabel('error', fontsize=16)
+    plt.xticks(fontsize=14)
+    plt.yticks(fontsize=14)
+    plt.subplot(111).set_yscale("log")
+    if ylim is not None:
+        plt.subplot(111).set(ylim=ylim)
+    if png_file is not None:
+        plt.savefig(png_file)
+        print(f"png_boxplot_errs saved to {png_file}")
+    # plt.show()
 
 
 if __name__ == '__main__':

@@ -4,7 +4,7 @@ Details Optimization
 
 
 Details Phase II
------------------
+----------------
 .. Including the following two lines leads to strange warnings:
 .. .. autoclass:: innerFuncs.PlogSquasher
    :members: get_warn_summary

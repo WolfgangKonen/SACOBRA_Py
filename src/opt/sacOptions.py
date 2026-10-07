@@ -37,10 +37,10 @@ class SACoptions:
         :type EQU: EQUoptions
         :param ISA: nested Internal SACOBRA options
         :type ISA: ISAoptions
+        :param RI: nested options for repair infeasible
+        :type RI: RIoptions
         :param MS: nested options for model selection (TODO)
         :type MS: MSoptions
-        :param RI: nested options for repair infeasible (TODO)
-        :type TR: RIoptions
         :param TR: nested options for trust region (TODO)
         :type TR: TRoptions
     """

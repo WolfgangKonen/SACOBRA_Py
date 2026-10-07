@@ -218,7 +218,8 @@ class CobraPhaseII:
             PlogSquasher.reset_warn_counter()
         # TODO: some final settings to self.cobra, self.p2
 
-        # Fill in remaining variables of self.p2 (constr, fin_err, ncall, ...)
+        # Fill in remaining variables of self.p2 (constr, fin_err, ncall, maxViol, ...)
+        # (Note that p2.maxViol is filled from cobra.sac_res['trueMaxViol'])
         self.p2.fill(self.cobra, gcop)
 
         if self.cobra.is_feasible():
@@ -260,11 +261,12 @@ class CobraPhaseII:
         - **fBest**: the all-time best feasible objective value. As long as no feasible point is found, the fitness of the one with the least maximum violation
         - **dist**: distance of the true solution to infill point, in rescaled space. Minimum distance for multiple solu's, None if no solu is provided
         - **distOrig**: the same, but in original space
+        - **dbest**: distance of ``xbest`` at every iteration to true solution, in rescaled space. Minimum distance for multiple solu's
         - **RS**: True if it is an iteration with a random start
         - **XI**: :ref:`DRC <DRC-label>` for this iteration
+        - **optimizer**: optimization algorithm
         - **optimConv**: convergence of sequential optimization
         - **optimTime**: time of this sequential optimization
-        - **optimizer**: optimization algorithm
         - **seed**: ```sac_opts.cobraSeed``
         - ...
 

@@ -16,3 +16,8 @@ PART II: COP, Equ, FnArch and Repair
 
 .. autoclass:: testRepair.TestRepair
    :members: test_eps_feas, test_find_best, test_repair, test_time_repair, test_grfact
+
+Class ``OneS`` is described in more detail in Sec. Reproducible Experiments of main SACOBRA_Py docu
+
+.. autoclass:: one_s_multi_g.OneS
+   :members: one_s, one_s_multi_g_r

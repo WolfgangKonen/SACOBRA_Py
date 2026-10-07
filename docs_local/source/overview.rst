@@ -6,7 +6,7 @@ What is **SACOBRA_Py** and what is contained in this documentation?
 
 
 SACOBRA_Py
------------------
+----------------
 
 **SACOBRA_Py**, available from `<https://github.com/WolfgangKonen/SACOBRA_Py>`_, is the SACOBRA Python port.
 
@@ -32,6 +32,7 @@ This documentation contains:
     - how initialization of SACOBRA_Py works
     - how optimization in SACOBRA_Py is done
     - usage examples
+    - how to conduct reproducible experiments
     - an appendix with further details (dict ``cobra.sac_res`` and data frames ``cobra.df``, ``cobra.df2``)
 
 
@@ -48,7 +49,9 @@ It is based on the earlier R package SACOBRA which was authored by
 - Wolfgang Konen, TH Köln
 - Thomas Baeck, Univ. Leiden
 
-SACOBRA uses many ideas from and extends COBRA, which was developed by R. G. Regis [Regis14]_.
+SACOBRA uses many ideas from and extends COBRA [Regis14]_, which was developed by
+
+- Rommel G. Regis, SJU, Philadelphia.
 
 The **SACOBRA_Py** realization relies on these other Python packages and software tools:
 
@@ -61,4 +64,4 @@ The **SACOBRA_Py** realization relies on these other Python packages and softwar
 
 We acknowledge and are grateful for all the work that goes into these great open source software tools!
 
-.. [Regis14] R. G. Regis. Constrained optimization by radial basis function interpolation for high-dimensional expensive black-box problems with infeasible initial points. Engineering Optimization, 46(2):218-243, 2014.
+.. [Regis14] Regis, Rommel G. Constrained optimization by radial basis function interpolation for high-dimensional expensive black-box problems with infeasible initial points. Engineering Optimization, 46(2):218-243, 2014.

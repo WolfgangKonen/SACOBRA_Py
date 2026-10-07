@@ -119,7 +119,8 @@ def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, EPS,
         df_predSolu = concat(cobra.df.predSolu, predSolu)
 
     # calculate distA and distOrig (distance to solu in rescaled and original space):
-    distA, distOrig = cobra.solu_cont.distance_to_solu(cobra)
+    distA, distOrig, dbest = cobra.solu_cont.distance_to_solu(cobra)
+    cobra.sac_res['dbest'] = dbest
 
     # several assertions
     assert s_res['Fres'].shape[0] == predY.size, "[updateSaveCobra] predY"
@@ -127,6 +128,7 @@ def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, EPS,
     assert s_res['Fres'].shape[0] == optimConv.size, "[updateSaveCobra] optimConv 2"
     assert s_res['Fres'].shape[0] == optimTime.size, "[updateSaveCobra] optimTime"
     assert s_res['Fres'].shape[0] == s_res['fbestArray'].size, "[updateSaveCobra] fbestArray"
+    assert s_res['Fres'].shape[0] == s_res['A'].shape[0], "[updateSaveCobra] Fres - A"
     if CONSTRAINED:
         assert s_res['Fres'].shape[0] == feas.size, "[updateSaveCobra] feas"
         assert s_res['Fres'].shape[0] == feasPred.size, "[updateSaveCobra] feasPred"
@@ -153,6 +155,7 @@ def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, EPS,
              'optimTime': optimTime,
              'dist': distA,         # distance of solu to infill points, rescaled space (min dist for multiple solu's)
              'distOrig': distOrig,  # the same, but in original space
+             'dbest': dbest,    # distance of solu to ``xbest`` at every iteration, rescaled space
              'RS': df_RS,       # TRUE, if it is an iteration with random start point
              })
     else:   # i.e. if not CONSTRAINED:

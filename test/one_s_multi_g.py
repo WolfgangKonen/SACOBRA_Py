@@ -5,9 +5,11 @@ import numpy as np
 import pandas as pd
 from datetime import datetime
 
+from pandas.core.interchange.dataframe_protocol import DataFrame
+
 from cobraInit import CobraInitializer
 from ex_COP import ExamCOP
-from gCOP import GCOP, png_error_plot, show_error_plot
+from gCOP import GCOP, png_error_plot, show_error_plot, png_boxplot_errs
 from cobraPhaseII import CobraPhaseII
 from opt.equOptions import EQUoptions
 from opt.isaOptions import ISAoptions, O_LOGIC
@@ -21,14 +23,15 @@ verb = 1
 
 
 class OneS:
-    def one_s(self, gname: str, dim: int, cobraSeed: int, feval=300, conTol=0.0):
+    def one_s(self, gname: str, dim: int, cobraSeed: int, feval=300, conTol=0.0) -> CobraPhaseII:
         """ One SACOBRA configuration for all G-problems.
 
             Run this configuration on COP ``gname`` with given seed, using ``feval`` and ``conTol`` as specified
             or as given by the defaults.
 
         :param gname:       name of G-problem
-        :param dim:         dimension for G-problems with variable dimension
+        :param dim:         dimension for G-problems with variable dimension (only relevant for G02 and G03;
+                            ignored for other G-problems)
         :param cobraSeed:   seed
         :param feval:       real function evaluations
         :param conTol:      constraint tolerance, common values are 0 or 1e-7
@@ -55,12 +58,12 @@ class OneS:
                                                    # RBF=RBFoptions(degree=1.5, interpolator="sacobra"),  # test only, "cubic"
                                                    # RBF=RBFoptions(kernel="gaussian", degree=2),   # alternative "gaussian"
                                                    # ISA=ISAoptions(onlinePLOG=O_LOGIC.NONE),   # the default (before 2025/08/01)
-                                                   ISA=ISAoptions(onlinePLOG=O_LOGIC.MIDPTS), # run 2025/08/12   # , TGR=np.inf
+                                                   ISA=ISAoptions(onlinePLOG=O_LOGIC.MIDPTS),   # run 2025/08/12   # , TGR=np.inf
                                                    # ISA=ISAoptions(onlinePLOG=O_LOGIC.XNEW),     # run 2025/08/13
                                                    EQU=equ,
                                                    RI=RIoptions(repairInfeas=True, eps2=0, q=3, repairMargin=np.inf, checkIt=False), # new 2025/10/15
                                                    SEQ=SEQoptions(finalEpsXiZero=True,  # epsilonMax=0.0,
-                                                                  conTol=conTol,)))  #,  trueFuncForSurrogates=True
+                                                                  conTol=conTol,)))  # ,  trueFuncForSurrogates=True
         # --- ncall-debug only: ---
         # print(f"after cobraInit: gcop.ncall = {gcop.ncall}")
         # cobra.sac_res['ncall'][18] = idp                # initial design points
@@ -77,6 +80,10 @@ class OneS:
         # print(gcop.fn(gcop.solu))
         print(gcop.fbest)
         print(c2.cobra.get_fbest())
+        xbest = c2.cobra.get_xbest()
+        dist_xbest = gcop.dist_to_solu(xbest)
+        print(f"dist_xbest = {dist_xbest}")
+        dummy = 0
         #
         # --- ncall-debug only: ---
         # print(f"after phase II: gcop.ncall = {gcop.ncall}")
@@ -87,22 +94,43 @@ class OneS:
 
         return c2
 
-    def one_s_multi_g_r(self, gnames: list, dims: list, runs: int, cobraSeed: int, feval=300, conTol: float|None=0):
+    def one_s_multi_g_r(self, gnames: list, dims: list, runs: int, cobraSeed: int, feval=300, conTol: float | None=0,
+                        mlist: list=['one_s']) -> DataFrame:
         """
-            Perform multiple SACOBRA-runs on multiple G-problems with method ``meth`` (def'd in source code below):
+            Perform multiple SACOBRA-runs on multiple G-problems, return result summary in data frame ``dfsum``, using method ``meth`` from ``mlist``:
 
             - ``meth='one_s'``: One SACOBRA configuration for all G-problems,
-            - ``meth='solve'``: G-problem-specific SACOBRA configuration (see ExamCop)
+            - ``meth='solve'``: G-problem-specific SACOBRA configuration (see :class:`.ExamCop`)
+
+            Side effect: Many detail files are written to directory ``test/feather/run%Y-%m-%d_%Hh%Mm%S``
+            (year-month-day_hour-minute-second).
 
         :param gnames:  list of G-problem names
-        :param dims:    list of corresponding dimensions (only relevant for G02 and G03)
+        :param dims:    list of corresponding dimensions (only relevant for G02 and G03; for other G-problems, any
+                        value, e.g. -1, may be used)
         :param runs:    how many runs
         :param cobraSeed: run ``r in range(runs)`` gets seed ``cobraSeed + r``
         :param feval:   budget of real function evaluations
         :param conTol:  common constraint tolerance for all runs (if None, use the defaults of each (gname,meth)-combi)
-        :return:        a data frame, with one row for each run and columns 'time' (computation time in ms), 'err' (final
-                        error after feval iterations) and others, which is also saved to
-                        ``"feather/df2.feather"``.
+        :param mlist:   list with settings for ``meth``: either ``'one_s'`` or ``'solve'`` or both
+        :return:        a data frame **dfsum**, with one row for each run and the following columns:
+
+                        - **gname**: name of G-problem
+                        - **dim**: dimension
+                        - **meth**: either ``‘solve’`` (problem-specific param settings) or ``‘one_s’`` (one set for all problems)
+                        - **seed**: the value of cobra.seed
+                        - **time**: computation time in ms
+                        - **err**: final error after ``feval`` iterations
+                        - **feval**: number of true function evaluations
+                        - **conTol**: constraint tolerance ``c2.p2.conTol``
+                        - **maxViol**: final maximum violation ``c2.p2.maxViol``
+                        - **isFeas**: 1 if this run produced a feasible solution, 0 else
+                        - **maxConstr**: ``max(constr)`` where ``constr`` are the true constraints evaluated at final ``xbest``
+                        - **dbest**: distance of final ``xbest`` to true solution, in rescaled space
+                        - **ncall**: the true function calls to ``GCOP.fn`` in this run
+                        - **n_repair**: number of repair steps conducted (# calls to :meth:`.RI2.repairInfeasRI2`)
+                        - **n_rep_suc**: number of successful repair steps (feasible solution after repair)
+
         """
         current_datetime = datetime.now()
         dir_run = current_datetime.strftime("feather/run%Y-%m-%d_%Hh%Mm%S")
@@ -112,7 +140,7 @@ class OneS:
         dfsum = pd.DataFrame()
         for i, gname in enumerate(gnames):
             dim = dims[i]
-            for meth in ['solve',]:   #  'solve','one_s'
+            for meth in mlist:   # 'solve','one_s'
                 for run in range(runs):
                     start = time.perf_counter()
                     if conTol is None:          # use the default conTol of each method
@@ -131,11 +159,13 @@ class OneS:
                     if meth == 'one_s':
                         c2 = eval(f"self.one_s(gname, dim, cobraSeed + run, feval {conTolStr})")
                         # why 'eval(...)'? - to be able to call cop.solve_{*} and to add conTolStr in a flexible way
-                    else:   # i.e. if meth=='solve'
+                    elif meth == 'solve':
                         if gname in {"G02", "G03"}:
                             c2 = eval(f"cop.solve_{gname}(cobraSeed + run, {dim}, feval={feval}, verbIter=100 {conTolStr})")
                         else:
                             c2 = eval(f"cop.solve_{gname}(cobraSeed + run, feval={feval}, verbIter=100 {conTolStr})")
+                    else:
+                        raise RuntimeError(f"Unallowed value meth={meth} in mlist={mlist}")
                     time_ms = (time.perf_counter() - start) / runs * 1000
                     new_row_dfs = pd.DataFrame(
                         {
@@ -150,12 +180,13 @@ class OneS:
                             'maxViol': c2.p2.maxViol,
                             'isFeas': 0 if c2.p2.maxViol > 0 else 1,
                             'maxConstr': max(c2.p2.constr),     # c2.p2.constr: see end of CobraPhaseII::start
+                            'dbest': c2.p2.dbest,
                             'ncall': c2.p2.ncall,
                             'n_repair': c2.p2.ri2.n_repair,
                             'n_rep_suc': c2.p2.ri2.n_rep_suc,
                         }, index=[0])
                     dfsum = pd.concat([dfsum, new_row_dfs], axis=0)
-                    f_prefix = f"{dir_run}/{gname}_{c2.p2.dim:02d}_{run:02d}"
+                    f_prefix = f"{dir_run}/{gname}_{c2.p2.dim:02d}_{meth}_{run:02d}"     # /WK/2026-10-03: added {meth}
                     c2_df1 = c2.cobra.df.drop(["optimizer", "optimConv"], axis=1)
                     c2_df2 = c2.cobra.df2.drop(["predSoluPenal", "sigmaD", "penaF", "err1", "err2",
                                                "nv_cB", "nv_cA", "nv_tB", "nv_tA"], axis=1)
@@ -163,34 +194,40 @@ class OneS:
                     print(f"c2.cobra.df  saved to {os.getcwd()}/{f_prefix}_df1.feather")
                     c2_df2.to_feather(f"{f_prefix}_df2.feather")
                     print(f"c2.cobra.df2 saved to {os.getcwd()}/{f_prefix}_df2.feather")
-                    gtitle = f"{gname}, d={c2.p2.dim:02d}"
-                    png_error_plot(c2.cobra.df, c2.get_muVec(), c2.p2.f_solu, gtitle, png_file=f"{f_prefix}.png")
-                    dummy = 0
+                    if c2.p2.f_solu is None:
+                        print(f"WARNING: Cannot call png_error_plot, because cobra.solu (p2.f_solu) is None.")
+                    else:
+                        gtitle = f"{gname}, d={c2.p2.dim:02d}"
+                        png_error_plot(c2.cobra.df, c2.get_muVec(), c2.p2.f_solu, gtitle, png_file=f"{f_prefix}.png")
+                        print(f"png_error_plot saved to {f_prefix}_df2.feather")
         print(dfsum)
         dfsum.to_feather(f"{dir_run}/dfsum.feather")
         print(f"dfsum saved to {os.getcwd()}/{dir_run}/dfsum.feather")
         # --- Read it back with: ---
         # dfsum = pd.read_feather(f"{dir_run}/dfsum.feather")
-        dfsum.to_csv(f"{dir_run}/dfsum.csv", sep=";", index = False, float_format =" %.8e")
+        dfsum.to_csv(f"{dir_run}/dfsum.csv", sep=";", index=False, float_format=" %.8e")
+        # --- Read it back with: ---
+        # dfsum = pd.read_csv(f"{dir_run}/dfsum.csv", sep=";")
+        png_boxplot_errs(dfsum, dir_run[8:8+13], f"{dir_run}/box_{dir_run[8:8+13]}.png")
         print(f"\n Number of runs in dfsum: {dfsum.seed.unique().size} for each (gname,meth)-combi")
         print("\n --- Median for each problem --- ")
         # if there are NaNs in column dfsum['err'] (run with no feasible solu found), then groupby will automatically
         # drop all NaN-rows prior to median calculation. The number of feasible runs is found by summing column
         # dfsum['isFeas'] in s_df and replacing this column in m_df by the s_df-column
-        m_df = dfsum.groupby(['gname','meth','d']).median()
-        s_df = dfsum.groupby(['gname','meth','d']).sum()
+        m_df = dfsum.groupby(['gname', 'meth', 'd']).median()
+        s_df = dfsum.groupby(['gname', 'meth', 'd']).sum()
         m_df['isFeas'] = s_df['isFeas']
         m_df = m_df.drop(["seed", "conTol", "maxViol", "n_repair", "n_rep_suc"], axis=1)
         print(m_df)
         print("\n ---  Std for each problem --- ")
-        s_df = dfsum.groupby(['gname','meth','d']).std()
+        s_df = dfsum.groupby(['gname', 'meth', 'd']).std()
         s_df = s_df.drop(["seed", "conTol", "maxViol", "n_repair", "n_rep_suc"], axis=1)
         print(s_df)
         m_df['std_time'] = s_df['time']
         m_df['std_err'] = s_df['err']
         m_df.to_csv(f"{dir_run}/med_std_grp.csv", sep=";", index=True, float_format=" %.8e")
         with open(f"{dir_run}/s_opts.pickle", 'wb') as f:
-            pickle.dump(c2.cobra.sac_opts, f, pickle.HIGHEST_PROTOCOL)
+            pickle.dump(c2.cobra.sac_opts, f, pickle.HIGHEST_PROTOCOL)      # save sac_opts of *last* run
         print(f"sac_opts saved to {os.getcwd()}/{dir_run}/s_opts.pickle")
         # --- Read it back with: ---
         # with open(f"{dir_run}/s_opts.pickle", 'rb') as f:
@@ -238,45 +275,59 @@ class OneS:
             # It turns out that results for conTol = 0.0 | 1e-7 are very similar (at least for G01, ..., G13).
             #
             df2 = pd.read_feather("feather/"+fname2)
-            assert np.all(df1['gname'] == df2['gname'] )
+            assert np.all(df1['gname'] == df2['gname'])
             assert np.all(df1['meth'] == df2['meth'])
             df1['time2'] = df2['time']
             df1['err2'] = df2['err']
-            df1 = df1.drop(["conTol","seed"],axis=1)    # drop some columns so that all other columns get printed
+            df1 = df1.drop(["conTol", "seed"], axis=1)    # drop some columns so that all other columns get printed
         print("\n --- Median for each (problem, meth) --- ")
         x = df1.groupby(['gname', 'meth', 'd']).median()   # median() will automatically drop NaNs (!)
         print(x.loc[:, ['time', 'err', 'n_repair', 'n_rep_suc']])
         print("\n ---  Std for each (problem, meth) --- ")
         x = df1.groupby(['gname', 'meth', 'd']).std()
         if 'maxViol' in x.columns:
-            print(x.loc[:, ['err','maxViol','n_repair','n_rep_suc']])                    # to get it printed if df1 has too many columns
+            print(x.loc[:, ['err', 'maxViol', 'n_repair', 'n_rep_suc']])           # to get it printed if df1 has too many columns
         else:
-            print(x.loc[:, ['err','n_repair','n_rep_suc']])
+            print(x.loc[:, ['err', 'n_repair', 'n_rep_suc']])
         # print("\n --- Mean for each problem --- ")
         # del df1['meth']
         # print(df1.groupby(['gname']).mean())
         y = df1.groupby(['gname', 'meth', 'd']).count()       # count() will automatically drop NaNs
-        print("\n ---  Runs that found no feasible solution --- ")        # --> err may have less counts due to NaNs for
-        print(y['feval'] - y['err'])                          # 'infeasible runs'
+        print("\n ---  Runs that found no feasible solution --- ")     # --> err may have fewer counts due to NaNs for
+        print(y['feval'] - y['err'])                                   # 'infeasible runs'
 
         if any(df1['gname'] == "G02"):
             print(f"\nThe (G02, d=2)-errors for {fname1}:")
-            G02_2_errs = np.array(df1[(df1["gname"]=="G02") &
-                                      (df1["d"]==2) &
-                                      (df1["meth"]=="one_s")]["err"])
+            G02_2_errs = np.array(df1[(df1["gname"] == "G02") &
+                                      (df1["d"] == 2) &
+                                      (df1["meth"] == "one_s")]["err"])
             print(np.sort(G02_2_errs))
             print(f"median = {np.median(G02_2_errs)}")
 
         if any(df1['gname'] == "G03"):
             print(f"\nThe (G03, d=10)-errors for {fname1}:")
-            G03_10_errs = np.array(df1[(df1["gname"]=="G03") & (df1["d"]==10)]["err"])
+            G03_10_errs = np.array(df1[(df1["gname"] == "G03") & (df1["d"] == 10)]["err"])
             print(np.sort(G03_10_errs))
             print(f"median = {np.median(G03_10_errs)}")
+
+    def run_analyze(self, runname: str):
+        print(f"\n--- Analysis of run {runname} ---")
+        dir_run = "feather/"+runname
+        with open(f"{dir_run}/s_opts.pickle", 'rb') as f:
+            s_opts = pickle.load(f)
+        dfsum = pd.read_feather(f"{dir_run}/dfsum.feather")
+        # dfsum = pd.read_csv(f"{dir_run}/dfsum-2026-10-04.csv", sep=";")
+        # dfsum.to_feather(f"{dir_run}/dfsum.feather")
+        # print(dfsum[dfsum["gname"]=="G03"]['err'].values)
+        png_boxplot_errs(dfsum, runname[0:13], f"{dir_run}/box_{runname[0:13]}.png")
+        print(f"trueFuncForSurr={s_opts.SEQ.trueFuncForSurrogates}")
+        print(f"conTol={s_opts.SEQ.conTol}")
+        dummy = 0
 
 
 if __name__ == '__main__':
     one = OneS()
-    gnames = ["G03", "G09",]  #  "G08", "G09", "G10",
+    gnames = ["G03", "G09",]  # "G08", "G09", "G10",
     dims   = [   10,   -1]
     gnames = ["G22"]  # , "G21", "G22", "G21", "G22", "G24" "G10", "G11", "G12",
     dims   = [   -1]  # ,    -1,    -1,    -1,    -1,    -1,
@@ -286,15 +337,19 @@ if __name__ == '__main__':
     dims   = [   -1,    -1]  # ,    -1,    -1,    -1,    -1,
     gnames = ["G02"]  # , "G21", "G22", "G21", "G22", "G24" "G10", "G11", "G12",
     dims   = [   2]  # ,    -1,    -1,    -1,    -1,    -1,
-    gnames = ["G01", "G02", "G02", "G03", "G03", "G04", "G05", "G06", "G07", "G08", "G09", "G10", "G11", "G12", "G13"] #
-    dims   = [  -1,     2,     5,     7,    10,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1 ] #
     gnames = ["G05", "G06"]  # , "G13",
     dims   = [   -1,    -1]  # ,    -1,    -1,    -1,    -1,
     gnames = ["G14", "G15", "G16", "G17", "G18", "G19", "G21", "G22", "G23", "G24"]
     dims   = [  -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1]
     gnames = ["G17"]  # , "G21", "G22", "G21", "G22", "G24" "G10", "G11", "G12",
     dims   = [   -1]  # ,    -1,    -1,    -1,    -1,    -1,
-    df2 = one.one_s_multi_g_r(gnames, dims,3, 65, feval=500, conTol=0.0)     #   # conTol=1e-4 | 1e-7
+    gnames = ["G01" , "G02", "G02", "G03", "G03", "G04", "G05", "G06", "G07",]  #
+    dims   = [  -1,     2,     5,     7,    10,    -1,    -1,    -1,    -1, ]  #
+    gnames = ["G01", "G02", "G02", "G03", "G03", "G04", "G05", "G06", "G07", "G08", "G09", "G10", "G11", "G12", "G13"]  #
+    dims   = [  -1,     2,     5,     7,    10,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1 ]  #
+    gnames = ["G11"]  # , "G21", "G22", "G21", "G22", "G24" "G10", "G11", "G12",
+    dims   = [  -1 ]  # ,    -1,    -1,    -1,    -1,    -1,
+    df2 = one.one_s_multi_g_r(gnames, dims,3, 65, feval=500, conTol=0.0, mlist=['solve', 'one_s'])     #  # conTol=1e-4 | 1e-7
     # init_df = one.multi_init(gnames, 54, feval=120)
     # one.df_analyze("df2_conTol0.0-fe500-G01-G13.feather", "df2_conTol1e-7-fe500-G01-G13.feather")
     # one.df_analyze("df2_conTol0.0-MIDPTS-fe500-G14-G24.feather")   # NONE | XNEW | MIDPTS
@@ -302,7 +357,5 @@ if __name__ == '__main__':
     # one.df_analyze("df2.feather")
     # one.df_analyze("df2-G22-T5.feather")
     # one.df_analyze("df2_repair-conTol0.0-MIDPTS-cubic-fe500-G14-24.feather")
-
-
-
-
+    one.run_analyze("run2026-10-04_11h01m26-g01g13")
+    # one.run_analyze("run2026-01-20_21h01m13-mu1m4-ncall")
