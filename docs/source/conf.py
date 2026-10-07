@@ -17,9 +17,9 @@ sys.path.insert(0, str(Path('..', '..', 'test').resolve()))
 #print(sys.path)
 
 project = 'SACOBRA_Py'
-copyright = '2025, Wolfgang Konen'
+copyright = '2026, Wolfgang Konen'
 author = 'Wolfgang Konen'
-release = '0.9'
+release = '0.95'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -40,5 +40,6 @@ exclude_patterns = []
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 # html_theme = 'alabaster'
+# html_theme = 'sphinx_rtd_theme'
 html_theme = 'furo'
 html_static_path = ['_static']
