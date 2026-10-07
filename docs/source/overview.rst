@@ -43,7 +43,7 @@ You can read more about SACOBRA in the following scientific publications:
 - [Bagh16a]_
 - [Bagh16b]_
 - [Bagh17a]_
-- [Bagh17a]_
+- [Bagh17b]_
 - [Bagh18]_
 
 Authors and Credits
