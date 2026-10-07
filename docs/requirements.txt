@@ -1,4 +1,3 @@
-furo==2021.11.16
 nlopt==2.9.1
 numpy==2.2.1
 matplotlib==3.9.2
