@@ -75,14 +75,14 @@ The **SACOBRA_Py** realization relies on these other Python packages and softwar
 We acknowledge and are grateful for all the work that goes into these great open source software tools!
 
 
-.. [Regis14] Regis, Rommel G. Constrained optimization by radial basis function interpolation for high-dimensional expensive black-box problems with infeasible initial points. Engineering Optimization, 46(2):218-243, 2014.
+.. [Regis14] Regis, Rommel G. **Constrained optimization by radial basis function interpolation for high-dimensional expensive black-box problems with infeasible initial points.** Engineering Optimization, 46(2):218-243, 2014.
 
-.. [Bagh16a] Bagheri, S., Konen, W., Bäck, T. **Equality constraint handling for surrogate-assisted constrained optimization.** In K. C. Tan, editor, Proc. World Congress on Computational Intelligence (WCCI), Vancouver, p. 1924-1931. IEEE, 2016. [URL](http://www.gm.fh-koeln.de/~konen/Publikationen/Bagh16-WCCI.pdf)
+.. [Bagh16a] Bagheri, S., Konen, W., Bäck, T. **Equality constraint handling for surrogate-assisted constrained optimization.** In K. C. Tan, editor, Proc. World Congress on Computational Intelligence (WCCI), Vancouver, p. 1924-1931. IEEE, 2016. (http://www.gm.fh-koeln.de/~konen/Publikationen/Bagh16-WCCI.pdf)
 
-.. [Bagh16b] Bagheri, S., Konen, W., Bäck, T. **Online Selection of Surrogate Models for Constrained Black-Box Optimization.** In: Jin, Yaochu (Hrsg.): SSCI'2016, Athens, S. 1, IEEE, 2016. (**Best Student Paper Award**) [URL](http://www.gm.fh-koeln.de/~konen/Publikationen/Bagh16-SSCI.pdf)
+.. [Bagh16b] Bagheri, S., Konen, W., Bäck, T. **Online Selection of Surrogate Models for Constrained Black-Box Optimization.** In: Jin, Yaochu (Hrsg.): SSCI'2016, Athens, S. 1, IEEE, 2016. (**Best Student Paper Award**) (http://www.gm.fh-koeln.de/~konen/Publikationen/Bagh16-SSCI.pdf)
 
-.. [Bagh17a] Bagheri, S., Konen, W., Emmerich, M., Bäck, T. **Self-adjusting parameter control for surrogate-assisted constrained optimization under limited budgets.** In: Applied Soft Computing, vol. 61, p. 377-393, ISSN: 1568-4946, 2017. [URL](http://www.gm.fh-koeln.de/ciopwebpub/Bagh17b/ASOC-SACOBRA17.pdf)
+.. [Bagh17a] Bagheri, S., Konen, W., Emmerich, M., Bäck, T. **Self-adjusting parameter control for surrogate-assisted constrained optimization under limited budgets.** In: Applied Soft Computing, vol. 61, p. 377-393, ISSN: 1568-4946, 2017. (http://www.gm.fh-koeln.de/ciopwebpub/Bagh17b/ASOC-SACOBRA17.pdf)
 
-.. [Bagh17b] Bagheri, S., Konen, W., Bäck, T. **Comparing Kriging and Radial Basis Function Surrogates.** In: Hoffmann, Frank; Hüllermeier, Eyke (Hrsg.): Proceedings 27. Workshop Computational Intelligence, S. 243-259, Universitätsverlag Karlsruhe, 2017. [URL](https://publikationen.bibliothek.kit.edu/1000074341)
+.. [Bagh17b] Bagheri, S., Konen, W., Bäck, T. **Comparing Kriging and Radial Basis Function Surrogates.** In: Hoffmann, Frank; Hüllermeier, Eyke (Hrsg.): Proceedings 27. Workshop Computational Intelligence, S. 243-259, Universitätsverlag Karlsruhe, 2017. (https://publikationen.bibliothek.kit.edu/1000074341)
 
-.. [Bagh18] Bagheri, S., Konen, W., Bäck, T. **How to Solve the Dilemma of Margin-Based Equality Handling Methods.** In: Hoffmann, Frank; Hüllermeier, Eyke; Mikut, Ralf (Hrsg.): Proceedings 27. Workshop Computational Intelligence, S. 257-270, Universitätsverlag Karlsruhe, 2017. (**Young Author Award**) [URL](https://blogs.gm.fh-koeln.de/ciop/files/2018/12/GMA2018.pdf)
+.. [Bagh18] Bagheri, S., Konen, W., Bäck, T. **How to Solve the Dilemma of Margin-Based Equality Handling Methods.** In: Hoffmann, Frank; Hüllermeier, Eyke; Mikut, Ralf (Hrsg.): Proceedings 27. Workshop Computational Intelligence, S. 257-270, Universitätsverlag Karlsruhe, 2017. (**Young Author Award**) (https://blogs.gm.fh-koeln.de/ciop/files/2018/12/GMA2018.pdf)

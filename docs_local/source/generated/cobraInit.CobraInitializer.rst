@@ -5,7 +5,7 @@
 
 .. autoclass:: CobraInitializer
 
-   
+   :no-index:
    .. automethod:: __init__
 
    
@@ -23,9 +23,6 @@
       ~CobraInitializer.get_xbest_cobra
       ~CobraInitializer.minMaxLen
       ~CobraInitializer.minMaxLen2
-   
-   
-
    
    
    

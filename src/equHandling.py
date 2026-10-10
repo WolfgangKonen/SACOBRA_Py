@@ -99,7 +99,8 @@ def modifyMu(Cfeas, Cinfeas, Tfeas, currentMu, cobra: CobraInitializer, p2: Phas
     s_res = cobra.sac_res
     # s_res['muVec'] holds the vector named cobra$currentEps in R
     if s_opts.EQU.muGrow > 0:
-        if p2.num % s_opts.EQU.muGrow == 0:
+        if p2.num % s_opts.EQU.muGrow <= 1:             # bug fix 2026/10/10: if a repair step is involved, we may
+            #                                           # reach this point not at the 100th, but only at the 101st iter
             currentMu = s_res['muVec'][0]  # every muGrow (e.g. 100) iterations, re-enlarge the \mu-band
 
     switcher = {

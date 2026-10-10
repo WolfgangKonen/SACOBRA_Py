@@ -239,7 +239,9 @@ class CobraInitializer:
             conTol = s_opts.SEQ.conTol
             maxViol = np.maximum(conTol, np.max(tempG, axis=1))     # /WK/2025/03/23: bug fix conTol
             numViol = np.sum(tempG > conTol, axis=1)                # /WK/2025/03/23: bug fix conTol
-
+            tempG[:, equ_ind] = tempG[:, equ_ind] + currentMu - s_opts.EQU.muFinal
+            trueMaxViol = np.maximum(conTol, np.max(tempG, axis=1))     # /WK/2026/10/08: bug fix true feasibility
+            trueNumViol = np.sum(tempG > conTol, axis=1)                # /WK/2026/10/08: bug fix true feasibility
         #
         # STEP 6: best feasible/infeasible solution, based on numViol
         #

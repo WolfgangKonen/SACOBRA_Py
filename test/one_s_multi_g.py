@@ -38,7 +38,7 @@ class OneS:
         :return:    ``c2``, the resulting object after running ``CobraPhaseII.start()``
         """
         print(f"Starting one_s({gname}, dim={dim}, {cobraSeed}) ...")
-        muFinal = 1e-4   # 1e-4 | 1e-7
+        muFinal = 1e-7   # 1e-4 | 1e-7
         if gname in {"G02", "G03"}:
             gcop = GCOP(gname, dimension=dim, mu=muFinal)
         else:
@@ -323,21 +323,26 @@ class OneS:
         # dfsum = pd.read_csv(f"{dir_run}/dfsum-2026-10-04.csv", sep=";")
         # dfsum.to_feather(f"{dir_run}/dfsum.feather")
         # print(dfsum[dfsum["gname"]=="G03"]['err'].values)
-        png_boxplot_errs(dfsum, runname[0:13], f"{dir_run}/box_{runname[0:13]}.png")
+
+        yl = [min(dfsum.err), max(dfsum.err)]       # all three following boxplots with same y-range
+        # print(min(dfsum.err), max(dfsum.err))
+        # print(yl)
+        png_boxplot_errs(dfsum, runname[0:13], f"{dir_run}/box_{runname[0:13]}.png", ylim=yl)
+        for m in ['one_s', 'solve']:
+            png_boxplot_errs(dfsum, runname[0:13], f"{dir_run}/box_{runname[0:13]}_{m}.png", meth=m, ylim=yl)
         print(f"trueFuncForSurr={s_opts.SEQ.trueFuncForSurrogates}")
         print(f"conTol={s_opts.SEQ.conTol}")
+        # df1 = pd.read_feather(f"{dir_run}/dfsum.feather")
+
+        df1 = pd.read_feather(f"{dir_run}/G23_09_one_s_00_df1.feather")
+        df2 = pd.read_feather(f"feather/df2_conTol0.0-MIDPTS-fe500-G14-G24-EPS0.feather")
         dummy = 0
 
 
 if __name__ == '__main__':
     one = OneS()
-    gnames = ["G03", "G09",]  # "G08", "G09", "G10",
-    dims   = [   10,   -1]
     gnames = ["G22"]  # , "G21", "G22", "G21", "G22", "G24" "G10", "G11", "G12",
     dims   = [   -1]  # ,    -1,    -1,    -1,    -1,    -1,
-    gnames = ["G05", "G06"]     # "G13",
-    dims   = [   -1,    -1]  # ,    -1,    -1,    -1,    -1,
-    gnames = ["G05", "G06"]     # "G13",
     dims   = [   -1,    -1]  # ,    -1,    -1,    -1,    -1,
     gnames = ["G02"]  # , "G21", "G22", "G21", "G22", "G24" "G10", "G11", "G12",
     dims   = [   2]  # ,    -1,    -1,    -1,    -1,    -1,
@@ -345,15 +350,19 @@ if __name__ == '__main__':
     dims   = [   -1,    -1]  # ,    -1,    -1,    -1,    -1,
     gnames = ["G14", "G15", "G16", "G17", "G18", "G19", "G21", "G22", "G23", "G24"]
     dims   = [  -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1]
-    gnames = ["G17"]  # , "G21", "G22", "G21", "G22", "G24" "G10", "G11", "G12",
-    dims   = [   -1]  # ,    -1,    -1,    -1,    -1,    -1,
     gnames = ["G01" , "G02", "G02", "G03", "G03", "G04", "G05", "G06", "G07",]  #
     dims   = [  -1,     2,     5,     7,    10,    -1,    -1,    -1,    -1, ]  #
+    gnames = ["G07"]  # , "G21", "G22", "G21", "G22", "G24" "G10", "G11", "G12",
+    dims   = [  -1 ]  # ,    -1,    -1,    -1,    -1,    -1,
     gnames = ["G01", "G02", "G02", "G03", "G03", "G04", "G05", "G06", "G07", "G08", "G09", "G10", "G11", "G12", "G13"]  #
     dims   = [  -1,     2,     5,     7,    10,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1 ]  #
-    gnames = ["G11"]  # , "G21", "G22", "G21", "G22", "G24" "G10", "G11", "G12",
-    dims   = [  -1 ]  # ,    -1,    -1,    -1,    -1,    -1,
-    df2 = one.one_s_multi_g_r(gnames, dims,3, 65, feval=500, conTol=0.0, mlist=['solve', 'one_s'])     #  # conTol=1e-4 | 1e-7
+    gnames = ["G14", "G15", "G16", "G17", "G18", "G19", ]  # "G21", "G22", "G23", "G24"
+    dims   = [  -1,    -1,    -1,    -1,    -1,    -1, ]  #    -1,    -1,    -1,    -1
+    gnames = ["G21", "G23", "G24", ]  # , "G22"
+    dims   = [   -1,    -1,    -1, ]  # ,    -1
+    gnames = ["G21"]
+    dims   = [   -1]
+    df2 = one.one_s_multi_g_r(gnames, dims,10, 64, feval=500, conTol=1e-4, mlist=[ 'solve'])     # 'one_s',  # conTol=1e-4 | 1e-7
     # init_df = one.multi_init(gnames, 54, feval=120)
     # one.df_analyze("df2_conTol0.0-fe500-G01-G13.feather", "df2_conTol1e-7-fe500-G01-G13.feather")
     # one.df_analyze("df2_conTol0.0-MIDPTS-fe500-G14-G24.feather")   # NONE | XNEW | MIDPTS
@@ -362,4 +371,5 @@ if __name__ == '__main__':
     # one.df_analyze("df2-G22-T5.feather")
     # one.df_analyze("df2_repair-conTol0.0-MIDPTS-cubic-fe500-G14-24.feather")
     # one.run_analyze("run2026-10-04_11h01m26-g01g13")
-    # one.run_analyze("run2026-01-20_21h01m13-mu1m4-ncall")
+    # one.run_analyze("run2026-10-08_14h53m05-g21g24")
+    # one.run_analyze("run2026-10-08_11h59m48-g14g19")

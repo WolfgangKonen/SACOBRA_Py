@@ -95,13 +95,13 @@ def updateInfoAndCounters(cobra: CobraInitializer, p2: Phase2Vars, currentMu=0):
     if cobra.sac_opts.EQU.active:
         verboseprint(verbose, important = cobra.sac_opts.important,
                      message = f"Best Result.[{p2.num}]: {realXbest[0]} {realXbest[1]} | {cobra.sac_res['fbest']} | "
-                               f"{cobra.sac_res['trueMaxViol'][cobra.sac_res['ibest']]} |  {currentMu}")
+                               f"{cobra.sac_res['trueMaxViol'][cobra.sac_res['ibest']]:7.1e} |  {currentMu:7.1e}")
 
     else:
         # TODO: add the part with 'nrow(get("ARCHIVE",envir=intern.archive.env))' to the following message:
         verboseprint(verbose, important=cobra.sac_opts.important,
                      message=f"Best Result.[{p2.num}]: {realXbest[0]} {realXbest[1]} | {cobra.sac_res['fbest']} | "
-                             f"{cobra.sac_res['trueMaxViol'][cobra.sac_res['ibest']]}")
+                             f"{cobra.sac_res['trueMaxViol'][cobra.sac_res['ibest']]:7.1e}")
 
     if cobra.sac_res['numViol'][-1] == 0:
         p2.Cfeas += 1
@@ -149,7 +149,8 @@ def adjustMargins(cobra: CobraInitializer, p2: Phase2Vars):
         p2.currentMu = modifyMu(p2.Cfeas, p2.Cinfeas, Tfeas, p2.currentMu, cobra, p2)
 
     if cobra.sac_opts.RBF.rhoGrow > 0:
-        if p2.num % cobra.sac_opts.RBF.rhoGrow == 0:
+        if p2.num % cobra.sac_opts.RBF.rhoGrow <= 1:    # bug fix 2026/10/10: if a repair step is involved, we may
+            #                                           # reach this point not at the 100th, but only at the 101st iter
             cobra.sac_opts.RBF.rho = cobra.df2['rho'].values[0]  # every rhoGrow (e.g. 100) iterations, re-enlarge rho
 
     cobra.sac_opts.RBF.rho /= cobra.sac_opts.RBF.rhoDec
@@ -245,7 +246,7 @@ def do_repair_step(cobra: CobraInitializer, p2: Phase2Vars):
     else:
         p2.ev1.state = "repairSuccess" if z_is_feas else "repaired"
         p2.ev1.update(z, cobra, p2, p2.currentMu)   # set ev1.xNew=z; do update w/o refine, because state!="optimized"
-        updateInfoAndCounters(cobra, p2)            # includes increment p2.num
+        updateInfoAndCounters(cobra, p2, p2.currentMu)            # includes increment p2.num
         updateSaveCobra(cobra, p2, p2.EPS, fitFuncPenalRBF, distRequirement)
         if p2.ev1.state == "repairSuccess":
             if p2.num >= 362:

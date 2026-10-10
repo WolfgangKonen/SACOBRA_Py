@@ -165,7 +165,7 @@ class CobraPhaseII:
                     Surrogator1.calcPEffect(self.p2, self.p2.ev1.xNew, self.p2.ev1.xNewEval, verbose=True)
 
             # update cobra information (A, Fres, Gres, p2.num and others)
-            p2f.updateInfoAndCounters(self.cobra, self.p2)      # includes increment p2.num
+            p2f.updateInfoAndCounters(self.cobra, self.p2, self.p2.currentMu)      # includes increment p2.num
 
             # if self.p2.num == 27:
             #     dummy = 0
@@ -222,20 +222,25 @@ class CobraPhaseII:
         # (Note that p2.maxViol is filled from cobra.sac_res['trueMaxViol'])
         self.p2.fill(self.cobra, gcop)
 
-        if self.cobra.is_feasible():
+        if self.cobra.is_feasible():        # is_feasible()==True if at least one cobra.sac_res['trueNumViol'] == 0
             # Assert - if a feasible solution was found - that indeed all constraint violations (self.p2.constr,
             # with muFinal subtracted for equality constraints) are below conTol.
             # For equality constrained COPs, this means that the absolute values of equality constraints at the
             # solution point are all less than muFinal + conTol.
-            self.cobra.sac_res['ncall'][13] += 1  # ncall-debug
             equ_ind = np.flatnonzero(s_res['is_equ'])
+            self.cobra.sac_res['ncall'][13] += 1  # ncall-debug
+            # temp = self.p2.constr.copy()      # wrong version (before 2026-10-08)
+            # bug fix 2026-10-08: select the last true feasible infill point and check its feasibility:
+            ifeas = np.flatnonzero(self.cobra.sac_res['trueNumViol'] == 0)[-1]  # select the last (true) feasible ind
+            temp = self.cobra.sac_res['fn'](self.cobra.sac_res['A'][ifeas, :])[1:]
             if equ_ind.size > 0:
-                temp = self.p2.constr.copy()
                 temp[equ_ind] = np.abs(temp[equ_ind]) - s_opts.EQU.muFinal
+                if np.any(temp > s_opts.SEQ.conTol):
+                    dummy = 0
                 assert np.all(temp <= s_opts.SEQ.conTol)
                 # this assertion would indeed fire, if we had not made the bug fix 2026/01/18 in equHandling.py:30
             else:
-                assert np.all(self.p2.constr <= s_opts.SEQ.conTol)
+                assert np.all(temp <= s_opts.SEQ.conTol)
 
         return self
 
@@ -251,7 +256,7 @@ class CobraPhaseII:
         - **y**: the objective function value at the current infill point
         - **predY**: the fitness surrogate value at the current infill point
         - **predSolu**: the fitness surrogate value at the true solution (if provided, else none)
-        - **feasible**: is the current infill point feasible on the true objective?
+        - **feasible**: is the current infill point feasible in the true constraint functions?
         - **feasPred**: is the current infill point *predicted* to be feasible by the surrogate models?
         - **nViolations**: the number of violations in the constraint surrogates' prediction at the infill point
         - **trueNViol**: the number of violations in the true constraints at the infill point

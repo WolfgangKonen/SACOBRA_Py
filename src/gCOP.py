@@ -53,7 +53,7 @@ class GCOP(COP):
 
     For problems G03, G05, G11, G13, G14, G15, G17, G21, G22, G23 (those with equality constraints), different solutions
     **solu** can be selected via parameter ``mu``: If ``mu = 1e-4`` then each equality constraint has a tolerance band
-    :math:`|h_j(x)| \leq 10^{-4}`. This is the feasibility definition of [LiangRunar06], it results in slightly
+    :math:`|h_j(x)| \\leq 10^{-4}`. This is the feasibility definition of [LiangRunar06], it results in slightly
     violating solutions with somewhat better (lower) objective. But in the cases of the ten G-problems above, one can
     find also solutions with equality constraint violation :math:`10^{-6}, 10^{-7}` or below, at the price of
     slightly higher objectives. These solutions will be returned when ``mu=1e-6`` or ``mu=1e-7`` is set. This is useful
@@ -314,9 +314,23 @@ class GCOP(COP):
         self.upper = np.repeat(+10, self.dimension)
         self.nConstraints = 8
         self.is_equ = np.repeat(False, self.nConstraints)
-        self.solu = np.array([2.171997834812, 2.363679362798, 8.773925117415,
-                              5.095984215855, 0.990655966387, 1.430578427576,
-                              1.321647038816, 9.828728107011, 8.280094195305, 8.375923511901])
+
+        # # earlier solu SACOBRA_Py:
+        # self.solu = np.array([2.171997834812, 2.363679362798, 8.773925117415,
+        #                       5.095984215855, 0.990655966387, 1.430578427576,
+        #                       1.321647038816, 9.828728107011, 8.280094195305, 8.375923511901])
+        #                     # obj: 24.306209068925877, maxConstr: -1.109e-10
+        # better solu SACOBRA_Py (2026/10/08):
+        self.solu = np.array([2.171995811322628, 2.363684409682767, 8.773926091156888,
+                              5.095985129350122, 0.990654988907378, 1.430573845763572,
+                              1.321643094793446, 9.828724887850385, 8.280090487320518, 8.375927382703775])
+                            # obj: 24.306209068292706 (6.3e-10 smaller), maxConstr: -2.04e-11
+        # # [LiangRunar06], slightly infeasible:
+        # self.solu = np.array([(2.17199634142692, 2.3636830416034, 8.77392573913157,
+        #                        5.09598443745173, 0.990654756560493, 1.43057392853463,
+        #                        1.32164415364306, 9.82872576524495, 8.2800915887356, 8.3759266477347)])
+        #                     # obj: 24.30620906817991 (1.1e-10 smaller), maxConstr: +5.684e-14
+
         # no x0 provided
 
         def g07_fn(x):
@@ -481,7 +495,17 @@ class GCOP(COP):
 
         # self.fn = lambda x: ...
         self.fn = g13_fn     # increments ncall
-        solu0 = np.array([-1.7171435947203, 1.5957097321519, 1.8272456947885, -0.7636422812896, -0.7636439027742])
+        if mu == 1e-4:
+            # --- from [LiangRunar06] ---
+            solu0 = np.array([-1.71714224003, 1.59572124049468, 1.8272502406271,-0.763659881912867,-0.76365986736498])
+            # obj: 0.053941514041898,   maxViol = 1e-4
+            # --- from SACOBRA_Py run (8.3e-06 higher in objective) ---
+            # solu0 = np.array([-1.717434349781, 1.596050546032,  1.826701048125, -0.764437917926, -0.762784533766])
+            # obj: 0.05394982135355639, maxViol = 3.1712911074954775e-05
+        else:
+            # --- another solution with lower maxViol: ---
+            solu0 = np.array([-1.7171435947203, 1.5957097321519, 1.8272456947885, -0.7636422812896, -0.7636439027742])
+            # obj: 0.05394984069520585, maxViol = 1.2183024811207588e-07
         self.solu = solu0.copy()
         self.solu = np.vstack((self.solu, np.array([solu0[0], solu0[1], -solu0[2], -solu0[3], +solu0[4]])))
         self.solu = np.vstack((self.solu, np.array([solu0[0], solu0[1], -solu0[2], +solu0[3], -solu0[4]])))
@@ -511,7 +535,7 @@ class GCOP(COP):
         if mu == 1e-4:
             # original solution from the R side, with maxViol = 1e-4, not fully feasible.
             # (This is also the solution in [LiangRunar06], who states that conTol = 1e-4 is allowed for all equality
-            # constraints. But this is illogical, because the same conTol is NOT applied for G11.)
+            # constraints.)
             self.solu = np.array([0.0406684113216282, 0.147721240492452, 0.783205732104114, 0.00141433931889084,
                                   0.485293636780388, 0.000693183051556082, 0.0274052040687766, 0.0179509660214818,
                                   0.0373268186859717, 0.0968844604336845])        # obj: -47.7648, but maxViol = 1e-4 (!)
@@ -541,7 +565,7 @@ class GCOP(COP):
         if mu == 1e-4:
             # original solution from the R side, with maxViol = 1e-4, not fully feasible:
             # (This is also the solution in [LiangRunar06], who states that conTol = 1e-4 is allowed for all equality
-            # constraints. But this is illogical, because the same conTol is NOT applied for G11.)
+            # constraints.)
             self.solu = np.array([3.51212812611795133, 0.216987510429556135, 3.55217854929179921])
             #                   obj = 961.7150222899609, but maxViol = 1e-4 (!)
         else:
@@ -643,7 +667,14 @@ class GCOP(COP):
                              , g28, g29, g30, g31, g32, g33, g34, g35, g36, g37, g38])
 
         self.fn = g16_fn     # increments ncall
-        self.solu = np.array([705.17454,  68.60000, 102.90000, 282.32493,  37.58412])
+        # # --- from SACOBRA_Py run, slightly infeasible ---
+        # self.solu = np.array([705.17454,  68.60000, 102.90000, 282.32493,  37.58412])
+        #                     # obj: -1.9051552572263963, maxViol: +5.0e-06
+        # --- from [LiangRunar06] ---
+        self.solu = np.array([705.174537070090537, 68.5999999999999943, 102.899999999999991,
+                              282.324931593660324, 37.5841164258054832])
+                            # obj: -1.9051552585347862 (smaller by 1.3e-09), maxViol: 0.0
+
         # no x0 provided
 
     def _call_G17(self, mu: float):
@@ -908,21 +939,33 @@ class GCOP(COP):
         self.fn = g23_fn    # increments ncall
 
         if mu == 1e-4:
-            # better solution from SACOBRA_Py run (cobraSeed=61, muFinal=1e-4) with maxViol < 1e-4:
-            self.solu = np.array([4.950004409665087e-03, 9.999516013545789e+01, 0.000000000000000e+00,
-                                  1.000001111305474e+02, 4.000006002702339e-04, 4.375832150960157e-04,
-                                  9.999988887027335e+01, 2.000000000000000e+02, 1.000000000000198e-02])
-            #                    obj -400.0480732, maxViol 9.9e-05
+            # # older (2026/01) solution from SACOBRA_Py run (cobraSeed=61, muFinal=1e-4) with maxViol < 1e-4:
+            # self.solu = np.array([4.950004409665087e-03, 9.999516013545789e+01, 0.000000000000000e+00,
+            #                       1.000001111305474e+02, 4.000006002702339e-04, 4.375832150960157e-04,
+            #                       9.999988887027335e+01, 2.000000000000000e+02, 1.000000000000198e-02])
+            # #                    obj -400.0480732,       maxViol 9.9e-05
+            # better solution from SACOBRA_Py run (cobraSeed=67, muFinal=1e-4) with maxViol < 1e-4
+            # (2026/10, with setting SEQ.epsilonInit=SEQ.epsilonMax=0.0):
+            self.solu = np.array([4.949758055561304e-03, 9.999515573044231e+01, 1.498801083243961e-13,
+                                  1.000001064790039e+02, 4.112593127880704e-04, 4.121322761563295e-04,
+                                  9.999989352057578e+01, 2.000000000000000e+02, 1.000000000000000e-02])
+            #                    obj -400.0484545698856, maxViol 9.9e-05
         else:
-            # original solution from the R side and from [LiangRunar06]: exactly feasible
-            self.solu = np.array([0,  100, 0,  100,  0,  0,   100, 200, 0.01])
-            #                    obj -400.000000, maxViol 0.0
-            # better solution from SACOBRA_Py run (trueFuncForSurrogates=True, cobraSeed=54, muFinal=1e-7,
-            # epsilonMax=0.0) with slight infeasibility:
-            self.solu = np.array([2.296029616433160e-06, 9.999999964208477e+01, 5.975775430044905e-11,
-                                  1.000000019381573e+02, 5.306852807196449e-06, 5.306852807196449e-06,
-                                  9.999999806112899e+01, 1.999999999992329e+02, 1.000000011069957e-02])
-            #                    obj -400.000006, maxViol 3.4e-08
+            # # original solution from the R side and from [LiangRunar06]: exactly feasible
+            # self.solu = np.array([0,  100, 0,  100,  0,  0,   100, 200, 0.01])
+            # #                    obj -400.000000, maxViol 0.0
+            # # older (2026/01) solution from SACOBRA_Py run (trueFuncForSurrogates=True, cobraSeed=54, muFinal=1e-7,
+            # # epsilonMax=0.0) with slight infeasibility:
+            # self.solu = np.array([2.296029616433160e-06, 9.999999964208477e+01, 5.975775430044905e-11,
+            #                       1.000000019381573e+02, 5.306852807196449e-06, 5.306852807196449e-06,
+            #                       9.999999806112899e+01, 1.999999999992329e+02, 1.000000011069957e-02])
+            # #                    obj -400.00000602081695, maxViol 3.4e-08
+            # better solution from SACOBRA_Py run (cobraSeed=67, muFinal=1e-7) with maxViol < 1e-4
+            # (2026/10, with setting SEQ.epsilonInit=SEQ.epsilonMax=0.0):
+            self.solu = np.array([4.950000176418001e-06, 9.999999515558238e+01, 6.812883590612273e-11,
+                                  1.000000001065081e+02, 4.014090226878153e-07, 4.020716426467175e-07,
+                                  9.999999989351203e+01, 1.999999999999999e+02, 1.000000000000363e-02])
+            #                    obj -400.0000484675244, maxViol 9.8e-08
         # no x0 provided
 
 
@@ -1104,18 +1147,24 @@ def png_error_plot(df: DataFrame, muVec, gcop_fbest, gname, png_file, ylim=None)
     plt.close()
 
 
-def png_boxplot_errs(dfsum: DataFrame, tit: str, png_file: str, ylim=None):
+def png_boxplot_errs(dfsum: DataFrame, tit: str, png_file: str, meth=None, ylim=None):
     gnames = sorted(set(dfsum['gname'].values))
     errs2 = []
     labels2 = []
     for g in gnames:
         dims =  sorted(set(dfsum[dfsum.gname==g]['d'].values))
-        errs2 += [dfsum[(dfsum.gname==g) & (dfsum.d==d)]['err'].values for d in dims]
+        # errs2 += [dfsum[(dfsum.gname==g) & (dfsum.d==d)]['err'].values for d in dims]
+        if meth is None:
+            z = [dfsum[(dfsum.gname == g) & (dfsum.d == d)]['err'].values for d in dims]
+        else:
+            z = [dfsum[(dfsum.gname == g) & (dfsum.d == d) & (dfsum.meth==meth)]['err'].values for d in dims]
+        if np.min(np.array(z)) < 0:
+            print(f"[png_boxplot_errs] WARNING: negative errors in problem {g}")
+        errs2 += z
         if len(dims) == 1:
             labels2 += [g]
         else:
             labels2 += [g + '-'+str(d) for d in dims]
-    errs = [dfsum[dfsum.gname==g]['err'].values for g in gnames]
     colors = ['peachpuff', 'orange', 'tomato', 'peachpuff', 'orange', 'tomato', 'peachpuff', 'orange', 'tomato',
               'peachpuff', 'orange', 'tomato', 'peachpuff', 'orange', 'tomato', 'peachpuff', 'orange', 'tomato',
               'peachpuff', 'orange', 'tomato', 'peachpuff', 'orange', 'tomato', 'peachpuff', 'orange', 'tomato',]
@@ -1128,7 +1177,8 @@ def png_boxplot_errs(dfsum: DataFrame, tit: str, png_file: str, ylim=None):
     for patch, color in zip(bplot['boxes'], colors):
         patch.set_facecolor(color)
 
-    plt.title(f"{tit}, {errs[0].size} runs", fontsize=20)
+    meth_str = "" if meth==None else ', '+meth
+    plt.title(f"{tit}{meth_str}, {errs2[0].size} runs", fontsize=20)
     plt.xlabel('problem', fontsize=16)
     plt.ylabel('error', fontsize=16)
     plt.xticks(fontsize=14)
