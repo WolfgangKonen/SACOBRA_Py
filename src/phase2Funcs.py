@@ -145,6 +145,9 @@ def adjustMargins(cobra: CobraInitializer, p2: Phase2Vars):
 
         p2.Cinfeas = 0
 
+    # if p2.num > cobra.sac_opts.feval/2:   # /2026/10/10: new epsilon-adjustment strategy
+    #     p2.EPS = 0.0
+
     if cobra.sac_opts.EQU.active:
         p2.currentMu = modifyMu(p2.Cfeas, p2.Cinfeas, Tfeas, p2.currentMu, cobra, p2)
 

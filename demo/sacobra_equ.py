@@ -1,5 +1,6 @@
 import numpy as np
-from gCOP import GCOP, show_error_plot
+from gCOP import GCOP
+from plotUtils import show_error_plot
 from cobraInit import CobraInitializer
 from cobraPhaseII import CobraPhaseII
 from opt.equOptions import EQUoptions

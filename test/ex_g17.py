@@ -8,7 +8,8 @@ from datetime import datetime
 
 from cobraInit import CobraInitializer
 from ex_COP import analyze_solution, plot_func_surr
-from gCOP import GCOP, show_error_plot
+from gCOP import GCOP
+from plotUtils import show_error_plot
 from cobraPhaseII import CobraPhaseII
 from opt.equOptions import EQUoptions
 from opt.isaOptions import ISAoptions, O_LOGIC

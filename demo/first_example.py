@@ -1,7 +1,8 @@
 import numpy as np
 from cobraInit import CobraInitializer
 from cobraPhaseII import CobraPhaseII
-from gCOP import COP, show_error_plot
+from gCOP import COP
+from plotUtils import show_error_plot
 
 
 class MyCOP(COP):

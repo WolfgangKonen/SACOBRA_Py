@@ -4,7 +4,8 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 from cobraInit import CobraInitializer
-from gCOP import GCOP, show_error_plot
+from gCOP import GCOP
+from plotUtils import show_error_plot
 from cobraPhaseII import CobraPhaseII
 from innerFuncs import distLine
 from opt.equOptions import EQUoptions
@@ -545,7 +546,7 @@ class ExamCOP:
         print(c2.p2.f_solu)
         print(c2.cobra.get_fbest())
         c2.p2.fe_thresh = 1e-13
-        analyze_solution(c2, cobra)
+        # analyze_solution(c2, cobra)
         return c2
 
     def solve_G18(self, cobraSeed, feval=500, verbIter=50, conTol=0.0):    # conTol=1e-7
@@ -555,7 +556,7 @@ class ExamCOP:
             We test that the median of 15 final errors is < 1e-13, which is statistically equivalent to the R side
             (see ex_COP.R, function solve_G17, multi_gfnc)
         """
-        print(f"Starting solve_G17({cobraSeed}) ...")
+        print(f"Starting solve_G18({cobraSeed}) ...")
         G18 = GCOP("G18")
         dim = G18.dimension
         idp = (dim + 1) * (dim + 2) // 2
@@ -574,7 +575,7 @@ class ExamCOP:
         print(c2.p2.f_solu)
         print(c2.cobra.get_fbest())
         c2.p2.fe_thresh = 1e-13
-        analyze_solution(c2, cobra)
+        # analyze_solution(c2, cobra)
         return c2
 
     def solve_G19(self, cobraSeed, feval=500, verbIter=50, conTol=0.0):    # conTol=1e-7
@@ -584,7 +585,7 @@ class ExamCOP:
             We test that the median of 15 final errors is < 1e-13, which is statistically equivalent to the R side
             (see ex_COP.R, function solve_G17, multi_gfnc)
         """
-        print(f"Starting solve_G17({cobraSeed}) ...")
+        print(f"Starting solve_G19({cobraSeed}) ...")
         G19 = GCOP("G19")
         dim = G19.dimension
         idp = (dim + 1) * (dim + 2) // 2
@@ -603,7 +604,7 @@ class ExamCOP:
         print(c2.p2.f_solu)
         print(c2.cobra.get_fbest())
         c2.p2.fe_thresh = 1e-13
-        analyze_solution(c2, cobra)
+        # analyze_solution(c2, cobra)
         return c2
 
     def solve_G21(self, cobraSeed, feval=500, verbIter=50, conTol=1e-4):
@@ -614,6 +615,7 @@ class ExamCOP:
             (see ex_COP.R, function solve_G17, multi_gfnc)
         """
         print(f"Starting solve_G21({cobraSeed}) ...")
+        conTol = 1e-4   # this overrides the conTol from the arguments
         muFinal = 1e-4   # 1e-4 | 1e-7
         G21 = GCOP("G21", mu=muFinal)
         dim = G21.dimension
@@ -683,7 +685,7 @@ class ExamCOP:
             (see ex_COP.R, function solve_G17, multi_gfnc)
         """
         print(f"Starting solve_G23({cobraSeed}) ...")
-        muFinal = 1e-7   # 1e-4 | 1e-7
+        muFinal = 1e-4   # 1e-4 | 1e-7
         G23 = GCOP("G23", mu=muFinal)
         dim = G23.dimension
         deg = 2
@@ -704,7 +706,7 @@ class ExamCOP:
                                                    EQU=equ,
                                                    RI=RIoptions(repairInfeas=True, eps2=0, q=3, repairMargin=np.inf, checkIt=False), # new 2025/10/15
                                                    SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol,
-                                                                  epsilonMax=0.0, epsilonInit=0.0)))  # , feMax=1000 , trueFuncForSurrogates=True
+                                                                  )))  # epsilonMax=0.0, epsilonInit=0.0, feMax=1000 , trueFuncForSurrogates=True
         c2 = CobraPhaseII(cobra).start(gcop=G23)
         # will also set various variables in c2.p2 via p2.fill()
 

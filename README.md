@@ -116,6 +116,25 @@ What is missing:
 
 and it contains more tests on the G-problem benchmark suite.
 
+#### V0.95
+2026/10/07 - Beta Version, it contains
+
+- repair infeasible solutions
+- other initial designs (BIASED, OPTCOBYLA)
+- new docu chapter 'Reproducible Experiments'
+- improved result production (class OneS.one_s_multi_g_r)
+- performance profile, data profile
+- dbest: best distance in input space
+- optional parameter mu for all equality GCOPs
+- G03, G11: optimal solution for arbitrary mu
+- bug fix around muGrow and rhoGrow
+
+What is still missing:
+
+- (surrogate) model selection
+- the optional ``CobraPhaseI``
+
+
 ## Publications
 You can read more about SACOBRA in the following scientific publications:
 
