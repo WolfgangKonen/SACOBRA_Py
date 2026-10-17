@@ -40,6 +40,8 @@ class ISAoptions:
         :param aCF: flag for automatic constraint function transformation
         :param TFRange: threshold, if the min-max-range of ``Fres[0:idp]`` is larger than ``TFRange`` and if
                     ``onlinePLOG=NONE``, then apply plog to ``Fres`` (objective function values)
+        :param TFR_DRC: threshold for case ``aDRC=True``: if the min-max-range of ``Fres[0:idp]`` is larger than
+                    ``TFR_DRC``, then set ``DRC=DRCS``. Else set ``DRC=DRCL``.
         :param TGR: threshold: If ``GRatio > TGR``, then apply automatic constraint function transformation. ``GRatio``
                     is the ratio "largest GR / smallest GR" where GR is the min-max range of a specific constraint.
                     If ``TGR < 1``, then the transformation is always performed.
@@ -73,6 +75,7 @@ class ISAoptions:
                  aFF=True,
                  aCF=True,
                  TFRange=1e+05,
+                 TFR_DRC=1e+03,
                  TGR=1e+03,
                  # conPLOG=False,
                  # conFitPLOG=False,
@@ -98,6 +101,7 @@ class ISAoptions:
         self.aFF = aFF
         self.aCF = aCF
         self.TFRange = TFRange
+        self.TFR_DRC = TFR_DRC
         self.TGR = TGR
         # self.conPLOG = conPLOG
         # self.conFitPLOG = conFitPLOG
@@ -131,6 +135,7 @@ class ISAoptions0(ISAoptions):
                  aFF=False,
                  aCF=False,
                  TFRange=np.inf,
+                 TFR_DRC=1e+03,
                  TGR=np.inf,
                  # conPLOG=False,
                  # conFitPLOG=False,
@@ -157,6 +162,7 @@ class ISAoptions0(ISAoptions):
             aFF=aFF,
             aCF=aCF,
             TFRange=TFRange,
+            TFR_DRC=TFR_DRC,
             TGR=TGR,
             # self.conPLOG = conPLOG
             # self.conFitPLOG = conFitPLOG
@@ -191,6 +197,7 @@ class ISAoptions2(ISAoptions):
                  aFF=True,
                  aCF=True,
                  TFRange=-1,
+                 TFR_DRC=1e+03,
                  TGR=-1,
                  # conPLOG=False,
                  # conFitPLOG=False,
@@ -217,6 +224,7 @@ class ISAoptions2(ISAoptions):
             aFF=aFF,
             aCF=aCF,
             TFRange=TFRange,
+            TFR_DRC=TFR_DRC,
             TGR=TGR,
             # self.conPLOG = conPLOG
             # self.conFitPLOG = conFitPLOG

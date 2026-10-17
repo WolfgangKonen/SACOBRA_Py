@@ -162,3 +162,8 @@ S. Bagheri, W. Konen, T. Bäck.
 *How to Solve the Dilemma of Margin-Based Equality Handling Methods.*
 In: Hoffmann, Frank; Hüllermeier, Eyke; Mikut, Ralf (Hrsg.): Proceedings 27. Workshop Computational Intelligence, S. 257-270, Universitätsverlag Karlsruhe, 2017. (**Young Author Award**)
 [URL](https://blogs.gm.fh-koeln.de/ciop/files/2018/12/GMA2018.pdf)
+
+W. Konen.  
+*Radial basis functions for constrained numerical global optimization including the challenges of equality constraints.* 
+Invited talk presented at conference MOPTA’2025 in Ponta Delgado, Azores, 2025. 
+[URL](https://www.gm.fh-koeln.de/ciopwebpub/Konen25a.d/MOPTA2025-pres.pdf)

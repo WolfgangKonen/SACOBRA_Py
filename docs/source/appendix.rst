@@ -21,6 +21,8 @@ cobra.sac_opts
 
 :class:`.SACoptions` ``cobra.sac_opts`` holds the collection of all parameters (options) for **SACOBRA_Py**.
 
+See Sec. :ref:`Options <Options-label>` for further details.
+
 
 .. _sacres-label:
 

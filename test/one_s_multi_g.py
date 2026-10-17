@@ -328,8 +328,8 @@ class OneS:
         p_p = PerformanceProfile(tau=0.05)
         p_p.inject(dfsum, dir_run, "one_s", meth="one_s")
         p_p.inject(dfsum, dir_run, "solve", meth="solve")
-        p_p.plot(range(0, 50, 2), f"{dir_run}/perf_DP.png", ptype="DP", ylim=[0, 1])
-        p_p.plot(range(0, 50, 2), f"{dir_run}/perf_PP.png", ptype="PP", ylim=[0, 1])
+        p_p.plot(range(0, 100, 2), f"{dir_run}/perf_DP.png", ptype="DP", ylim=[0, 1])
+        p_p.plot(range(0, 100, 2), f"{dir_run}/perf_PP.png", ptype="PP", ylim=[0, 1])
 
         dfs2 = dfsum.copy()
         dfs2.loc[dfs2.err < 0, 'err'] = np.nan      # set negative values to NaN to exclude them from min-operation
@@ -372,13 +372,13 @@ if __name__ == '__main__':
     dims   = [  -1,     2,     5,     7,    10,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1 ]  #
     gnames = ["G21", "G23", "G24", ]  # , "G22"
     dims   = [   -1,    -1,    -1, ]  # ,    -1
-    gnames = ["G21"]    # , "G23"
-    dims   = [  -1]    # ,  -1
     gnames = ["G14", "G15", "G16", "G17", "G18", "G19", "G21", "G23", "G24"]  # "G22",
     dims   = [  -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1 ]  #   -1,
     gnames = ["G01", "G02", "G02", "G03", "G03", "G04", "G05", "G06", "G07", "G08", "G09", "G10", "G11", "G12", "G13"]  #
     dims   = [  -1,     2,     5,     7,    10,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1 ]  #
-    # df2 = one.one_s_multi_g_r(gnames, dims,5, 64, feval=500, conTol=0.0, mlist=[ 'one_s' ])     # ,'solve' # conTol=1e-4 | 1e-7
+    gnames = ["G21"]    # , "G23"
+    dims   = [  -1]    # ,  -1
+    df2 = one.one_s_multi_g_r(gnames, dims,5, 64, feval=500, conTol=0.0, mlist=[ 'solve' ])     # 'one_s', # conTol=1e-4 | 1e-7
     # init_df = one.multi_init(gnames, 54, feval=120)
     # one.df_analyze("df2_conTol0.0-fe500-G01-G13.feather", "df2_conTol1e-7-fe500-G01-G13.feather")
     # one.df_analyze("df2_conTol0.0-MIDPTS-fe500-G14-G24.feather")   # NONE | XNEW | MIDPTS
@@ -386,7 +386,6 @@ if __name__ == '__main__':
     # one.df_analyze("df2.feather")
     # one.df_analyze("df2-G22-T5.feather")
     # one.df_analyze("df2_repair-conTol0.0-MIDPTS-cubic-fe500-G14-24.feather")
-    # one.run_analyze("run2026-10-04_11h01m26-g01g13")
-    # one.run_analyze("run2026-10-08_14h53m05-g21g24")
     # one.run_analyze("run2026-10-11_16h14m59-g01g13-mu1m4")
-    one.run_analyze("run2026-10-08_09h48m37-g01g13")
+    # one.run_analyze("run2026-10-08_09h48m37-g01g13")
+    # one.run_analyze("run2026-10-11_12h46m03-g14g24-mu1m4")

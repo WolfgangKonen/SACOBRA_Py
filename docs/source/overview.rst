@@ -45,6 +45,7 @@ You can read more about SACOBRA in the following scientific publications:
 - [Bagh17a]_
 - [Bagh17b]_
 - [Bagh18]_
+- [Konen25]_
 
 Authors and Credits
 -------------------
@@ -86,3 +87,5 @@ We acknowledge and are grateful for all the work that goes into these great open
 .. [Bagh17b] Bagheri, S., Konen, W., Bäck, T. **Comparing Kriging and Radial Basis Function Surrogates.** In: Hoffmann, Frank; Hüllermeier, Eyke (Hrsg.): Proceedings 27. Workshop Computational Intelligence, S. 243-259, Universitätsverlag Karlsruhe, 2017. (https://publikationen.bibliothek.kit.edu/1000074341)
 
 .. [Bagh18] Bagheri, S., Konen, W., Bäck, T. **How to Solve the Dilemma of Margin-Based Equality Handling Methods.** In: Hoffmann, Frank; Hüllermeier, Eyke; Mikut, Ralf (Hrsg.): Proceedings 27. Workshop Computational Intelligence, S. 257-270, Universitätsverlag Karlsruhe, 2017. (**Young Author Award**) (https://blogs.gm.fh-koeln.de/ciop/files/2018/12/GMA2018.pdf)
+
+.. [Konen25] Konen, W. **Radial basis functions for constrained numerical global optimization including the challenges of equality constraints.** Invited talk presented at conference MOPTA'2025 in Ponta Delgado, Azores, 2025. (https://www.gm.fh-koeln.de/ciopwebpub/Konen25a.d/MOPTA2025-pres.pdf)

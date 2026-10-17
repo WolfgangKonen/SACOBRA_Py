@@ -615,21 +615,22 @@ class ExamCOP:
             (see ex_COP.R, function solve_G17, multi_gfnc)
         """
         print(f"Starting solve_G21({cobraSeed}) ...")
-        conTol = 1e-4   # this overrides the conTol from the arguments
+        conTol = 1e-3   # 1e-4 # this overrides the conTol from the arguments
+        # feval = 1000    # this overrides the feval from the arguments
         muFinal = 1e-4   # 1e-4 | 1e-7
         G21 = GCOP("G21", mu=muFinal)
         dim = G21.dimension
         idp = (dim + 1) * (dim + 2) // 2
 
-        equ = EQUoptions(muGrow=100, muDec=1.6, muFinal=muFinal,        # 1e-7
+        equ = EQUoptions(muGrow=100, muDec=1.6, muFinal=muFinal,        # 1e-7  # , mu4inequality=True
                          refinePrint=False, refineAlgo="L-BFGS-B")  # "L-BFGS-B COBYLA"
         cobra = CobraInitializer(G21.x0, G21.fn, G21.name, G21.lower, G21.upper, G21.is_equ,
                                  solu=G21.solu,
                                  s_opts=SACoptions(verbose=verb, verboseIter=verbIter, feval=feval, cobraSeed=cobraSeed,
                                                    ID=IDoptions(initDesign="LHS", initDesPoints=idp),
-                                                   RBF=RBFoptions(degree=2),
-                                                   # ISA=ISAoptions(TGR=np.inf),
-                                                   ISA=ISAoptions(onlinePLOG=O_LOGIC.MIDPTS, TGR=np.inf),   #
+                                                   RBF=RBFoptions(degree=2),   # kernel="gaussian",
+                                                   # RBF=RBFoptions(interpolator="sacobra", degree=1.5), # worse
+                                                   ISA=ISAoptions(onlinePLOG=O_LOGIC.MIDPTS, TGR=np.inf),   # , TFRange=0
                                                    EQU=equ,
                                                    RI=RIoptions(repairInfeas=True, eps2=0, q=3, repairMargin=np.inf, checkIt=False), # new 2025/10/15
                                                    SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol,
@@ -890,7 +891,7 @@ if __name__ == '__main__':
     # cop.solve_G17(54)
     # cop.solve_G21(63)
     # cop.solve_G22(55, conTol=0.0, verbIter=10)
-    cc2 = cop.multi_gfnc(cop.solve_G05, "G05", 5, 49)
+    # cc2 = cop.multi_gfnc(cop.solve_G05, "G05", 5, 49)
     # cc2 = cop.multi_gfnc(cop.solve_G04, "G04", 15, 42)
     # cc2 = cop.multi_gfnc(cop.solve_G15, "G15", 10, 48)
     # cc2 = cop.multi_gfnc(cop.solve_G17, "G17", 10, 61)

@@ -378,7 +378,7 @@ class CobraInitializer:
         """ Adjust :ref:`DRC <DRC-label>` (distance requirement cycle), based on range of ``Fres`` """
         s_opts = self.sac_opts
         FRange = (max(self.sac_res['Fres']) - min(self.sac_res['Fres']))
-        if FRange > 1e+03:
+        if FRange > s_opts.ISA.TFR_DRC:   # before 2026/10/17: fixed threshold 1e+03
             DRC = DRCS
             verboseprint(s_opts.verbose, True, f"FR={FRange} is large, XI is set to Short DRC")
         else:
