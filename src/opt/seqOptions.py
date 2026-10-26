@@ -14,6 +14,7 @@ class SEQoptions:
             where :math:`\\ell` is the length of smallest side of search space
     :param epsilonMax: maximum value for ``EPS``. If None,
             then ``epsilonMax`` is set to :math:`2*0.005 \\ell`.
+    :param eps0_at_half: If True, set ``EPS`` to 0 from iteration ``feval/2`` on.
     :param finalEpsXiZero: if True, set in final iteration ``EPS`` and ``XI`` to zero for best exploitation
     :param Tfeas: threshold for count of feasible iterations in a row. If None, :class:`.CobraInitializer` will
             set it to :math:`floor(2\\sqrt{d})`.
@@ -31,11 +32,13 @@ class SEQoptions:
                  sigmaD=[3.0, 2.0, 100],
                  epsilonInit=None,
                  epsilonMax=None,
+                 eps0_at_half=True,
                  finalEpsXiZero=True,  # if True, then set EPS=XI=0 in final iteration (full exploit, might require
                                        # SEQ.conTol=1e-7 instead of 0.0)
                  Tfeas=None,        # will be set in cobraInit
                  Tinfeas=None,      # will be set in cobraInit
-                 trueFuncForSurrogates=False
+                 trueFuncForSurrogates=False,
+                 checkTrueSolu=False,
                  ):
         self.optimizer = optimizer
         self.feMax = feMax
@@ -45,7 +48,9 @@ class SEQoptions:
         self.sigmaD = sigmaD
         self.epsilonInit = epsilonInit
         self.epsilonMax = epsilonMax
+        self.eps0_at_half = eps0_at_half
         self.finalEpsXiZero = finalEpsXiZero
         self.Tfeas = Tfeas
         self.Tinfeas = Tinfeas
         self.trueFuncForSurrogates = trueFuncForSurrogates
+        self.checkTrueSolu = checkTrueSolu

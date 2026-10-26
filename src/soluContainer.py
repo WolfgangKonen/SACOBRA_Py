@@ -18,6 +18,8 @@ class SoluContainer():
     """
     def __init__(self, solu, cobra: CobraInitializer):
         self.originalSolu = solu
+        self.fn = cobra.sac_res['fn']
+        self.trueFuncForSurrogates = cobra.sac_opts.SEQ.trueFuncForSurrogates
 
         if cobra.sac_opts.ID.rescale:
             if solu is not None:
@@ -53,19 +55,24 @@ class SoluContainer():
             predSoluPenal = np.nan
 
         else:
-            predSoluFunc = lambda x: getPredY0(x, fitnessSurrogate, p2)
+            if self.trueFuncForSurrogates:
+                predSoluFunc = lambda x: self.fn(x)[0]
+            else:
+                predSoluFunc = lambda x: getPredY0(x, fitnessSurrogate, p2)
+
             if self.solu.ndim == 1:
                 predSolu = predSoluFunc(self.solu)
                 predSoluPenal = fitFuncPenalRBF(self.solu)
             elif self.solu.ndim == 2:  # in case of multiple global optima in solu:
                 predSolu = np.apply_along_axis(predSoluFunc, axis=1, arr=self.solu)
                 predSoluPenal = np.apply_along_axis(fitFuncPenalRBF, axis=1, arr=self.solu)
+
+                predSolu = min(predSolu)            # Why min? - In case of multiple global optima: predSolu is the
+                predSoluPenal = min(predSoluPenal)  # value of predSoluFunc at the best solution solu
+                #                                   # (same for predSoluPenal)
             else:
                 raise ValueError(f"solu.ndim = {self.solu.ndim} is not allowed!")
 
-            predSolu = min(predSolu)                # Why min? - In case of multiple global optima: predSolu is the
-            predSoluPenal = min(predSoluPenal)      # value of predSoluFunc at the best solution solu
-                                                    # (same for predSoluPenal)
         return predSolu, predSoluPenal
 
     def distance_to_solu(self, cobra: CobraInitializer) -> Tuple[np.ndarray, np.ndarray]:

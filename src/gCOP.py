@@ -676,7 +676,8 @@ class GCOP(COP):
     def _call_G17(self, mu: float):
         self.dimension = 6
         self.lower = np.array([0, 0, 340, 340, -1000, 0.0])
-        self.upper = np.array([400, 1000, 420, 420, 1000, 0.5236])
+        # self.upper = np.array([400, 1000, 420, 420, 1000, 0.5236])
+        self.upper = np.array([250, 100, 420, 420, 1000, 0.5236])  # simplified, only for debugging
         self.nConstraints = 4
         self.is_equ = np.repeat(True, 4)
         f0 = lambda x0: 30*x0 if 0 <= x0 < 300 else 31 * x0
@@ -697,17 +698,25 @@ class GCOP(COP):
                             ])
         self.fn = g17_fn    # increments ncall
         if mu == 1e-4:
-            # original solution from the R side, with maxViol = 1e-4, not fully feasible:
-            # (This is also the solution in [LiangRunar06], who states that conTol = 1e-4 is allowed for all equality
-            # constraints. But this is illogical, because the same conTol is NOT applied for G11.)
-            self.solu = np.array([201.784467214523659, 99.9999999999999005, 383.071034852773266,
-                                  420, -10.9076584514292652, 0.0731482312084287128])
-            #                   obj = 8853.534016, maxViol = 1e-4 (!)
+            # # original solution from the R side, with maxViol = 1e-4, not fully feasible:
+            # # (This is also the solution in [LiangRunar06], who states that conTol = 1e-4 is allowed for all equality
+            # # constraints.)
+            # self.solu = np.array([201.784467214523659, 99.9999999999999005, 383.071034852773266,
+            #                       420, -10.9076584514292652, 0.0731482312084287128])
+            # #                   obj = 8853.534016, maxViol = 1e-4 (!)
+            # better feasible solution from SACOBRA_Py run (EQU.refine=F, SEQ.trueFuncForSurrogates=T, cobraSeed=67):
+            self.solu = np.array([2.017844624935497e+02,  9.999999999999984e+01,  3.830710348527733e+02,
+                                  4.200000000000000e+02, -1.090783374943555e+01,  7.314823120842863e-02])
+            #                   obj = 8853.533874806486, maxViol = 1e-4 (!)
         else:
-            # better feasible solution from SACOBRA_Py run (trueFuncForSurrogates=True, cobraSeed=62):
-            self.solu = np.array([2.017846653971304e+02,  9.999999784008750e+01, 3.830709791968072e+02,
-                                  4.199999883655434e+02, -1.090758755746594e+01, 7.314815097092348e-02])
-            #                   obj = 8853.53990143, maxViol = 1.7e-9
+            # # better feasible solution from SACOBRA_Py run (trueFuncForSurrogates=True, cobraSeed=62):
+            # self.solu = np.array([2.017846653971304e+02,  9.999999784008750e+01, 3.830709791968072e+02,
+            #                       4.199999883655434e+02, -1.090758755746594e+01, 7.314815097092348e-02])
+            # #                   obj = 8853.53990143, maxViol = 1.7e-9
+            # better feasible solution from SACOBRA_Py run (SEQ.trueFuncForSurrogates=T, EQU.refine=F, cobraSeed=67):
+            self.solu = np.array([2.017846628437692e+02,  9.999999999999977e+01,  3.830709953125155e+02,
+                                  4.199999999999978e+02, -1.090760585748262e+01,  7.314814848314907e-02])
+            #                   obj = 8853.53988531, maxViol = 1e-7
 
         # no x0 provided
 

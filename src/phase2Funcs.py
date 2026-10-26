@@ -123,13 +123,17 @@ def adjustMargins(cobra: CobraInitializer, p2: Phase2Vars):
 
     If ``p2.Cinfeas >= Tinfeas``, then double :math:`\\epsilon` and clip it at ``epsilonMax``.
 
-    ``Tfeas``, ``Tinfeas``, ``epsilonMax`` are members of  ``cobra.sac_opts.SEQ``.
+    If ``eps0_at_half`` and ``p2.num > feval/2``, then set  :math:`\\epsilon=0`.
+
+    ``Tfeas``, ``Tinfeas``, ``epsilonMax``, ``eps0_at_half`` are members of  ``cobra.sac_opts.SEQ``.
 
     :param cobra:   SACOBRA settings and results
     :param p2:      these members may be changed : ``EPS``, ``currentMu``, ``Cfeas``, ``Cinfeas``
     """
     Tfeas = cobra.sac_opts.SEQ.Tfeas
     Tinfeas = cobra.sac_opts.SEQ.Tinfeas
+    eps0_at_half = cobra.sac_opts.SEQ.eps0_at_half
+    refineF_at_half = cobra.sac_opts.EQU.refineF_at_half
     verbose = cobra.sac_opts.verbose
     if p2.Cfeas >= Tfeas:
         p2.EPS = p2.EPS / 2
@@ -145,8 +149,11 @@ def adjustMargins(cobra: CobraInitializer, p2: Phase2Vars):
 
         p2.Cinfeas = 0
 
-    # if p2.num > cobra.sac_opts.feval/2:   # /2026/10/10: new epsilon-adjustment strategy
-    #     p2.EPS = 0.0
+    if eps0_at_half and p2.num > cobra.sac_opts.feval/2:    # /2026/10/10: new epsilon-adjustment strategy
+        p2.EPS = 0.0                                        # (beneficial for G23)
+
+    if refineF_at_half and p2.num > cobra.sac_opts.feval/2:    # /2026/10/10: new refine strategy: disable refine in
+        cobra.sac_opts.EQU.refine = False                      # 2nd half (beneficial for G23)
 
     if cobra.sac_opts.EQU.active:
         p2.currentMu = modifyMu(p2.Cfeas, p2.Cinfeas, Tfeas, p2.currentMu, cobra, p2)

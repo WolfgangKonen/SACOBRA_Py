@@ -68,8 +68,8 @@ opt = nlopt.opt(nlopt.LN_COBYLA, 7)
 # opt = nlopt.opt(nlopt.LD_MMA, 7)       # does not complete, if no gradient is specified
 opt.set_lower_bounds(np.repeat(-5,7))
 opt.set_upper_bounds(np.repeat(+5,7))
-#opt.set_min_objective(myfunc)
-opt.set_min_objective(SACopts().myfunc)     # just a check: we can also pass methods of classes as function? - yes
+opt.set_min_objective(myfunc)
+#opt.set_min_objective(SACopts().myfunc)     # just a check: we can also pass methods of classes as function? - yes
 tol = 0 # 1e-8 #
 opt.add_inequality_constraint(myconstraint1, tol)
 opt.add_inequality_constraint(myconstraint2, tol)

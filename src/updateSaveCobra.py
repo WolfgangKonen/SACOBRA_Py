@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import pickle
 
+from seqOptimizer import calcConstrPred
 from soluContainer import SoluContainer
 from cobraInit import CobraInitializer
 from phase2Vars import Phase2Vars
@@ -108,15 +109,24 @@ def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, EPS,
     # xbestIndex = which.min(cobra$Fres[feasibleIndices])  # finding index of the best point so far
 
     # only diagnostics, needed for cobra$df & cobra$df2 /WK/
-    if p2.num == 150:
-        dummy = 0
     cobra.solu_cont = SoluContainer(cobra.solu, cobra)
     predSolu, predSoluPenal = cobra.solu_cont.predict_at_solu(p2, fitnessSurrogate, fitFuncPenalRBF)
+    nConstraints = cobra.sac_res['nConstraints']
+    if nConstraints > 0:
+        solu = cobra.solu_cont.get_solu()
+        if solu.ndim == 2:          # quick fix, TODO better
+            solu = solu[0,:]
+        constraintSolu = calcConstrPred(solu, cobra, p2)
+        feasSolu = np.all(constraintSolu < s_opts.SEQ.conTol)
+    else:
+        feasSolu = np.nan
 
     if cobra.df is None:
         df_predSolu = concat(np.repeat(np.nan, s_opts.ID.initDesPoints), predSolu)
+        df_feasSolu = concat(np.repeat(False, s_opts.ID.initDesPoints), feasSolu)
     else:
         df_predSolu = concat(cobra.df.predSolu, predSolu)
+        df_feasSolu = concat(cobra.df.feasSolu, feasSolu)
 
     # calculate distA and distOrig (distance to solu in rescaled and original space):
     distA, distOrig, dbest = cobra.solu_cont.distance_to_solu(cobra)
@@ -142,6 +152,7 @@ def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, EPS,
              'y': s_res['Fres'],
              'predY': predY,  # surrogate fitness
              'predSolu': df_predSolu,
+             'feasSolu': df_feasSolu,
              'feasible': feas,
              'feasPred': feasPred,
              'nViolations': s_res['numViol'],

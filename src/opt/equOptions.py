@@ -32,6 +32,7 @@ class EQUoptions:
                  refine=True,
                  refineMaxit=1000,      # 100,
                  refineAlgo="BFGS_0",   # BFGS_0 | BFGS_1 | COBYQA | COBYLA
+                 refineF_at_half=False,
                  refinePrint=False
                  ):
         self.active = active
@@ -44,4 +45,5 @@ class EQUoptions:
         self.refine = refine
         self.refineMaxit = refineMaxit
         self.refineAlgo = refineAlgo
+        self.refineF_at_half = refineF_at_half
         self.refinePrint = refinePrint

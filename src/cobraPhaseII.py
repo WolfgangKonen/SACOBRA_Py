@@ -148,7 +148,7 @@ class CobraPhaseII:
             self.p2.globalOptCounter += 1       # a counter which counts all main iterates, excluding repair or TR
             self.p2.ev1.state = "optimized"     # flag ev1 as being in the state after sequential optimization
 
-            # evaluate xNew on the real functions + do refine step (if cobra.sac_opts.EQU.active).
+            # evaluate xNew on the real functions + do refine step (if s_opts.EQU.active and s_opts.EQU.refine).
             # Result is the updated EvaluatorReal object self.p2.ev1:
             xNew = self.p2.opt_res['x']
             self.p2.ev1.update(xNew, self.cobra, self.p2, self.p2.currentMu)

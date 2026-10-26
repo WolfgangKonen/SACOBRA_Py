@@ -11,14 +11,14 @@ class PerformanceProfile:
     **Performance profile** and **data profile** generator.
 
     Given a set :math:`P` of COPs (e.g. :math:`P` = {G01, G02, G03}) and a set :math:`S` of solvers :math:`s`.
-    Performance and data profiles are plots that allow to compare the different solvers :math:`s` on the given set
-    :math:`P` of problems. We define :math:`t_{p,s}` as the lowest number of iterations in a run where a given
+    Performance and data profiles [MoreWild2009] are plots that allow to compare the different solvers :math:`s` on the
+    given set :math:`P` of problems. We define :math:`t_{p,s}` as the lowest number of iterations in a run where a given
     convergence test is satisfied. In our context, the **convergence test** is (with :math:`f_{best}(t)`: best feasible
     objective value up to iteration :math:`t` and :math:`f_{opt}`: optimal feasible objective value):
 
       :math:`\\qquad f_{best}(t) - f_{opt} \leq \\tau`
 
-    Performance and data profile are defined as function of the **performance factor** (threshold) :math:`\\alpha`:
+    Performance and data profiles are defined as function of the **performance factor** (threshold) :math:`\\alpha`:
 
       :math:`\\qquad \\rho_s(\\alpha) = \\frac{1}{|P|}
       \\left|\\left\{ p \\in P | \\frac{t_{p,s}}{D(p)} \leq \\alpha\\right\}\\right|`
@@ -40,6 +40,9 @@ class PerformanceProfile:
     This example assumes that we have in ``dfsum`` the results of an experiment conducted with
     :meth:`.OneS.one_s_multi_g_r` and that the detailed results are in a subdirectory ``dir_run``.
     The corresponding data profile plot is shown below.
+
+    [MoreWild2009] Moré J., Wild S. (2009) Benchmarking derivative-free optimization algorithms. SIAM J Optim
+    20(1):172–191.
     """
     def __init__(self, tau=0.05):
         """

@@ -1,6 +1,5 @@
 import time
 import numpy as np
-import pandas as pd
 from matplotlib import pyplot as plt
 
 from cobraInit import CobraInitializer
@@ -13,7 +12,7 @@ from opt.isaOptions import ISAoptions, O_LOGIC
 from opt.riOptions import RIoptions
 from opt.sacOptions import SACoptions
 from opt.idOptions import IDoptions
-from opt.rbfOptions import RBFoptions
+from opt.rbfOptions import RBFoptions, W_RULE
 from opt.seqOptions import SEQoptions
 
 verb = 1
@@ -121,17 +120,22 @@ class ExamCOP:
 
             We test that the median of 15 final errors is < 1e-9, which is statistically better than the R side
             (see ex_COP.R)
+
+            Two settings give good results:   GCOP(G03,..,mu=0) and EQU.refine=True   or
+                                        GCOP(G03,..,mu=muFinal) and EQU.refine=False
+            both with muFinal=1e-4
         """
         print(f"Starting solve_G03({cobraSeed}, dim={dimension}, ...) ...")
         muFinal = 1e-4   # 1e-4 | 1e-7     # before 2026/10/03: muFinal=1e-12 --> strange png_err_plot (colors)
-        G03 = GCOP("G03", dimension, mu=muFinal)
+        G03 = GCOP("G03", dimension, mu=muFinal)   # 0 # muFinal
 
         x0 = G03.x0             # None --> a random x0 will be set
         # x0 = np.arange(dimension)/dimension    # fixed x0
         dim = G03.dimension
         idp = (dim + 1) * (dim + 2) // 2
         if feval == 0: feval = idp + 2
-        equ_opt = EQUoptions(muGrow=100, muDec=1.6, muFinal=muFinal, refinePrint=False, refineAlgo="L-BFGS-B")  # "BFGS_1"
+        equ_opt = EQUoptions(muGrow=100, muDec=1.6, muFinal=muFinal,
+                             refine=False, refinePrint=False, refineAlgo="L-BFGS-B")  # "BFGS_1"
         cobra = CobraInitializer(x0, G03.fn, G03.name, G03.lower, G03.upper, G03.is_equ,
                                  solu=G03.solu,
                                  s_opts=SACoptions(verbose=verb, verboseIter=verbIter, feval=feval, cobraSeed=cobraSeed,
@@ -292,6 +296,7 @@ class ExamCOP:
             (see ex_COP.R, function solve_G07, multi_gfnc)
         """
         print(f"Starting solve_G09({cobraSeed}) ...")
+        feval = 800     # overrides the argument given above
         G09 = GCOP("G09")
         idp = 10*11//2
         # G09.x0 = G09.solu + 0.01
@@ -301,7 +306,7 @@ class ExamCOP:
                                  s_opts=SACoptions(verbose=verb, verboseIter=verbIter, feval=feval, cobraSeed=cobraSeed,
                                                    ID=IDoptions(initDesign="LHS", initDesPoints=idp),
                                                    RBF=RBFoptions(degree=2),
-                                                   SEQ=SEQoptions(finalEpsXiZero=True, trueFuncForSurrogates=False, conTol=conTol)))
+                                                   SEQ=SEQoptions(finalEpsXiZero=True, feMax=5000, conTol=conTol)))  # trueFuncForSurrogates=False,
 
         c2 = CobraPhaseII(cobra).start(gcop=G09)
 
@@ -357,7 +362,7 @@ class ExamCOP:
                                                    RBF=RBFoptions(degree=2),
                                                    EQU=EQUoptions(refinePrint=False, muFinal=muFinal, refineAlgo="COBYLA"),  # "L-BFGS-B COBYLA"
                                                    # COBYLA is slower, issues warnings, but is a bit more precise
-                                                   SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol)))
+                                                   SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol, trueFuncForSurrogates=True)))
 
         c2 = CobraPhaseII(cobra).start(gcop=G11)
 
@@ -443,8 +448,10 @@ class ExamCOP:
                                  solu=G14.solu,
                                  s_opts=SACoptions(verbose=verb, verboseIter=verbIter, feval=feval, cobraSeed=cobraSeed,
                                                    ID=IDoptions(initDesign="LHS", initDesPoints=idp),
-                                                   RBF=RBFoptions(degree=2, rho=2.5, rhoDec=2.0),  # , rhoGrow=100
+                                                   RBF=RBFoptions(degree=2),  # , rho=2.5, rhoDec=2.0, rhoGrow=100
                                                    EQU=equ,
+                                                   ISA=ISAoptions(onlinePLOG=O_LOGIC.MIDPTS),
+                                                   RI=RIoptions(repairInfeas=True, eps2=0, q=3, repairMargin=np.inf),
                                                    SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol)))
 
         c2 = CobraPhaseII(cobra).start(gcop=G14)
@@ -529,16 +536,22 @@ class ExamCOP:
         idp = (dim + 1) * (dim + 2) // 2
 
         equ = EQUoptions(muGrow=100, muDec=1.6, muFinal=muFinal,
+                         refineF_at_half=True,    # use default refine=True for the first half of iterations
                          refinePrint=False, refineAlgo="L-BFGS-B")  # "L-BFGS-B" "COBYLA"
         cobra = CobraInitializer(G17.x0, G17.fn, G17.name, G17.lower, G17.upper, G17.is_equ,
                                  solu=G17.solu,
                                  s_opts=SACoptions(verbose=verb, verboseIter=verbIter, feval=feval, cobraSeed=cobraSeed,
                                                    ID=IDoptions(initDesign="LHS", initDesPoints=idp),
-                                                   RBF=RBFoptions(degree=2, kernel="gaussian"),    #
+                                                   RBF=RBFoptions(degree=2, kernel="cubic"),    #
+                                                   # RBF=RBFoptions(degree=2, kernel="gaussian", widthFactor=2.0),
+                                                   # RBF=RBFoptions(interpolator="sacobra", degree=1.5, widthFactor=2.0),
                                                    EQU=equ,
                                                    ISA=ISAoptions(onlinePLOG=O_LOGIC.MIDPTS),
-                                                   #RI=RIoptions(repairInfeas=True, eps2=0, q=3, repairMargin=np.inf, checkIt=False),
-                                                   SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol)))
+                                                   # --- if commented out, use default RIoptions: ---
+                                                   # RI=RIoptions(repairInfeas=True, eps2=0, q=3, repairMargin=np.inf, checkIt=False),
+                                                   # RI=RIoptions(trueFuncForSurrogates=True),
+                                                   SEQ=SEQoptions(finalEpsXiZero=True, feMax=1000,
+                                                                  conTol=conTol)))   # , trueFuncForSurrogates=True
 
         c2 = CobraPhaseII(cobra).start(gcop=G17)
 
@@ -615,26 +628,33 @@ class ExamCOP:
             (see ex_COP.R, function solve_G17, multi_gfnc)
         """
         print(f"Starting solve_G21({cobraSeed}) ...")
-        conTol = 1e-3   # 1e-4 # this overrides the conTol from the arguments
-        # feval = 1000    # this overrides the feval from the arguments
+        conTol = 1e-5   # 1e-4 # this overrides the conTol from the arguments
+        feval = 500    # this overrides the feval from the arguments
         muFinal = 1e-4   # 1e-4 | 1e-7
         G21 = GCOP("G21", mu=muFinal)
         dim = G21.dimension
         idp = (dim + 1) * (dim + 2) // 2
 
-        equ = EQUoptions(muGrow=100, muDec=1.6, muFinal=muFinal,        # 1e-7  # , mu4inequality=True
+        # --- debug testing: ---
+        lower = np.maximum(G21.solu - 0.01, G21.lower)     # G21.lower  #
+        upper = np.minimum(G21.solu + 0.01, G21.upper)     # G21.upper  #
+        lower = G21.lower  #
+        upper = G21.upper  #
+
+        equ = EQUoptions(muGrow=100, muDec=2.6, muFinal=muFinal, refine=False,       # 1e-7  # , mu4inequality=True
                          refinePrint=False, refineAlgo="L-BFGS-B")  # "L-BFGS-B COBYLA"
-        cobra = CobraInitializer(G21.x0, G21.fn, G21.name, G21.lower, G21.upper, G21.is_equ,
+        cobra = CobraInitializer(G21.x0, G21.fn, G21.name, lower, upper, G21.is_equ,
                                  solu=G21.solu,
                                  s_opts=SACoptions(verbose=verb, verboseIter=verbIter, feval=feval, cobraSeed=cobraSeed,
                                                    ID=IDoptions(initDesign="LHS", initDesPoints=idp),
                                                    RBF=RBFoptions(degree=2),   # kernel="gaussian",
                                                    # RBF=RBFoptions(interpolator="sacobra", degree=1.5), # worse
-                                                   ISA=ISAoptions(onlinePLOG=O_LOGIC.MIDPTS, TGR=np.inf),   # , TFRange=0
+                                                   ISA=ISAoptions(onlinePLOG=O_LOGIC.MIDPTS, TGR=np.inf),   # , TFR_DRC=100, TFRange=0
                                                    EQU=equ,
-                                                   RI=RIoptions(repairInfeas=True, eps2=0, q=3, repairMargin=np.inf, checkIt=False), # new 2025/10/15
-                                                   SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol,
-                                                                  epsilonMax=0.0, epsilonInit=0.0, feMax=5000)))  #  , trueFuncForSurrogates=True
+                                                   RI=RIoptions(repairInfeas=True, eps2=0, q=3, repairMargin=np.inf,
+                                                                checkIt=False,  trueFuncForSurrogates=True),  #
+                                                   SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol, # checkTrueSolu=True, #  optimizer="ISRESN",
+                                                                  epsilonMax=0.0, epsilonInit=0.0, feMax=5000, trueFuncForSurrogates=True)))  #
         c2 = CobraPhaseII(cobra).start(gcop=G21)
 
         print(f"final err: {c2.p2.fin_err}")

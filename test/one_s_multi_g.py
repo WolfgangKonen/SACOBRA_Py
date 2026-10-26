@@ -50,6 +50,7 @@ class OneS:
         if feval == 0: feval = idp+2
 
         equ = EQUoptions(muGrow=100, muDec=1.6, muFinal=muFinal,
+                         # refineF_at_half=True,    # use default refine=True for the first half of iterations
                          refinePrint=False, refineAlgo="L-BFGS-B")  # "L-BFGS-B COBYLA"
         cobra = CobraInitializer(gcop.x0, gcop.fn, gcop.name, gcop.lower, gcop.upper, gcop.is_equ,
                                  solu=gcop.solu,
@@ -322,7 +323,7 @@ class OneS:
         with open(f"{dir_run}/s_opts.pickle", 'rb') as f:
             s_opts = pickle.load(f)
         dfsum = pd.read_feather(f"{dir_run}/dfsum.feather")
-        # dfsum = pd.read_csv(f"{dir_run}/dfsum-2026-10-04.csv", sep=";")
+        # dfsum = pd.read_csv(f"{dir_run}/dfsum.csv", sep=";")
         # dfsum.to_feather(f"{dir_run}/dfsum.feather")
         # print(dfsum[dfsum["gname"]=="G03"]['err'].values)
         p_p = PerformanceProfile(tau=0.05)
@@ -333,19 +334,27 @@ class OneS:
 
         dfs2 = dfsum.copy()
         dfs2.loc[dfs2.err < 0, 'err'] = np.nan      # set negative values to NaN to exclude them from min-operation
-        yl = [dfs2['err'].min(), dfs2['err'].max()]  # all three following boxplots with same y-range
+        yl = [max(dfs2['err'].min(), 1e-14), dfs2['err'].max()]  # all three following boxplots with same y-range
         # --- use Pandas operator .min() here: it will automatically exclude NaN's ---
         print(yl)
         png_boxplot_errs(dfsum, runname[0:13], f"{dir_run}/box_{runname[0:13]}.png", ylim=yl)
-        for m in ['one_s']: # , 'solve'
+        for m in ['one_s', 'solve']: #
             png_boxplot_errs(dfsum, runname[0:13], f"{dir_run}/box_{runname[0:13]}_{m}.png", meth=m, ylim=yl)
-        dfs_e_old_file = f"{dir_run}/dfs_e_old.feather"
+        dfs_e_old_file = f"{dir_run}/dfs_ehT.feather"
         if os.path.exists(dfs_e_old_file):
             dfs_e_old = pd.read_feather(dfs_e_old_file)
-            png_boxplot_errs(dfs_e_old, runname[0:13], f"{dir_run}/box_{runname[0:13]}_one_s_eOld.png", meth='one_s', ylim=yl)
+            for m in ['one_s', 'solve']:  #
+                png_boxplot_errs(dfs_e_old, runname[0:13], f"{dir_run}/box_{runname[0:13]}_{m}_ehT.png", meth=m, ylim=yl)
+        dfs_rfh_file = f"{dir_run}/dfs_rfhT.feather"
+        if os.path.exists(dfs_rfh_file):
+            dfs_e_old = pd.read_feather(dfs_rfh_file)
+            for m in ['one_s', 'solve']:  #
+                png_boxplot_errs(dfs_e_old, runname[0:13]+", rfhT", f"{dir_run}/box_{runname[0:13]}_{m}_rfhT.png", meth=m, ylim=yl)
         print(f"trueFuncForSurr={s_opts.SEQ.trueFuncForSurrogates}")
         print(f"conTol={s_opts.SEQ.conTol}")
         print(f"muFinal={s_opts.EQU.muFinal}")
+        print(f"eps0_at_half={s_opts.SEQ.eps0_at_half}")
+        print(f"refineF_at_half={s_opts.EQU.refineF_at_half}")
         # df1 = pd.read_feather(f"{dir_run}/dfsum.feather")
 
         # df1 = pd.read_feather(f"{dir_run}/G23_09_one_s_00_df1.feather")
@@ -366,19 +375,23 @@ if __name__ == '__main__':
     dims   = [  -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1]
     gnames = ["G01" , "G02", "G02", "G03", "G03", "G04", "G05", "G06", "G07",]  #
     dims   = [  -1,     2,     5,     7,    10,    -1,    -1,    -1,    -1, ]  #
-    gnames = ["G07"]  # , "G21", "G22", "G21", "G22", "G24" "G10", "G11", "G12",
-    dims   = [  -1 ]  # ,    -1,    -1,    -1,    -1,    -1,
     gnames = ["G01", "G02", "G02", "G03", "G03", "G04", "G05", "G06", "G07", "G08", "G09", "G10", "G11", "G12", "G13"]  #
     dims   = [  -1,     2,     5,     7,    10,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1 ]  #
     gnames = ["G21", "G23", "G24", ]  # , "G22"
     dims   = [   -1,    -1,    -1, ]  # ,    -1
-    gnames = ["G14", "G15", "G16", "G17", "G18", "G19", "G21", "G23", "G24"]  # "G22",
-    dims   = [  -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1 ]  #   -1,
     gnames = ["G01", "G02", "G02", "G03", "G03", "G04", "G05", "G06", "G07", "G08", "G09", "G10", "G11", "G12", "G13"]  #
     dims   = [  -1,     2,     5,     7,    10,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1 ]  #
-    gnames = ["G21"]    # , "G23"
-    dims   = [  -1]    # ,  -1
-    df2 = one.one_s_multi_g_r(gnames, dims,5, 64, feval=500, conTol=0.0, mlist=[ 'solve' ])     # 'one_s', # conTol=1e-4 | 1e-7
+    gnames = ["G03", "G03"]    # , "G23"
+    dims   = [   7 ,   10 ]    # ,  -1
+    gnames = ["G01", "G02", "G02", "G03", "G03", "G04", "G05", "G06", "G07", "G08", "G09", "G10", "G11", "G12", "G13"]  #
+    dims   = [  -1,     2,     5,     7,    10,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1 ]  #
+    gnames = ["G14", "G15", "G16", "G17", "G18", "G19", "G21", "G23", "G24"]  # "G22",
+    dims   = [  -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1 ]  #   -1,
+    gnames = ["G14", "G15", "G16", "G17", "G18", "G19", "G21", "G23", "G24"]  # "G22",
+    dims   = [  -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1 ]  #   -1,
+    gnames = ["G21"]  # , "G21", "G22", "G21", "G22", "G24" "G10", "G11", "G12",
+    dims   = [  -1 ]  # ,    -1,    -1,    -1,    -1,    -1,
+    df2 = one.one_s_multi_g_r(gnames, dims,5, 64, feval=500, conTol=0.0, mlist=['solve'])     # 'one_s', # conTol=1e-4 | 1e-7
     # init_df = one.multi_init(gnames, 54, feval=120)
     # one.df_analyze("df2_conTol0.0-fe500-G01-G13.feather", "df2_conTol1e-7-fe500-G01-G13.feather")
     # one.df_analyze("df2_conTol0.0-MIDPTS-fe500-G14-G24.feather")   # NONE | XNEW | MIDPTS
@@ -388,4 +401,6 @@ if __name__ == '__main__':
     # one.df_analyze("df2_repair-conTol0.0-MIDPTS-cubic-fe500-G14-24.feather")
     # one.run_analyze("run2026-10-11_16h14m59-g01g13-mu1m4")
     # one.run_analyze("run2026-10-08_09h48m37-g01g13")
-    # one.run_analyze("run2026-10-11_12h46m03-g14g24-mu1m4")
+    # one.run_analyze("run2026-10-22_12h34m42-g14g24-rfhT")
+    # one.run_analyze("run2026-10-22_14h08m13-g14g24-rfhF")
+    # one.run_analyze("run2026-10-18_15h27m20-g01g13-ehT")

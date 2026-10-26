@@ -483,16 +483,26 @@ class CobraInitializer:
         - **predC**: matrix ``(p2.num, nConstraints)``: *predicted* constraint values for each point in ``A``. The prediction of the current infill point is made with the current constraint surrogates which are formed from the ``p2.num - 1`` previous points.
         - **muVec**: vector of size ``p2.num``: :math:`\\mu` in the ``i``'th iteration
         - **numViol, trueNumViol, maxViol, trueMaxViol**: same as columns *nViolations, trueNViol, maxViolation, trueMaxViol* of :ref:`cobra.df <df-label>`
-        - **fbestArray**: vector of size ``p2.num``: best feasible objective value in the ``i``'th iteration
-        - **xbestArray**: matrix ``(p2.num, dimension)``: best feasible point ``xbest`` found in the ``i``'th iteration
+        - **fbestArray**: vector of size ``p2.num``: ever-best feasible objective value in the ``i``'th iteration
+        - **xbestArray**: matrix ``(p2.num, dimension)``: ever-best feasible point ``xbest`` found in the ``i``'th iteration
+        - **fbest, xbest, ibest**: so-far best feasible objective, point, and its index (iteration)
         - **dbest**: vector of size ``p2.num``: distance of ``xbest`` at every iteration to true solution, in rescaled space. Minimum distance for multiple solu's
-        - ...
+        - **phase**: vector of size ``p2.num``: the phase ('init', 'phase1', 'phase2') of the ``i``'th iteration
+        - **l**: minimal side length of search space cube (2 if standard rescaling to [-1,+1] is used)
+        - **GRfact**: vector of size ``nConstraints``: span of each constraint in ``Gres``, i.e. ``max(g_i)-min(g_i)``
+        - **GR**: ratio ``max(GRfact)/min(GRfact)``. If ``GR > ISA.TGR``, then constraint normalization is done
+        - **GR**: ratio ``max(GRfact)/min(GRfact)``. If ``GR > ISA.TGR``, then constraint normalization is done
+        - **Grange, GrangeEqu**: ``mean(GRfact)``, ``mean(GRfact[equ])``
+        - **finMarginCoef**: only relevant for ``EQU.muType='SAexpFunc'``
 
         ``p2.num`` counts the number of real function evaluations, see :class:`.Phase2Vars` ``p2``.
 
         :return: SACOBRA results
         :rtype: dict
         """
+        # additional elements of sac_res, just debug logging:
+        #       - **rs**: vector with (1+d)*n_rs elements: (iter_rs, xStart_rs) for each iteration with a random start
+        #       - **currentFeas**: vector of all feasible iterations (those with currentMaxViol <= conTol)
         return self.sac_res
 
 

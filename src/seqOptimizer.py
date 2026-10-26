@@ -60,6 +60,10 @@ class SeqOptimizer:
         opt.set_xtol_rel(s_opts.SEQ.tol)
         opt.set_maxeval(s_opts.SEQ.feMax)
 
+        # --- debug only: ---
+        # fs = cobra.rw.forward(cobra.solu)
+        # xStart = fs
+
         try:
             x = opt.optimize(xStart)
         except nlopt.RoundoffLimited:
@@ -68,6 +72,12 @@ class SeqOptimizer:
             x = xStart.copy()
 
         minf = opt.last_optimum_value()
+        # only debug analysis:
+        if s_opts.SEQ.checkTrueSolu and p2.num > 100:
+            dummy = 0
+            x, minf = sf_factory.check_if_solu_better(x, minf)
+            dummy = 0
+
         time_ms = (time.perf_counter() - start) * 1000
         p2.opt_res = {'x': x,
                       'minf': minf,
@@ -92,9 +102,10 @@ class SeqFuncFactory:
         # ine_ind is an index to the inequality constraints in gCOBRA
         # ['+ 1' and 'concatenate((0,...))' because the first inequality constraint is dist req]:
         self.ine_ind = np.flatnonzero(self.is_equ == False) + 1
-        # DON'T change here to 'self.is_equ is False' as the PEP hint suggest --> strange error in NLopt (!)
+        # DON'T change here to 'self.is_equ is False' as the PEP hint suggests --> strange error in NLopt (!)
         self.ine_ind = np.concatenate((0, self.ine_ind), axis=None)
         tol = 0.0           # here we use always 0.0, the constraint tolerance conTol is used in EvaluatorReal
+        tol = self.cobra.sac_opts.SEQ.conTol
         self.tol_e = np.repeat(tol, self.equ_ind.size)      # we need tol_e and tol_i
         self.tol_i = np.repeat(tol, self.ine_ind.size)      # just to transport the sizes
 
@@ -175,13 +186,40 @@ class SeqFuncFactory:
     #     # inequality constraints for nloptr::cobyla
     #     return -self.gCOBRA(x, None)  # new convention h_i <= 0.
 
+    def check_if_solu_better(self, x, minf):
+        if self.cobra.solu is None:
+            return x, minf
+
+        s = self.cobra.solu
+        fs = self.cobra.rw.forward(s)
+        y = self.p2.fitnessSurrogate(fs)[0]
+        nConstraints = self.cobra.sac_res['nConstraints']
+        conTol = self.cobra.sac_opts.SEQ.conTol
+        if nConstraints > 0:
+            constraintPrediction = calcConstrPred(fs, self.cobra, self.p2)
+        s_feasible = np.all(constraintPrediction < conTol)
+        # print(minf, y, constraintPrediction)
+        print(self.p2.num, minf, y, s_feasible)
+        dummy = 0
+        if y < minf and s_feasible:
+            minf = y
+            x[:] = fs[:]
+        return x, minf
+
 
 def calcConstrPred(x, cobra: CobraInitializer, p2: Phase2Vars) -> np.ndarray:
     """
-    Calculate constraint_prediction at point ``x``. This includes
+    Calculate constraint prediction at point ``x``. This includes
 
     - the proper handling of ``s_opts.EQU.active`` and
     - ``s_opts.SEQ.trueFuncForSurrogates``
+
+    Details: If there are ``m`` inequality constraints and ``r`` equality constraints, then we form the vector
+
+        ( g_i(x) + eps**2, h_j(x) - mu, - h_j(x) - mu )
+
+    with ``m+2*r`` components and with ``mu=currentMu``, ``eps=p2.EPS``. This vector should be in all components
+    ``<= SEQ.contol`` in order to fulfill the constraints.
 
     Known callers:
 
@@ -191,18 +229,11 @@ def calcConstrPred(x, cobra: CobraInitializer, p2: Phase2Vars) -> np.ndarray:
     :param x: the point to evaluate
     :param cobra: we need here members ``sac_opts`` and ``sac_res``
     :param p2: we need here members ``constraintSurrogates``, ``mu4`` and ``EPS``
-    :return: a vector of length ``nConstraints``
+    :return: a vector of length ``m+2*r``
     """
     s_opts = cobra.sac_opts
     s_res = cobra.sac_res
     if s_opts.EQU.active:
-        # We form here the vector
-        #
-        #     ( g_i(x) + eps**2, h_j(x) - mu, - h_j(x) - mu )
-        #
-        # with mu = currentMu, eps=p2.EPS. This vector should be in all components <= 0
-        # in order to fulfill the constraints
-        #
         currentMu = s_res['muVec'][-1]
         # --- The following line with p2.mu4 was active until 2026-01-20, but I do not know why. It leads always to
         # --- currentMu = 0. We now return to the earlier behavior: currentMu = s_res['muVec'][-1]
@@ -217,14 +248,14 @@ def calcConstrPred(x, cobra: CobraInitializer, p2: Phase2Vars) -> np.ndarray:
 
         ine_ind = np.flatnonzero(s_res['is_equ'] == False)
         equ_ind = np.flatnonzero(s_res['is_equ'])
-        version = 2   #  0 | 1 | 2
-        if version == 0:    # Version BEFORE 2025/09/14
+        version = 2   # 0 | 1 | 2
+        if version == 0:    # Version BEFORE 2025/09/14, wrong
             constraint_pred1[ine_ind] = constraint_pred1[ine_ind] - currentMu    # g(x) - mu, new 2025/04/02
             constraint_pred1[equ_ind] = constraint_pred1[equ_ind] - currentMu   # this creates h(x)-mu
             constraint_pred2 = -constraint_pred1[equ_ind] - 2 * currentMu       # this creates -h(x)-mu
             # why 2*currentMu? - because we modify the already created h(x)-mu to -(h(x)-mu)-2*mu = -h(x)-mu
             constraint_prediction = np.concatenate((constraint_pred1, constraint_pred2), axis=None) + p2.EPS ** 2
-        elif version == 1:  # Version 2025/09/14 - 2026/01/20
+        elif version == 1:  # Version 2025/09/14 - 2026/01/20, partly wrong
             # --- BUG FIX 2025/09/14: + p2.EPS**2 only for inequality constraints (and NO '- currentMu'): ---
             constraint_pred1[ine_ind] = constraint_pred1[ine_ind] + p2.EPS ** 2    # g(x) + EPS ** 2 (!!)
             constraint_pred1[equ_ind] = constraint_pred1[equ_ind] - currentMu   # this creates h(x)-mu
