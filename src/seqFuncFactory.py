@@ -8,7 +8,7 @@ from phase2Vars import Phase2Vars
 
 class SeqFuncFactory:
     """
-    Factory for the functions that :class:`SeqOptimizer` optimizes in phase II
+    Factory for the functions that :class:`.SeqOptimizer` optimizes in phase II
     """
     def __init__(self, cobra: CobraInitializer, p2: Phase2Vars):
         self.cobra = cobra
@@ -132,7 +132,7 @@ class SeqFuncFactory:
 
 class ConstrFactory:
     """
-    Factory for the constraints that :class:`DEoptOptimizer` needs
+    Factory for the constraints that :class:`.DEoptOptimizer` needs
     """
     def __init__(self, sf: SeqFuncFactory):
         self.sf = sf

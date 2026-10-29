@@ -630,7 +630,7 @@ class ExamCOP:
             (see ex_COP.R, function solve_G17, multi_gfnc)
         """
         print(f"Starting solve_G21({cobraSeed}) ...")
-        # conTol = 1e-5   # 1e-4 # this overrides the conTol from the arguments
+        conTol = 1e-5   # 1e-4 # this overrides the conTol from the arguments
         # feval = 500    # this overrides the feval from the arguments
         muFinal = 1e-4   # 1e-4 | 1e-7
         G21 = GCOP("G21", mu=muFinal)
@@ -655,9 +655,9 @@ class ExamCOP:
                                                    EQU=equ,
                                                    RI=RIoptions(repairInfeas=True, eps2=0, q=3, repairMargin=np.inf,
                                                                 checkIt=False,  trueFuncForSurrogates=True),  #
-                                                   SEQ=SEQoptions(optimizer="DE_OPT", finalEpsXiZero=True,
+                                                   SEQ=SEQoptions(optimizer="COBYLA", finalEpsXiZero=True,
                                                                   epsilonMax=0.0, epsilonInit=0.0, feMax=1000,
-                                                                  DRC_active=False, conTol=conTol, trueFuncForSurrogates=True)))  #
+                                                                  DRC_active=False, conTol=conTol)))  # , trueFuncForSurrogates=True
                                                    # SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol, # checkTrueSolu=True, #  optimizer="ISRESN",
                                                    #                epsilonMax=0.0, epsilonInit=0.0, feMax=5000, trueFuncForSurrogates=True)))  #
         c2 = CobraPhaseII(cobra).start(gcop=G21)

@@ -22,6 +22,9 @@ class SEQoptions:
             set it to :math:`floor(2\\sqrt{d})`.
     :param trueFuncForSurrogates: if True, use the true (constraint & fitness) functions instead of surrogates (only for
             debug analysis)
+    :param checkTrueSolu: (only debug analysis) if True, check if the true solution is feasible and has better objective
+            on the surrogates. If so, store the true solutions as ``xbest``
+    :param DRC_active: if True, include DRC constraint (distance requirement cycle)
     """
     def __init__(self,
                  optimizer="COBYLA",

@@ -23,6 +23,9 @@ class Optimizer(ABC):
 
 
 class NLoptOptimizer(Optimizer):
+    """
+    Optimizers that are based on package ``nlOpt``
+    """
     def __init__(self, xStart: np.ndarray, cobra: CobraInitializer, p2: Phase2Vars):
         super().__init__(xStart, cobra, p2)
         start = time.perf_counter()
@@ -76,12 +79,14 @@ class NLoptOptimizer(Optimizer):
                                    opt.get_numevals(),
                                    self.time_ms)
 
-
     def get_result(self) -> OptimResult:
         return self.opt_res
 
 
 class DEoptOptimizer(Optimizer):
+    """
+    Optimizers that are based on ``scipy``'s differential evolution
+    """
     def __init__(self, xStart: np.ndarray, cobra: CobraInitializer, p2: Phase2Vars):
         super().__init__(xStart, cobra, p2)
         start = time.perf_counter()

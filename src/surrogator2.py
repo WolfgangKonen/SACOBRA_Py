@@ -5,7 +5,7 @@ from typing import Union
 # then the following import statements will work:
 from surrogator1 import Surrogator1   # for AdFitter, assert_gres
 from cobraInit import CobraInitializer
-from cobraPhaseII import Phase2Vars
+from phase2Vars import Phase2Vars
 from innerFuncs import verboseprint, PlogSquasher  # , plog, plogReverse
 from rbfModel import RBFmodel
 

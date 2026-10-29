@@ -5,7 +5,7 @@ Details Optimization
 
 Details Phase II
 ----------------
-.. Including the following two lines leads to strange warnings:
+.. Including the following two lines leads to strange warnings (circular import):
 .. .. autoclass:: innerFuncs.PlogSquasher
    :members: get_warn_summary
 
@@ -14,16 +14,7 @@ Details Phase II
 
 .. autoclass:: seqOptimizer.SeqOptimizer
 
-.. _AdFitter-label:
-
-.. autoclass:: surrogator1.Surrogator1.AdFitter
-   :members: __init__, __call__
-
-.. autoclass:: surrogator1.Surrogator1
-   :members: calcPEffect, trainSurrogates
-
-.. autoclass:: surrogator2.Surrogator2
-   :members: calcPEffect, trainSurrogates
+.. autoclass:: optimResult.OptimResult
 
 .. autoclass:: rbfModel.RBFmodel
    :members: __init__, __call__
@@ -31,5 +22,3 @@ Details Phase II
 .. autoclass:: rbfSacobra.RBFsacob
    :members: __init__, __call__
 
-.. autoclass:: evaluatorReal.EvaluatorReal
-   :members: update, equ_refine, equ_num_max_viol, ine_num_max_viol

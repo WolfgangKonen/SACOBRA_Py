@@ -1,8 +1,8 @@
 import numpy as np
 from typing import Tuple
 from cobraInit import CobraInitializer
-from evaluatorReal import getPredY0
 from innerFuncs import distLine
+from evaluatorReal import getPredY0
 from phase2Vars import Phase2Vars
 
 

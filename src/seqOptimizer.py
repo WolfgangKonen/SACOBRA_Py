@@ -13,14 +13,16 @@ class SeqOptimizer:
     Sequential optimizer for phase II that optimizes on the surrogates in each sequential step.
 
     Several optimizer algorithms from `nlopt <https://nlopt.readthedocs.io/en/latest/>`_, the nonlinear optimization
-    package **NLopt**, are available and can be selected via parameter ``cobra.sac_opts.SEQ.optimizer``, namely
+    package **NLopt** and from ``scipy``'s differential evolution method are available and can be selected
+    via parameter ``cobra.sac_opts.SEQ.optimizer``, namely
 
     - ``COBYLA``: `nlopt.LN_COBYLA <https://nlopt.readthedocs.io/en/latest/NLopt_Python_Reference/#the-nloptopt-class>`_
     - ``ISRESN``: `nlopt.GN_ISRES <https://nlopt.readthedocs.io/en/latest/NLopt_Python_Reference/#the-nloptopt-class>`_
+    - ``DE_OPT``: `scipy.optimize.differential_evolution <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.differential_evolution.html>`_
 
     :param xStart: where (in input space) the optimizer starts
-    :param cobra: parameter ``cobra.sac_opts.SEQ.optimizer`` specifies the optimization algorithm
-    :param p2: dict ``p2.opt_res`` contains the optimization results
+    :param cobra: parameter ``SEQ.optimizer`` in ``cobra.sac_opts`` specifies the optimization algorithm
+    :param p2: object ``p2.opt_res`` of class :class:`.OptimResult` contains the optimization results
     """
     def __init__(self, xStart: np.ndarray, cobra: CobraInitializer, p2: Phase2Vars):
         """

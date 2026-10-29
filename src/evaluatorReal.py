@@ -5,8 +5,8 @@ from scipy.optimize import fmin_l_bfgs_b
 from scipy.optimize import minimize
 
 from cobraInit import CobraInitializer
+from innerFuncs import PlogSquasher
 from phase2Vars import Phase2Vars
-from innerFuncs import PlogSquasher  # , plog, plogReverse
 import phase2Funcs as p2f
 
 

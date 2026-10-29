@@ -20,6 +20,7 @@ SACOBRA_Py documentation
    init
    optim
    optim_detail
+   optim_detail_2
    example
    repro_experim
    appendix
