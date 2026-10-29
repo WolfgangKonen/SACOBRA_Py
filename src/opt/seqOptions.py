@@ -39,6 +39,7 @@ class SEQoptions:
                  Tinfeas=None,      # will be set in cobraInit
                  trueFuncForSurrogates=False,
                  checkTrueSolu=False,
+                 DRC_active=True,
                  ):
         self.optimizer = optimizer
         self.feMax = feMax
@@ -54,3 +55,4 @@ class SEQoptions:
         self.Tinfeas = Tinfeas
         self.trueFuncForSurrogates = trueFuncForSurrogates
         self.checkTrueSolu = checkTrueSolu
+        self.DRC_active = DRC_active
