@@ -362,7 +362,8 @@ class ExamCOP:
                                                    RBF=RBFoptions(degree=2),
                                                    EQU=EQUoptions(refinePrint=False, muFinal=muFinal, refineAlgo="COBYLA"),  # "L-BFGS-B COBYLA"
                                                    # COBYLA is slower, issues warnings, but is a bit more precise
-                                                   SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol, trueFuncForSurrogates=True)))
+                                                   SEQ=SEQoptions(optimizer="DE_OPT", finalEpsXiZero=True,
+                                                                  DRC_active=False, conTol=conTol)))  # , trueFuncForSurrogates=True
 
         c2 = CobraPhaseII(cobra).start(gcop=G11)
 
@@ -419,7 +420,8 @@ class ExamCOP:
                                                    ID=IDoptions(initDesign="LHS", initDesPoints=idp),
                                                    RBF=RBFoptions(degree=2, rho=2.5, rhoDec=2.0),  # , rhoGrow=100
                                                    EQU=equ,
-                                                   SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol)))
+                                                   SEQ=SEQoptions(optimizer="DE_OPT", finalEpsXiZero=True,
+                                                                  DRC_active=False, conTol=conTol)))  # , trueFuncForSurrogates=True
 
         c2 = CobraPhaseII(cobra).start(gcop=G13)
 
@@ -620,7 +622,7 @@ class ExamCOP:
         # analyze_solution(c2, cobra)
         return c2
 
-    def solve_G21(self, cobraSeed, feval=500, verbIter=50, conTol=1e-4):
+    def solve_G21(self, cobraSeed, feval=500, verbIter=10, conTol=1e-4):
         """ Test whether COP G21 has statistical equivalent results to the R side with squares=T, if we set on the
             Python side RBF.degree=2 (which is similar, but not the same).
 
@@ -629,7 +631,7 @@ class ExamCOP:
         """
         print(f"Starting solve_G21({cobraSeed}) ...")
         conTol = 1e-5   # 1e-4 # this overrides the conTol from the arguments
-        feval = 500    # this overrides the feval from the arguments
+        # feval = 500    # this overrides the feval from the arguments
         muFinal = 1e-4   # 1e-4 | 1e-7
         G21 = GCOP("G21", mu=muFinal)
         dim = G21.dimension
@@ -653,8 +655,11 @@ class ExamCOP:
                                                    EQU=equ,
                                                    RI=RIoptions(repairInfeas=True, eps2=0, q=3, repairMargin=np.inf,
                                                                 checkIt=False,  trueFuncForSurrogates=True),  #
-                                                   SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol, # checkTrueSolu=True, #  optimizer="ISRESN",
-                                                                  epsilonMax=0.0, epsilonInit=0.0, feMax=5000, trueFuncForSurrogates=True)))  #
+                                                   SEQ=SEQoptions(optimizer="COBYLA", finalEpsXiZero=True,
+                                                                  epsilonMax=0.0, epsilonInit=0.0, feMax=1000,
+                                                                  DRC_active=False, conTol=conTol)))  # , trueFuncForSurrogates=True
+                                                   # SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol, # checkTrueSolu=True, #  optimizer="ISRESN",
+                                                   #                epsilonMax=0.0, epsilonInit=0.0, feMax=5000, trueFuncForSurrogates=True)))  #
         c2 = CobraPhaseII(cobra).start(gcop=G21)
 
         print(f"final err: {c2.p2.fin_err}")

@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import pickle
 
-from seqOptimizer import calcConstrPred
+from seqFuncFactory import calcConstrPred
 from soluContainer import SoluContainer
 from cobraInit import CobraInitializer
 from phase2Vars import Phase2Vars
@@ -116,7 +116,7 @@ def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, EPS,
         solu = cobra.solu_cont.get_solu()
         if solu.ndim == 2:          # quick fix, TODO better
             solu = solu[0,:]
-        constraintSolu = calcConstrPred(solu, cobra, p2)
+        constraintSolu = calcConstrPred(solu, cobra, p2)            # m + 2*r constraints (2 for each equ constraint)
         feasSolu = np.all(constraintSolu < s_opts.SEQ.conTol)
     else:
         feasSolu = np.nan

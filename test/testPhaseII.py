@@ -3,7 +3,7 @@ import numpy as np
 import nlopt
 from cobraInit import CobraInitializer
 from opt.rbfOptions import RBFoptions
-from seqOptimizer import SeqFuncFactory
+from seqFuncFactory import SeqFuncFactory
 from cobraPhaseII import CobraPhaseII
 from innerFuncs import PlogSquasher
 from rescaleWrapper import RescaleWrapper

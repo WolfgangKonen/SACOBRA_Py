@@ -445,6 +445,8 @@ class GCOP(COP):
         # no x0 provided
 
         def g11_fn(x):
+            # if self.ncall <= 12:
+            #     print(self.ncall, x, x[1] - x[0] ** 2)
             self.ncall += 1
             return np.array([x[0] ** 2 + (x[1] - 1) ** 2,
                              x[1] - x[0] ** 2])

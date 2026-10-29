@@ -165,7 +165,7 @@ class OneS:
                         if gname in {"G02", "G03"}:
                             c2 = eval(f"cop.solve_{gname}(cobraSeed + run, {dim}, feval={feval}, verbIter=100 {conTolStr})")
                         else:
-                            c2 = eval(f"cop.solve_{gname}(cobraSeed + run, feval={feval}, verbIter=100 {conTolStr})")
+                            c2 = eval(f"cop.solve_{gname}(cobraSeed + run, feval={feval}, verbIter=10 {conTolStr})")
                     else:
                         raise RuntimeError(f"Unallowed value meth={meth} in mlist={mlist}")
                     time_ms = (time.perf_counter() - start) / runs * 1000
@@ -391,7 +391,7 @@ if __name__ == '__main__':
     dims   = [  -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1 ]  #   -1,
     gnames = ["G21"]  # , "G21", "G22", "G21", "G22", "G24" "G10", "G11", "G12",
     dims   = [  -1 ]  # ,    -1,    -1,    -1,    -1,    -1,
-    df2 = one.one_s_multi_g_r(gnames, dims,5, 64, feval=500, conTol=0.0, mlist=['solve'])     # 'one_s', # conTol=1e-4 | 1e-7
+    df2 = one.one_s_multi_g_r(gnames, dims,3, 64, feval=200, conTol=0.0, mlist=['solve'])     # 'one_s', # conTol=1e-4 | 1e-7
     # init_df = one.multi_init(gnames, 54, feval=120)
     # one.df_analyze("df2_conTol0.0-fe500-G01-G13.feather", "df2_conTol1e-7-fe500-G01-G13.feather")
     # one.df_analyze("df2_conTol0.0-MIDPTS-fe500-G14-G24.feather")   # NONE | XNEW | MIDPTS

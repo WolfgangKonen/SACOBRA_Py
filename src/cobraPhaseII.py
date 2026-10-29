@@ -12,7 +12,8 @@ from randomStarter import RandomStarter
 from repairInfeasRI2 import RI2
 from surrogator import Surrogator
 from surrogator1 import Surrogator1
-from seqOptimizer import SeqOptimizer, check_if_cobra_optimizable
+from seqOptimizer import SeqOptimizer
+from seqFuncFactory import check_if_cobra_optimizable
 from evaluatorReal import EvaluatorReal
 from surrogator2 import Surrogator2
 from updateSaveCobra import updateSaveCobra
@@ -68,7 +69,7 @@ class CobraPhaseII:
              :class:`.Surrogator1`, :class:`.Surrogator2`, :class:`.RBFmodel`)
            - select start point ``xStart``: either current-best ``xbest`` or random start (see :class:`.RandomStarter`)
            - perform sequential optimization, starting from ``xStart``, subject to the ``nConstraint + 1`` constraints.
-             Result is ``xNew = p2.opt_res['x']`` (see :class:`.SeqOptimizer`)
+             Result is ``xNew = p2.opt_res.x`` (see :class:`.SeqOptimizer`)
            - evaluate ``xNew`` on the real functions +  (if ``EQU.active``) do :ref:`refine step <refineStep-label>`.
              Result is the updated :class:`.EvaluatorReal` object ``p2.ev1``
            - calculate :ref:`p-effect <pEffect-label>` for ``onlinePLOG`` (see :meth:`.Surrogator1.calcPEffect`)
@@ -143,14 +144,14 @@ class CobraPhaseII:
             check_if_cobra_optimizable(self.cobra, self.p2)
 
             # start sequential optimizer on surrogates and write result to self.p2.opt_res
-            # (e.g. the new best x is in xNew = self.p2.opt_res['x']):
+            # (e.g. the new best x is in xNew = self.p2.opt_res.x):
             SeqOptimizer(xStart, self.cobra, self.p2)
             self.p2.globalOptCounter += 1       # a counter which counts all main iterates, excluding repair or TR
             self.p2.ev1.state = "optimized"     # flag ev1 as being in the state after sequential optimization
 
             # evaluate xNew on the real functions + do refine step (if s_opts.EQU.active and s_opts.EQU.refine).
             # Result is the updated EvaluatorReal object self.p2.ev1:
-            xNew = self.p2.opt_res['x']
+            xNew = self.p2.opt_res.x
             self.p2.ev1.update(xNew, self.cobra, self.p2, self.p2.currentMu)
 
             # calcPEffect (SACOBRA) for onlinePLOG

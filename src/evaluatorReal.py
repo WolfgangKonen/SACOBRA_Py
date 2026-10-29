@@ -5,8 +5,8 @@ from scipy.optimize import fmin_l_bfgs_b
 from scipy.optimize import minimize
 
 from cobraInit import CobraInitializer
+from innerFuncs import PlogSquasher
 from phase2Vars import Phase2Vars
-from innerFuncs import PlogSquasher  # , plog, plogReverse
 import phase2Funcs as p2f
 
 
@@ -108,7 +108,7 @@ class EvaluatorReal:
         :param fitnessSurrogate:  if ``None``, set ``fitnessSurrogate = p2.fitnessSurrogate``.
                     Used to calculate ``s_f(xNew)`` where ``s_f`` is the fitness surrogate model.
                     ``s_f(xNew)`` becomes the new last value of vector ``self.predY``
-        :param f_value: if ``None``, set ``f_value=p2.opt_res['minf']``. Used for ``self.predVal`` (probably obsolete)
+        :param f_value: if ``None``, set ``f_value=p2.opt_res.minf``. Used for ``self.predVal`` (probably obsolete)
         :return: nothing, but many elements of ``self`` are updated: ``xNew``, ``xNewEval``, ``x0``, ``x1``, ...
         """
         # update() corresponds to evalReal() in R, which is called in three places:
@@ -116,7 +116,7 @@ class EvaluatorReal:
         if fitnessSurrogate is None:
             fitnessSurrogate = p2.fitnessSurrogate
         if f_value is None:
-            f_value = p2.opt_res['minf']
+            f_value = p2.opt_res.minf
         self.xNew = xNew
         self.xNew = np.maximum(self.xNew, cobra.sac_res['lower'])
         self.xNew = np.minimum(self.xNew, cobra.sac_res['upper'])
@@ -134,9 +134,9 @@ class EvaluatorReal:
         self.predY = concat(self.predY, newPredY)  # bug fix: now predY is the fitness surrogate value /WK/
         self.predVal = concat(self.predVal, f_value)  # fitness + penalty (in case of NMKB et al.) /WK/
         # /WK/2025/10/16: predVal is probably never really used
-        self.feMax = concat(self.feMax, p2.opt_res['feMax'])
-        self.optimConv = concat(self.optimConv, p2.opt_res['res_code'])
-        self.optimTime = concat(self.optimTime, p2.opt_res['time_ms'])
+        self.feMax = concat(self.feMax, p2.opt_res.fe_max)
+        self.optimConv = concat(self.optimConv, p2.opt_res.res_code)
+        self.optimTime = concat(self.optimTime, p2.opt_res.time_ms)
         newPredC = np.array([])
         if self.CONSTRAINED:
             newPredC = p2.constraintSurrogates(self.xNew)

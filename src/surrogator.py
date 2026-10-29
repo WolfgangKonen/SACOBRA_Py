@@ -1,6 +1,6 @@
 from opt.isaOptions import O_LOGIC
 from cobraInit import CobraInitializer
-from cobraPhaseII import Phase2Vars
+from phase2Vars import Phase2Vars
 from surrogator1 import Surrogator1   # for AdFitter
 from surrogator2 import Surrogator2
 
