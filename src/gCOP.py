@@ -64,6 +64,7 @@ class GCOP(COP):
         self.x0 = None
         self.info = None
         self.ncall = 0
+        self.ocall = 0
         if name == "G01": self._call_G01()
         elif name == "G02": self._call_G02(dimension)
         elif name == "G03": self._call_G03(dimension, mu=mu)
@@ -97,6 +98,13 @@ class GCOP(COP):
         else:
             first_solu = self.solu[0, :] if self.solu.ndim == 2 else self.solu
             self.fbest = self.fn(first_solu)[0]     # objective at (first) solution point
+
+        def g_obj(x):
+            self.ocall += 1
+            return (eval(self.fn_strg[0]))(x)
+
+        self.fn_obj = g_obj   # increments self.ocall
+
 
     def dist_to_solu(self, xbest):
         """
@@ -445,14 +453,14 @@ class GCOP(COP):
         # no x0 provided
 
         def g11_fn(x):
-            # if self.ncall <= 12:
-            #     print(self.ncall, x, x[1] - x[0] ** 2)
             self.ncall += 1
             return np.array([x[0] ** 2 + (x[1] - 1) ** 2,
                              x[1] - x[0] ** 2])
-        # self.fn = lambda x: np.array([x[0]**2 + (x[1]-1)**2,
-        #                               x[1] - x[0]**2])
         self.fn = g11_fn     # increments ncall
+        self.fn_strg = [
+            "lambda x: x[0] ** 2 + (x[1] - 1) ** 2",    # obj
+            "lambda x: x[1] - x[0] ** 2",               # h1
+            ]
 
     def _call_G12(self):
         self.dimension = 3
@@ -470,10 +478,14 @@ class GCOP(COP):
         def g12_fn(x):
             self.ncall += 1
             return np.array([-1 + 0.01*((x[0]-5)**2+(x[1]-5)**2+(x[2]-5)**2),
-                            G(x) ])
+                            G(x)])
 
-        # self.fn = lambda x: ...
         self.fn = g12_fn     # increments ncall
+        self.fn_strg = [
+            "lambda x: -1 + 0.01*((x[0]-5)**2+(x[1]-5)**2+(x[2]-5)**2)",                            # obj
+            "lambda x: np.min(np.array([[[(x[0]-i)**2+(x[1]-j)**2+(x[2]-k)**2 - 0.0625"
+                            "for i in range(1,9)] for j in range(1,9)] for k in range(1,9)]))",     # g1
+            ]
 
     def _call_G13(self, mu: float):
         # currently, we do not have a 'better' solution for mu > 0
@@ -491,8 +503,13 @@ class GCOP(COP):
                             x[0] ** 3 + x[1] ** 3 + 1
                             ])
 
-        # self.fn = lambda x: ...
         self.fn = g13_fn     # increments ncall
+        self.fn_strg = [
+            "lambda x: np.exp(x[0]*x[1]*x[2]*x[3]*x[4])",               # obj
+            "lambda x: x[0]**2+x[1]**2+x[2]**2+x[3]**2+x[4]**2-10",     # h1
+            "lambda x: x[1] * x[2] - 5 * x[3] * x[4]",                  # h2
+            "lambda x: x[0] ** 3 + x[1] ** 3 + 1",                      # h3
+            ]
         if mu == 1e-4:
             # --- from [LiangRunar06] ---
             solu0 = np.array([-1.71714224003, 1.59572124049468, 1.8272502406271,-0.763659881912867,-0.76365986736498])
@@ -823,20 +840,40 @@ class GCOP(COP):
         self.is_equ = np.array([False, True, True, True, True, True])
 
         def g21_fn(x):
+            # with modified g1_mod (np.abs in bases) to ensure valid results even if x[i] is negative (DE))
             self.ncall += 1
             return np.array([+x[0],                                                                      # obj
-                            -x[0]+35*(x[1]**(0.6))+35*(x[2]**0.6),                                       # g1
+                            # -x[0]+35*(x[1]**(0.6))+35*(x[2]**0.6),                                     # g1_orig
+                            -x[0]+35*(np.abs(x[1])**(0.6))+35*(np.abs(x[2])**0.6),                       # g1_mod
                             -300*x[2] + 7500*x[4]- 7500*x[5] - 25*x[3]*x[4] + 25*x[3]*x[5] + x[2]*x[3],  # h1
                             +100*x[1] + 155.365*x[3] + 2500*x[6] - x[1]*x[3] - 25*x[3]*x[6] - 15536.5,   # h2
                             -x[4] + np.log(-x[3] + 900),                                                 # h3
                             -x[5] + np.log(x[3] + 300),                                                  # h4
                             -x[6] + np.log(-2 * x[3] + 700)                                              # h5
                             ])
-        self.fn = g21_fn    # increments ncall
+
+        self.fn_strg = [
+            "lambda x: x[0]",                                                   # obj
+            # "lambda x: -x[0]+35*(x[1]**(0.6))+35*(x[2]**0.6)",                # g1_orig
+            "lambda x: -x[0]+35*(np.abs(x[1])**(0.6))+35*(np.abs(x[2])**0.6)",  # g1_mod
+            "lambda x: -300 * x[2] + 7500 * x[4] - 7500 * x[5] - 25 * x[3] * x[4] + 25 * x[3] * x[5] + x[2]*x[3]",  # h1
+            "lambda x: +100 * x[1] + 155.365 * x[3] + 2500 * x[6] - x[1] * x[3] - 25 * x[3] * x[6] - 15536.5",      # h2
+            "lambda x: -x[4] + np.log(-x[3] + 900)",            # h3
+            "lambda x: -x[5] + np.log(x[3] + 300)",             # h4
+            "lambda x: -x[6] + np.log(-2 * x[3] + 700)",        # h5
+            ]
+        self.fn = g21_fn        # increments self.ncall
+
+        # def g_obj(x):
+        #     self.ocall += 1
+        #     return x[0]
+        #
+        # self.fn_obj = g_obj   # increments self.ocall
+
         if mu == 1e-4:
             # original solution from the R side, with maxViol = 1e-4, not fully feasible:
             # (This is also the solution in [LiangRunar06], who states that conTol = 1e-4 is allowed for all equality
-            # constraints. But this is illogical, because the same conTol is NOT applied for G11.)
+            # constraints.)
             self.solu = np.array([193.724510070034967, 5.56944131553368433e-27, 17.3191887294084914,
                                   100.047897801386839, 6.68445185362377892, 5.99168428444264833, 6.21451648886070451
                                   ])        # obj = 193.7245100 with maxViol = 1.0e-04

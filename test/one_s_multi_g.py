@@ -322,6 +322,12 @@ class OneS:
         dir_run = "feather/"+runname
         with open(f"{dir_run}/s_opts.pickle", 'rb') as f:
             s_opts = pickle.load(f)
+
+        # --- debug only ---
+        # df1 = pd.read_feather(f"{dir_run}/"+"G21_07_solve_00_df1.feather")
+        # df2 = pd.read_feather(f"{dir_run}/" + "G21_07_solve_00_df2.feather")
+        # png_error_plot(df1, df2['muVec'].values, 193.7245100, "gtitle", png_file=f"dummy.png")
+
         dfsum = pd.read_feather(f"{dir_run}/dfsum.feather")
         # dfsum = pd.read_csv(f"{dir_run}/dfsum.csv", sep=";")
         # dfsum.to_feather(f"{dir_run}/dfsum.feather")
@@ -391,7 +397,7 @@ if __name__ == '__main__':
     dims   = [  -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1 ]  #   -1,
     gnames = ["G21"]  # , "G21", "G22", "G21", "G22", "G24" "G10", "G11", "G12",
     dims   = [  -1 ]  # ,    -1,    -1,    -1,    -1,    -1,
-    df2 = one.one_s_multi_g_r(gnames, dims,3, 64, feval=200, conTol=0.0, mlist=['solve'])     # 'one_s', # conTol=1e-4 | 1e-7
+    df2 = one.one_s_multi_g_r(gnames, dims,3, 64, feval=500, conTol=0.0, mlist=['solve'])     # 'one_s', # conTol=1e-4 | 1e-7
     # init_df = one.multi_init(gnames, 54, feval=120)
     # one.df_analyze("df2_conTol0.0-fe500-G01-G13.feather", "df2_conTol1e-7-fe500-G01-G13.feather")
     # one.df_analyze("df2_conTol0.0-MIDPTS-fe500-G14-G24.feather")   # NONE | XNEW | MIDPTS
@@ -403,4 +409,4 @@ if __name__ == '__main__':
     # one.run_analyze("run2026-10-08_09h48m37-g01g13")
     # one.run_analyze("run2026-10-22_12h34m42-g14g24-rfhT")
     # one.run_analyze("run2026-10-22_14h08m13-g14g24-rfhF")
-    # one.run_analyze("run2026-10-18_15h27m20-g01g13-ehT")
+    # one.run_analyze("run2026-11-01_08h37m49")

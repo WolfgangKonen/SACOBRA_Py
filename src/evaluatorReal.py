@@ -55,6 +55,7 @@ class EvaluatorReal:
             self.feasPred = np.repeat(False, s_opts.ID.initDesPoints)
             self.optimConv = np.repeat(1, s_opts.ID.initDesPoints)  # vector to store optimizer convergence
             self.optimTime = np.repeat(0, s_opts.ID.initDesPoints)
+            self.optimName = np.repeat(s_opts.SEQ.optimizer, s_opts.ID.initDesPoints)
             self.feMax = np.repeat(np.nan, s_opts.ID.initDesPoints)  # vector to store function evaluations on surrogate
 
         else:
@@ -66,6 +67,7 @@ class EvaluatorReal:
             self.feasPred = df.feasPred
             self.optimConv = df.optimConv
             self.optimTime = df.optimTime
+            self.optimName = df.optimName
             self.feMax = df.FEval
 
         self.is_equ = cobra.sac_res['is_equ']
@@ -137,6 +139,7 @@ class EvaluatorReal:
         self.feMax = concat(self.feMax, p2.opt_res.fe_max)
         self.optimConv = concat(self.optimConv, p2.opt_res.res_code)
         self.optimTime = concat(self.optimTime, p2.opt_res.time_ms)
+        self.optimName = concat(self.optimName, p2.opt_res.optimizer)
         newPredC = np.array([])
         if self.CONSTRAINED:
             newPredC = p2.constraintSurrogates(self.xNew)

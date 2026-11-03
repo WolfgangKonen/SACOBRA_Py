@@ -3,6 +3,7 @@ import numpy as np
 # then the following import statements will work:
 from cobraInit import CobraInitializer
 from gCOP import GCOP
+from optimResult import OptimResult
 
 
 class Phase2Vars:
@@ -11,7 +12,7 @@ class Phase2Vars:
     These variables include:
 
     - **EPS**           number, the current safety margin :math:`\\epsilon` in constraint surrogates, see :ref:`safety margin <safety_margin-label>`
-    - **currentMu**     number, the current equality margin :math:`\\mu`, see :ref:`refine step <refineStep-label>`
+    - **currentMu**     number, the current equality margin :math:`\\mu`, see :ref:`refine step <refineStep-label>`. It is initialized with ``cobra.sac_res['muVec'][0]``
     - **num**           the number of real function evaluations carried out
     - **globalOptCounter**      counter of the global optimization steps in phase II, excluding repair and trust region
     - **Cfeas**         how many feasible infills in a row (see :meth:`phase2Funcs.adjustMargins`, ``updateInfoAndCounters``)
@@ -26,7 +27,7 @@ class Phase2Vars:
     """
     def __init__(self, cobra: CobraInitializer):
         self.EPS = cobra.sac_opts.SEQ.epsilonInit      # number, the current safety margin EPS in constraint surrogates
-        self.currentMu = 0.0       #
+        self.currentMu = cobra.sac_res['muVec'][0]
         self.num = cobra.sac_res['A'].shape[0]      # the number of real function evaluations carried out
         self.globalOptCounter = 0   # counter for only for the global optimization steps in phase II,
                                     # excluding repair and trust region
@@ -47,7 +48,10 @@ class Phase2Vars:
         self.rs1 = None         # gets RandomStarter object in cobraPhaseII
         self.ev1 = None         # gets EvaluatorReal object in cobraPhaseII
         self.ri2 = None         # gets RI2 (repair infeasible) object in cobraPhaseII
-        self.opt_res = None     # gets the SeqOptimizer results in cobraPhaseII
+        self.opt_res = OptimResult(     # gets the SeqOptimizer results in cobraPhaseII
+                "", np.nan, np.nan, -1,
+                "", -1, -1
+                        )
         self.gama = None        # number, will be set in cobraPhaseII.py
         self.ro = None          # number, will be set in cobraPhaseII.py
         self.mu4 = 0            # number, will be conditionally set in cobraPhaseII.py

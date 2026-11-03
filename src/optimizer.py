@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 
 import nlopt
 import numpy as np
-import scipy.optimize
 from scipy.optimize import Bounds, differential_evolution, NonlinearConstraint
 
 from cobraInit import CobraInitializer
@@ -74,8 +73,9 @@ class NLoptOptimizer(Optimizer):
             x, minf = sf_factory.check_if_solu_better(x, minf)
 
         self.time_ms = (time.perf_counter() - start) * 1000
-        self.opt_res = OptimResult(x, minf,
+        self.opt_res = OptimResult(self.s_opts.SEQ.optimizer, x, minf,
                                    opt.last_optimize_result(),
+                                   opt.get_errmsg(),
                                    opt.get_numevals(),
                                    self.time_ms)
 
@@ -109,13 +109,25 @@ class DEoptOptimizer(Optimizer):
         assert (xStart >= lower).all(), "[SeqOptimizer] xStart >= lower violated"
         assert (xStart <= upper).all(), "[SeqOptimizer] xStart <= upper violated"
         objective_function = sf_factory.subProb2_de
+        # # --- debug only: replace objective by true objective function
+        # objective_function = lambda x: cobra.fn_obj(cobra.rw.inverse(x))
+
 
         constraints = []
         for i in range(sf_factory.ine_ind.size):
+            # if DRC_active==False, take all but the constraint i==0, which is the DRC constraint
+            # if DRC_active==True, include also this DRC constraint
             if i != 0 or cobra.sac_opts.SEQ.DRC_active:
-              constraints +=  [cf_factory.g_constr(i)]
+              constraints +=  [cf_factory.g_constr2(i)]
         for j in range(sf_factory.equ_ind.size):
-            constraints +=  [cf_factory.h_constr(j)]
+            constraints +=  [cf_factory.h_constr2(j)]
+
+        DBG = False
+        if DBG:
+            cobra_solu = cobra.rw.forward(cobra.solu)
+            for k in range(len(constraints)):
+                print(constraints[k].fun(cobra_solu), objective_function(cobra_solu))
+            dummy=0
 
         result = differential_evolution(
             objective_function,
@@ -129,10 +141,13 @@ class DEoptOptimizer(Optimizer):
         )
 
         time_ms = (time.perf_counter() - start) * 1000
-        self.opt_res = OptimResult(result.x, result.fun,
+        self.opt_res = OptimResult(self.s_opts.SEQ.optimizer,
+                                   result.x, result.fun,
+                                   1 if result.success else 0,
                                    result.message,
                                    result.nfev,
                                    time_ms)
+        dummy = 0
 
     def get_result(self) -> OptimResult:
         return self.opt_res

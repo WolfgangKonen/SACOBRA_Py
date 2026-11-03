@@ -343,7 +343,7 @@ class ExamCOP:
         c2.p2.fe_thresh = 1e-9
         return c2
 
-    def solve_G11(self, cobraSeed, feval=70, verbIter=10, conTol=0):          # conTol=0 | 1e-7
+    def solve_G11(self, cobraSeed, feval=70, verbIter=100, conTol=0):          # conTol=0 | 1e-7
         """ Test whether COP G11 has statistical equivalent results to the R side with squares=T, if we set on the
             Python side RBF.degree=2 (which is similar, but not the same).
 
@@ -362,8 +362,9 @@ class ExamCOP:
                                                    RBF=RBFoptions(degree=2),
                                                    EQU=EQUoptions(refinePrint=False, muFinal=muFinal, refineAlgo="COBYLA"),  # "L-BFGS-B COBYLA"
                                                    # COBYLA is slower, issues warnings, but is a bit more precise
-                                                   SEQ=SEQoptions(optimizer="DE_OPT", finalEpsXiZero=True,
-                                                                  DRC_active=False, conTol=conTol)))  # , trueFuncForSurrogates=True
+                                                   SEQ=SEQoptions(optimizer="COBYLA", finalEpsXiZero=True,
+                                                                  DRC_active=True, # DE_at_mod99=True,
+                                                                  conTol=conTol)))  # , trueFuncForSurrogates=True
 
         c2 = CobraPhaseII(cobra).start(gcop=G11)
 
@@ -622,7 +623,7 @@ class ExamCOP:
         # analyze_solution(c2, cobra)
         return c2
 
-    def solve_G21(self, cobraSeed, feval=500, verbIter=10, conTol=1e-4):
+    def solve_G21(self, cobraSeed, feval=500, verbIter=100, conTol=1e-4):
         """ Test whether COP G21 has statistical equivalent results to the R side with squares=T, if we set on the
             Python side RBF.degree=2 (which is similar, but not the same).
 
@@ -643,21 +644,22 @@ class ExamCOP:
         lower = G21.lower  #
         upper = G21.upper  #
 
-        equ = EQUoptions(muGrow=100, muDec=2.6, muFinal=muFinal, refine=False,       # 1e-7  # , mu4inequality=True
+        equ = EQUoptions(muGrow=100, muDec=2.6, muFinal=muFinal,   # muType="CONS", refine=False, muFinal=1e-7, mu4inequality=True
                          refinePrint=False, refineAlgo="L-BFGS-B")  # "L-BFGS-B COBYLA"
         cobra = CobraInitializer(G21.x0, G21.fn, G21.name, lower, upper, G21.is_equ,
-                                 solu=G21.solu,
+                                 solu=G21.solu, fn_strg=G21.fn_strg, fn_obj=G21.fn_obj,
                                  s_opts=SACoptions(verbose=verb, verboseIter=verbIter, feval=feval, cobraSeed=cobraSeed,
-                                                   ID=IDoptions(initDesign="LHS", initDesPoints=idp),
+                                                   ID=IDoptions(initDesign="LHS", initDesPoints=idp, rescale=False),
                                                    RBF=RBFoptions(degree=2),   # kernel="gaussian",
                                                    # RBF=RBFoptions(interpolator="sacobra", degree=1.5), # worse
                                                    ISA=ISAoptions(onlinePLOG=O_LOGIC.MIDPTS, TGR=np.inf),   # , TFR_DRC=100, TFRange=0
                                                    EQU=equ,
                                                    RI=RIoptions(repairInfeas=True, eps2=0, q=3, repairMargin=np.inf,
-                                                                checkIt=False,  trueFuncForSurrogates=True),  #
+                                                                checkIt=False),  # ,  trueFuncForSurrogates=True
                                                    SEQ=SEQoptions(optimizer="COBYLA", finalEpsXiZero=True,
                                                                   epsilonMax=0.0, epsilonInit=0.0, feMax=1000,
-                                                                  DRC_active=False, conTol=conTol)))  # , trueFuncForSurrogates=True
+                                                                  DRC_active=True, # DE_at_mod99=True,
+                                                                  conTol=conTol)))  # , trueFuncForSurrogates=True
                                                    # SEQ=SEQoptions(finalEpsXiZero=True, conTol=conTol, # checkTrueSolu=True, #  optimizer="ISRESN",
                                                    #                epsilonMax=0.0, epsilonInit=0.0, feMax=5000, trueFuncForSurrogates=True)))  #
         c2 = CobraPhaseII(cobra).start(gcop=G21)

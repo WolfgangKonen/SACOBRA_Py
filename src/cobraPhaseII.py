@@ -1,5 +1,8 @@
+import copy
+import pickle
 import numpy as np
 import pandas as pd
+
 # need to specify SACOBRA_Py.src as source folder in File - Settings - Project Structure,
 # then the following import statements will work:
 from cobraInit import CobraInitializer
@@ -143,9 +146,13 @@ class CobraPhaseII:
 
             check_if_cobra_optimizable(self.cobra, self.p2)
 
+            # # --- debug only ---
+            self.debug_pickle_dump(xStart)
+
             # start sequential optimizer on surrogates and write result to self.p2.opt_res
             # (e.g. the new best x is in xNew = self.p2.opt_res.x):
             SeqOptimizer(xStart, self.cobra, self.p2)
+            # print(self.p2.num, self.p2.opt_res.time_ms, self.p2.opt_res.minf)
             self.p2.globalOptCounter += 1       # a counter which counts all main iterates, excluding repair or TR
             self.p2.ev1.state = "optimized"     # flag ev1 as being in the state after sequential optimization
 
@@ -207,6 +214,9 @@ class CobraPhaseII:
 
         # end while self.p2.num < s_opts.feval
 
+        #####################################################################
+        # Some final steps of CobraPhaseII.start:
+        #####################################################################
         nr = self.p2.ri2.n_repair
         if nr > 2:      # if p2f.do_repair_step is called 3 or more times
             eps2=self.cobra.sac_opts.RI.eps2
@@ -244,6 +254,55 @@ class CobraPhaseII:
                 assert np.all(temp <= s_opts.SEQ.conTol)
 
         return self
+
+    def debug_pickle_dump(self, xStart: np.ndarray):
+        # --- debug only ---
+        assert self.cobra.fn_obj(xStart) == xStart[0]
+        cobra2 = copy.deepcopy(self.cobra)
+        cobra2.sac_res['fn'] = None
+        cobra2.sac_res['originalfn'] = None
+        cobra2.rw = None
+        cobra2.rng = None
+        cobra2.fn_obj = None
+        cobra2.solu_cont = None
+        with open('cobra_tst.pkl', 'wb') as output:
+            pickle.dump(cobra2, output, pickle.HIGHEST_PROTOCOL)
+        p2_2 = copy.deepcopy(self.p2)
+        p2_2.ri2.fn = None
+        p2_2.ri2.rw = None
+        with open('p2_tst.pkl', 'wb') as output:
+            pickle.dump(p2_2, output, pickle.HIGHEST_PROTOCOL)
+        with open('xstart_tst.pkl', 'wb') as output:
+            pickle.dump(xStart, output, pickle.HIGHEST_PROTOCOL)
+
+    def debug_pickle_load(self, xStart) -> np.ndarray:
+        # --- debug only ---
+        with open('../test/cobra_tst.pkl', 'rb') as input:
+            cobra2 = pickle.load(input)
+        cobra2.sac_res['fn'] = self.cobra.sac_res['fn']
+        cobra2.sac_res['originalfn'] = self.cobra.sac_res['originalfn']
+        cobra2.rw = self.cobra.rw
+        cobra2.rng = self.cobra.rng
+        cobra2.fn_obj = self.cobra.fn_obj
+        # cobra2.solu_cont = self.cobra.solu_cont
+        self.cobra = cobra2
+        # self.cobra.df2 = cobra2.df2
+        # self.cobra.fn_strg = cobra2.fn_strg
+        # self.cobra.for_rbf = cobra2.for_rbf
+        # self.cobra.sac_opts = cobra2.sac_opts
+        # self.cobra.sac_res = cobra2.sac_res                     # <--- this results in the crash (1st iter)
+        # self.cobra.sac_res['muVec'] = cobra2.sac_res['muVec']     # <--- this results in the crash (1st iter)
+        with open('../test/p2_tst.pkl', 'rb') as input:
+            p2_2 = pickle.load(input)
+        # p2_2.rw = self.p2.rw
+        p2_2.ri2.fn = self.p2.ri2.fn
+        p2_2.ri2.rw = self.p2.ri2.rw
+        # self.p2 = p2_2
+        with open('../test/xstart_tst.pkl', 'rb') as input:
+            xStart = pickle.load(input)
+        assert self.cobra.fn_obj(xStart) == xStart[0]
+        print(xStart)
+        return xStart
 
     # NOTE: the purpose of this function is just to supply a docstring (used in appendix of Sphinx docu):
     def get_df(self) -> pd.DataFrame:

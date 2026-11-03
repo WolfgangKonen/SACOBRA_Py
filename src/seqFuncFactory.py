@@ -36,7 +36,11 @@ class SeqFuncFactory:
             return np.inf
 
         if self.cobra.sac_opts.SEQ.trueFuncForSurrogates:
-            y = self.cobra.sac_res['fn'](x)[0]
+            if self.cobra.sac_res['f_name'] == "G21":
+                x_o = self.cobra.rw.inverse(x) if self.cobra.sac_opts.ID.rescale else x
+                y = self.cobra.fn_obj(x_o)
+            else:
+                y = self.cobra.sac_res['fn'](x)[0]
             self.cobra.sac_res['ncall'][7] += 1  # ncall-debug
         else:
             y = self.p2.fitnessSurrogate(x)[0]
@@ -138,17 +142,55 @@ class ConstrFactory:
         self.sf = sf
         self.cur_x = sf.cobra.sac_res['x0'] * 0.0
         self.conTol = sf.cobra.sac_opts.SEQ.conTol
-        self.currentMu = sf.cobra.sac_res['muVec'][-1]
-
-    def g_constr(self, i):
-        g_func = lambda x: -self.gCOBRA_de(x)[self.sf.ine_ind[i]]
-        # if i == 0: g_func = lambda x: -2.0     # only debug
-        return NonlinearConstraint(g_func, -np.inf, self.conTol)
+        # self.currentMu = sf.cobra.sac_res['muVec'][-1]
+        self.currentMu = sf.p2.currentMu            # 2026-10-31 bug fix
+        dummy = 0
 
 
-    def h_constr(self, j):
-        h_func = lambda x: -self.gCOBRA_de(x)[self.sf.equ_ind[j]]
-        return NonlinearConstraint(h_func,  -self.currentMu-self.conTol, +self.currentMu+self.conTol)
+    # # --- old version, slower, since gCOBRA_de calls GCOP.fn for every single constraint ---
+    # def g_constr(self, i):
+    #     g_func = lambda x: -self.gCOBRA_de(x)[self.sf.ine_ind[i]]
+    #     return NonlinearConstraint(g_func, -np.inf, self.conTol)
+    #
+    # def h_constr(self, j):
+    #     h_func = lambda x: -self.gCOBRA_de(x)[self.sf.equ_ind[j]]
+    #     return NonlinearConstraint(h_func,  -self.currentMu-self.conTol, +self.currentMu+self.conTol)
+
+    def g_constr2(self, i):
+        if i == 0:
+            g_func_o = lambda x: self.drc_constr(x)
+        else:
+            if self.sf.cobra.sac_opts.SEQ.trueFuncForSurrogates:
+                g_func = eval(self.sf.cobra.fn_strg[self.sf.ine_ind[i]])
+                # print(i, self.sf.ine_ind[i], self.sf.cobra.fn_strg[self.sf.ine_ind[i]])
+                if self.sf.cobra.sac_opts.ID.rescale:
+                    g_func_o = lambda x: g_func(self.sf.cobra.rw.inverse(x)) + self.sf.p2.EPS ** 2
+                else:
+                    g_func_o = lambda x: g_func(x) + self.sf.p2.EPS ** 2
+            else:
+                g_func = lambda x: self.sf.p2.constraintSurrogates(x)[0, self.sf.ine_ind[i]]
+                g_func_o = lambda x: g_func(x) + self.sf.p2.EPS ** 2
+        return NonlinearConstraint(g_func_o, -np.inf, self.conTol)
+
+    def h_constr2(self, j):
+        if self.sf.cobra.sac_opts.SEQ.trueFuncForSurrogates:
+            h_func = eval(self.sf.cobra.fn_strg[self.sf.equ_ind[j]])
+            # print(j, self.sf.equ_ind[j], self.sf.cobra.fn_strg[self.sf.equ_ind[j]])
+            h_func_o = (lambda x: h_func(self.sf.cobra.rw.inverse(x))) if self.sf.cobra.sac_opts.ID.rescale else h_func
+            return NonlinearConstraint(h_func_o, -self.currentMu - self.conTol, +self.currentMu + self.conTol)
+        else:
+            h_func = lambda x: self.sf.p2.constraintSurrogates(x)[0, self.sf.equ_ind[j] - 1]
+            return NonlinearConstraint(h_func, -self.currentMu - self.conTol, +self.currentMu + self.conTol)
+
+    def drc_constr(self, x):
+        if self.sf.cobra.sac_opts.SEQ.DRC_active:
+            distance = distLine(x, self.sf.cobra.sac_res['A'])
+            subC = np.maximum((self.sf.p2.ro - distance), 0)
+            # h[1] = sum(subC)*cobra$drFactor
+            h = sum(subC)
+        else:
+            h = 0.0
+        return h
 
     def gCOBRA_de(self, x):
         """
@@ -162,13 +204,7 @@ class ConstrFactory:
         if nConstraints > 0:
             constraintPrediction = calcConstrPred_de(x, self.sf.cobra, self.sf.p2)
 
-        if self.sf.cobra.sac_opts.SEQ.DRC_active:
-            distance = distLine(x, self.sf.cobra.sac_res['A'])
-            subC = np.maximum((self.sf.p2.ro - distance), 0)
-            # h[1] = sum(subC)*cobra$drFactor
-            h = sum(subC)
-        else:
-            h = 0.0
+        h = self.drc_constr(x)
 
         DBG = False
         if DBG and h > 0:
@@ -210,7 +246,8 @@ def calcConstrPred(x, cobra: CobraInitializer, p2: Phase2Vars) -> np.ndarray:
     s_opts = cobra.sac_opts
     s_res = cobra.sac_res
     if s_opts.EQU.active:
-        currentMu = s_res['muVec'][-1]
+        # currentMu = s_res['muVec'][-1]
+        currentMu = p2.currentMu            # 2026-10-31 bug fix
         # --- The following line with p2.mu4 was active until 2026-01-20, but I do not know why. It leads always to
         # --- currentMu = 0. We now return to the earlier behavior: currentMu = s_res['muVec'][-1]
         # currentMu = p2.mu4  # normally 0. Experimental: same value as currentMu, applied to *inequalities*

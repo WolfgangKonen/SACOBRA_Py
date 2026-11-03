@@ -31,6 +31,17 @@ class SeqOptimizer:
         verboseprint(s_opts.verbose, important=False,
                      message=f"[SeqOptimizer] {s_opts.SEQ.optimizer} optimization on surrogate ...")
 
+        if s_opts.SEQ.DE_at_mod99 and p2.num % 100 == 99:
+            # experimental: at iteration 99, 199, 299, ... replace the standard optimizer
+            # by "DE_OPT" to search for a better optimum on the surrogates
+            o_old = s_opts.SEQ.optimizer
+            drc_old = s_opts.SEQ.DRC_active
+            s_opts.SEQ.optimizer = "DE_OPT"
+            s_opts.SEQ.DRC_active = False       # disable DRC constraint, because DE has numerical problems with its
+            #                                   # piecewise flat regions
+            # # debug only
+            # xStart = cobra.rw.forward(cobra.solu) # + 0.001
+
         o = s_opts.SEQ.optimizer
         if o == "COBYLA":
             the_opt =  NLoptOptimizer(xStart, cobra, p2)
@@ -41,6 +52,11 @@ class SeqOptimizer:
         else:
             raise RuntimeError(f"Optimizer {s_opts.SEQ.optimizer} is not (yet) implemented")
         p2.opt_res = the_opt.get_result()
+
+        if s_opts.SEQ.DE_at_mod99 and p2.num % 100 == 99:
+            s_opts.SEQ.optimizer = o_old
+            s_opts.SEQ.DRC_active = drc_old
+
 
         # TODO: add other sequential optimizers
 

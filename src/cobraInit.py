@@ -52,6 +52,8 @@ class CobraInitializer:
 
     def __init__(self, x0, fn: object, f_name: str, lower: np.ndarray, upper: np.ndarray,
                  is_equ: np.ndarray,
+                 fn_strg=None,
+                 fn_obj=None,
                  solu=None,
                  s_opts: SACoptions = SACoptions(),
                  ):
@@ -91,10 +93,12 @@ class CobraInitializer:
         originalx0 = x0
         originalL = lower
         originalU = upper
-        lb = np.repeat(s_opts.ID.newLower, dimension)
-        ub = np.repeat(s_opts.ID.newUpper, dimension)
+        lb = np.repeat(s_opts.ID.newLower, dimension) if s_opts.ID.rescale else originalL
+        ub = np.repeat(s_opts.ID.newUpper, dimension) if s_opts.ID.rescale else originalU
         self.rw = RescaleWrapper(originalfn, originalL, originalU, lb, ub)
         self.solu = solu
+        self.fn_strg = fn_strg
+        self.fn_obj = fn_obj
 
         if s_opts.ID.rescale:
             x0 = self.rw.forward(x0)
@@ -504,5 +508,4 @@ class CobraInitializer:
         #       - **rs**: vector with (1+d)*n_rs elements: (iter_rs, xStart_rs) for each iteration with a random start
         #       - **currentFeas**: vector of all feasible iterations (those with currentMaxViol <= conTol)
         return self.sac_res
-
 

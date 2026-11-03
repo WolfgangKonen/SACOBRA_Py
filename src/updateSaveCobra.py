@@ -43,6 +43,7 @@ def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, EPS,
     feMax = p2.ev1.feMax
     optimConv = p2.ev1.optimConv
     optimTime = p2.ev1.optimTime
+    optimName = p2.ev1.optimName
     predY = p2.ev1.predY
     predVal = p2.ev1.predVal
     diff = s_res['A'].shape[0] - predY.size
@@ -137,6 +138,7 @@ def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, EPS,
     assert df_predSolu.size == optimConv.size, "[updateSaveCobra] optimConv"
     assert s_res['Fres'].shape[0] == optimConv.size, "[updateSaveCobra] optimConv 2"
     assert s_res['Fres'].shape[0] == optimTime.size, "[updateSaveCobra] optimTime"
+    assert s_res['Fres'].shape[0] == optimName.size, "[updateSaveCobra] optimName"
     assert s_res['Fres'].shape[0] == s_res['fbestArray'].size, "[updateSaveCobra] fbestArray"
     assert s_res['Fres'].shape[0] == s_res['A'].shape[0], "[updateSaveCobra] Fres - A"
     if CONSTRAINED:
@@ -161,7 +163,8 @@ def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, EPS,
              'trueMaxViol': s_res['trueMaxViol'],
              'feMax': feMax,
              'fBest': s_res['fbestArray'],
-             'optimizer': np.repeat(s_opts.SEQ.optimizer, s_res['Fres'].shape[0]),
+             # 'optimizer': np.repeat(p2.opt_res.optimizer, s_res['Fres'].shape[0]),
+             'optimizer': optimName,
              'optimConv': optimConv,
              'optimTime': optimTime,
              'dist': distA,         # distance of solu to infill points, rescaled space (min dist for multiple solu's)
@@ -178,7 +181,8 @@ def updateSaveCobra(cobra: CobraInitializer, p2: Phase2Vars, EPS,
              'feasible': True,
              'feMax': feMax,
              'fBest': s_res['fbestArray'],
-             'optimizer': np.repeat(s_opts.SEQ.optimizer, s_res['Fres'].shape[0]),
+             # 'optimizer': np.repeat(s_opts.SEQ.optimizer, s_res['Fres'].shape[0]),
+             'optimizer': optimName,
              'optimConv': optimConv,
              'optimTime': optimTime,
              'dist': distA,         # distance of solu to infill points, rescaled space (min dist for multiple solu's)

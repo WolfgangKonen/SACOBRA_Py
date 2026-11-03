@@ -237,7 +237,7 @@ def inner_plot(df: pd.DataFrame, muVec, gcop_fbest, gname, png_file, ylim=None, 
         j_start = 0
         for k in range(jumps.size):
             ind_k = ind_blue[j_start:jumps[k]]
-            if ind_blue[j_start] > 0:
+            if ind_blue.size > 0 and ind_blue[j_start] > 0:
                 # add 'one index earlier' to paint also the upwards shoulder of the jump in blue:
                 ind_k = np.array([ind_blue[j_start]-1] + list(ind_blue[j_start:jumps[k]]))
             plt.plot(iStart + ind_k, np.abs(err[ind_k]), 'b-', label='error')

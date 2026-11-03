@@ -43,6 +43,7 @@ class SEQoptions:
                  trueFuncForSurrogates=False,
                  checkTrueSolu=False,
                  DRC_active=True,
+                 DE_at_mod99=False,
                  ):
         self.optimizer = optimizer
         self.feMax = feMax
@@ -59,3 +60,4 @@ class SEQoptions:
         self.trueFuncForSurrogates = trueFuncForSurrogates
         self.checkTrueSolu = checkTrueSolu
         self.DRC_active = DRC_active
+        self.DE_at_mod99 = DE_at_mod99
